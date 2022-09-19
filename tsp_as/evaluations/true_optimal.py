@@ -1,34 +1,23 @@
 import numpy as np
 from _shared import cost, create_Vn, phase_parameters
-from scipy.linalg import inv  # matrix inversion
+from scipy.linalg import inv
 from scipy.optimize import LinearConstraint, minimize
 
 
-def Transient_IA(means, SCVs, omega, tol=None):
+def compute_schedule(means, SCVs, omega_b):
     """
-    Computes the optimal schedule.
-
-    wis = waiting in system. # N = n + wis
+    Return the appointment times and the cost of the true optimal schedule.
     """
-
     n = len(means)
     gamma, T = zip(*[phase_parameters(means[i], SCVs[i]) for i in range(n)])
     Vn = create_Vn(gamma, T)
     Vn_inv = inv(Vn)
 
-    # minimization
-    x0 = np.array([1.5] + [1.5] * (n - 1))  # initial guess, of length n
-    cost_fun = lambda x: cost(x, gamma, Vn, Vn_inv, omega_b)
+    def cost_fun(x):
+        return cost(x, gamma, Vn, Vn_inv, omega_b)
+
+    x_init = 1.5 * np.ones(n)
     lin_cons = LinearConstraint(np.eye(n), 0, np.inf)
-    optim = minimize(cost_fun, x0, constraints=lin_cons, method="SLSQP", tol=tol)
+    optim = minimize(cost_fun, x_init, constraints=lin_cons, method="SLSQP")
 
     return optim.x, optim.fun
-
-
-n = 10
-omega_b = 0.8
-
-means = [0.5] * n
-SCVs = [0.5] * n
-
-Transient_IA(means, SCVs, omega_b)
