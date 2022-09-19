@@ -1,5 +1,5 @@
 import numpy as np
-from _shared import create_Vn, phase_parameters, cost
+from _shared import cost, create_Vn, phase_parameters
 from objht import objht
 from scipy.linalg import inv  # matrix inversion
 from scipy.linalg.blas import dgemm, dgemv  # matrix multiplication
@@ -47,13 +47,7 @@ def Transient_IA(means, SCVs, omega_b, tol=None):
     # minimization
     cost_fun_ht = objht(x, B, omega_b)  # heavy traffic loss function
 
-    # true optimal loss function
-    x0 = np.array([1.5] + [1.5] * (n - 1))  # initial guess, of length n
-    cost_fun = lambda x: cost(x, gamma, Vn, Vn_inv, omega_b)
-    lin_cons = LinearConstraint(np.eye(n), 0, np.inf)
-    optim = minimize(cost_fun, x0, constraints=lin_cons, method="SLSQP", tol=tol)
-
-    return x, cost_fun_ht, optim.x, optim.fun
+    return x, cost_fun_ht
 
 
 n = 10
