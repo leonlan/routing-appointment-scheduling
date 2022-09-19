@@ -4,6 +4,7 @@ from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 import tsp_as.evaluations.heavy_traffic as ht
 import tsp_as.evaluations.true_optimal as to
+from tsp_as.classes import Params, Solution
 
 
 def tour2params(tour, dist, rng):
@@ -19,7 +20,6 @@ def tour2params(tour, dist, rng):
 
     mean_travel = np.array([dist[tour[i], tour[(i + 1) % n]] for i in range(n)])
     scv_travel = rng.uniform(low=0.1, high=0.4, size=n)
-    scv_travel = (0.1 * np.ones(n)) ** 2  # TODO remove this when not testing
     var_travel = scv_travel * np.power(mean_travel, 2)
 
     mean_sum = mean_travel + mean_service
@@ -69,27 +69,29 @@ def main():
     omega_b = 0.8
 
     rng = rnd.default_rng(1)
-    tour = np.array([0, 7, 3, 5, 9, 2, 4, 6, 1, 8])
-    dist = np.matrix(
-        "0    10     3     8     4     3     3     2     8     1 ; 10     0     9     2     7     7    10    12     2     8;  3     9     0     7     2     2     1     3     7     4; 8     2     7     0     8     5     8    10     2     6 ; 4     7     2     8     0     3      4     6     5     5;   3     7     2     5     3     0     3     5     5     2;3    10     1     8     4     3     0     2     8     4;  2    12     3     10     6     5     2     0    10     4;   8     2     7     2     5     5     8    10     0     6; 1     8     4     6     5     2     4     4     6     0"
-    )
-    means, SCVs = tour2params(tour, dist, rng)
 
-    test()
+    params = Params.from_tsplib("instances/atsp/br17.atsp", max_dim=10)
+    tour = np.arange(params.dimension)
 
-    # Heavy traffic pure
-    x = ht.compute_schedule(means, SCVs, omega_b)
-    cost = ht.compute_objective(means, SCVs, omega_b)
-    print(cost)
+    for _ in range(10):
+        rng.shuffle(tour)
+        means, SCVs = tour2params(tour, params.distances, rng)
 
-    # Heavy traffic optimal
-    x = ht.compute_schedule(means, SCVs, omega_b)
-    cost = to.compute_objective_(x, means, SCVs, omega_b)
-    print(cost)
+        test()
 
-    # True optimal
-    # x, cost = to.compute_schedule(means, SCVs, omega_b, tol=1e-2)
-    print(cost)
+        # Heavy traffic pure
+        x = ht.compute_schedule(means, SCVs, omega_b)
+        cost = ht.compute_objective(means, SCVs, omega_b)
+        print("HTP:", cost)
+
+        # Heavy traffic optimal
+        x = ht.compute_schedule(means, SCVs, omega_b)
+        cost = to.compute_objective_(x, means, SCVs, omega_b)
+        print("HTO:", cost)
+
+        # True optimal
+        x, cost = to.compute_schedule(means, SCVs, omega_b, tol=1e-2)
+        print("TO:", cost)
 
 
 if __name__ == "__main__":
