@@ -15,26 +15,19 @@ def compute_schedule(means, SCVs, omega_b):
 
     # assigning new variables for heavy traffic computations (2)
     B = np.zeros(n)
-    Nu = np.zeros(n)
-    De = np.zeros(n)
-
-    nu = 0
-    de = 0
-    al = 0.5
+    nu, de, al = 0, 0, 0.5
 
     for i in range(1, n + 1):
         for j in range(i):
             nu += v[j] * pow(al, i - j)
             de += pow(al, i - j)
 
-        Nu[i - 1] = nu
-        De[i - 1] = de
         B[i - 1] = nu / de
 
     # Eq. (2)
-    x = [means[i] + np.sqrt((1 - omega_b) * B[i]) / (2 * omega_b) for i in range(n)]
+    x = [means[i] + np.sqrt((1 - omega_b) * B[i] / (2 * omega_b)) for i in range(n)]
 
-    return x
+    return x, B  # TODO remove returning B
 
 
 def compute_objective(x, B, omega_bar):
