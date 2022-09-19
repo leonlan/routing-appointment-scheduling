@@ -15,7 +15,7 @@ def phase_parameters(mean, SCV):
     and the elapsed service time u of the client in service.
     """
 
-    # weighted Erlang case
+    # Weighted Erlang case
     if SCV < 1:
 
         # parameters
@@ -26,14 +26,18 @@ def phase_parameters(mean, SCV):
         # initial distribution
         gamma_i = np.zeros((1, K + 1))
         B_sf = poisson.cdf(K - 1, mu) + (1 - p) * poisson.pmf(K, mu)
+
         for z in range(K + 1):
             gamma_i[0, z] = poisson.pmf(z, mu) / B_sf
+
         gamma_i[0, K] *= 1 - p
 
         # transition rate matrix
         Ti = -mu * np.eye(K + 1)
+
         for i in range(K - 1):
             Ti[i, i + 1] = mu
+
         Ti[K - 1, K] = (1 - p) * mu
 
     # hyperexponential case
@@ -60,9 +64,8 @@ def phase_parameters(mean, SCV):
 
 def create_Vn(gamma, T):
     """
-    Creates the matrix Vn given the
-    initial distributions gamma and the
-    corresponding transition matrices T.
+    Creates the matrix Vn given the initial distributions `gamma` and the
+    corresponding transition matrices `T`.
     """
 
     # initialize Vn
@@ -83,9 +86,9 @@ def create_Vn(gamma, T):
     return Vn
 
 
-def cost(x, gamma, Vn, Vn_inv, omega_b):
+def compute_objective(x, gamma, Vn, Vn_inv, omega_b):
     """
-    Evaluates the cost function given all parameters.
+    Compute the objective value of a schedule.
     """
     n = len(gamma)
 
@@ -118,7 +121,20 @@ def cost(x, gamma, Vn, Vn_inv, omega_b):
     return cost
 
 
-def compute_schedule(means, SCVs, omega_b):
+def compute_objective_(x, means, SCVs, omega_b):
+    """
+    TODO This functions is used for HTM.
+    Not sure if these args acn be used for both.
+    """
+    n = len(means)
+    gamma, T = zip(*[phase_parameters(means[i], SCVs[i]) for i in range(n)])
+    Vn = create_Vn(gamma, T)
+    Vn_inv = inv(Vn)
+
+    return compute_objective(x, gamma, Vn, Vn_inv, omega_b)
+
+
+def compute_schedule(means, SCVs, omega_b, tol=None):
     """
     Return the appointment times and the cost of the true optimal schedule.
     """
@@ -128,10 +144,10 @@ def compute_schedule(means, SCVs, omega_b):
     Vn_inv = inv(Vn)
 
     def cost_fun(x):
-        return cost(x, gamma, Vn, Vn_inv, omega_b)
+        return compute_objective(x, gamma, Vn, Vn_inv, omega_b)
 
     x_init = 1.5 * np.ones(n)
     lin_cons = LinearConstraint(np.eye(n), 0, np.inf)
-    optim = minimize(cost_fun, x_init, constraints=lin_cons, method="SLSQP")
+    optim = minimize(cost_fun, x_init, constraints=lin_cons, method="SLSQP", tol=tol)
 
     return optim.x, optim.fun
