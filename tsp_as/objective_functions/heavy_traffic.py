@@ -1,47 +1,10 @@
 import numpy as np
-from _shared import create_Vn, phase_parameters
+from _shared import create_Vn, phase_parameters, cost
 from scipy.linalg import inv  # matrix inversion
 from scipy.linalg.blas import dgemm, dgemv  # matrix multiplication
 from scipy.optimize import LinearConstraint, minimize
 from scipy.sparse.linalg import expm  # matrix exponential
 from scipy.stats import poisson
-
-
-def cost(x, gamma, Vn, Vn_inv, omega_b):
-    """
-    Evaluates the cost function given all parameters.
-    """
-
-    n = len(gamma)
-    N = x.shape[0]
-
-    Pi = gamma[0]
-    cost = omega_b * np.sum(x)
-    sum_di = 0
-
-    # cost of clients to be scheduled
-    for i in range(1, n + 1):
-
-        sum_di += gamma[i - 1].shape[1]
-
-        exp_Vi = expm(Vn[0:sum_di, 0:sum_di] * x[i - 1])
-
-        cost += float(
-            dgemv(
-                1,
-                dgemm(1, Pi, Vn_inv[0:sum_di, 0:sum_di]),
-                np.sum(omega_b * np.eye(sum_di) - exp_Vi, 1),
-            )
-        )
-
-        if i == n:
-            break
-
-        P = dgemm(1, Pi, exp_Vi)
-        Fi = 1 - np.sum(P)
-        Pi = np.hstack((np.matrix(P), gamma[i] * Fi))
-
-    return cost
 
 
 def objht(x, B, omega_b):
@@ -91,8 +54,6 @@ def Transient_IA(means, SCVs, omega_b, tol=None):
 
     for i in range(0, n):
         x[i] = means[i] + np.sqrt(((1 - omega_b) * B[i]) / (2 * omega_b))
-
-    # print(x)
 
     # minimization
     cost_fun_ht = objht(x, B, omega_b)  # heavy traffic loss function
