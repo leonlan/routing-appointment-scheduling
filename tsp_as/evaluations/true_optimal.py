@@ -1,15 +1,13 @@
 import numpy as np
-from _shared import create_Vn, phase_parameters, cost
+from _shared import cost, create_Vn, phase_parameters
 from scipy.linalg import inv  # matrix inversion
-from scipy.linalg.blas import dgemm, dgemv  # matrix multiplication
 from scipy.optimize import LinearConstraint, minimize
-from scipy.sparse.linalg import expm  # matrix exponential
-from scipy.stats import poisson
 
 
 def Transient_IA(means, SCVs, omega, tol=None):
     """
     Computes the optimal schedule.
+
     wis = waiting in system. # N = n + wis
     """
 
@@ -32,8 +30,5 @@ omega_b = 0.8
 
 means = [0.5] * n
 SCVs = [0.5] * n
-# means = [0.5] * 10 + [1.5] * 10 + [0.5] * 10
-# print(means)
-# SCVs = [0.5] * 10 + [1.2] * 10 + [0.5] * 10
 
 Transient_IA(means, SCVs, omega_b)
