@@ -1,22 +1,11 @@
 import numpy as np
 from _shared import create_Vn, phase_parameters, cost
+from objht import objht
 from scipy.linalg import inv  # matrix inversion
 from scipy.linalg.blas import dgemm, dgemv  # matrix multiplication
 from scipy.optimize import LinearConstraint, minimize
 from scipy.sparse.linalg import expm  # matrix exponential
 from scipy.stats import poisson
-
-
-def objht(x, B, omega_b):
-    n = len(x)
-    obj = 0
-
-    for i in range(0, n):
-        obj += np.sqrt(B[i])
-
-    obj = np.sqrt(2 * omega_b * (1 - omega_b)) * obj
-
-    return obj
 
 
 def Transient_IA(means, SCVs, omega_b, tol=None):
@@ -68,13 +57,8 @@ def Transient_IA(means, SCVs, omega_b, tol=None):
 
 
 n = 10
-# n = n - 1
 
 omega_b = 0.8
 
-# means = [0.5] * 3 + [0.5] * 4 + [0.5] * 3
-# SCVs = [0.5] * 3 + [0.2] * 4 + [0.5] * 3
 means = [0.5] * n
 SCVs = [0.5] * n
-
-# %time Transient_IA(means, SCVs, omega)
