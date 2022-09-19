@@ -1,23 +1,19 @@
 import numpy as np
-from objht import objht
 
 
-def Transient_IA(means, SCVs, omega_b):
+def compute_schedule(means, SCVs, omega_b):
     """
-    Computes the optimal schedule, i.e., appointment times.
+    Computes the optimal schedule, i.e., appointment times, using heavy traffic
+    approximation.
 
-    Notes:
-    - wis = waiting in system.
+    Eq. (2) in draft.
     """
-
     n = len(means)
 
     # TODO what is v?
-    v = [SCVs[i] * pow(means[i], 2) for i in range(n)]
+    v = np.array([SCVs[i] * pow(means[i], 2) for i in range(n)])
 
-    # assigning new variables for heavy traffic computations
-    # (equation number 2 in the writeup)
-    x = np.zeros(n)
+    # assigning new variables for heavy traffic computations (2)
     B = np.zeros(n)
     Nu = np.zeros(n)
     De = np.zeros(n)
@@ -33,12 +29,26 @@ def Transient_IA(means, SCVs, omega_b):
 
         Nu[i - 1] = nu
         De[i - 1] = de
-        B[i - 1] = nu / de  # S(i) for heavy traffic in code
+        B[i - 1] = nu / de
 
-    for i in range(0, n):
-        x[i] = means[i] + np.sqrt(((1 - omega_b) * B[i]) / (2 * omega_b))
+    # Eq. (2)
+    x = [means[i] + np.sqrt((1 - omega_b) * B[i]) / (2 * omega_b) for i in range(n)]
 
-    # minimization
-    cost_fun_ht = objht(x, B, omega_b)  # heavy traffic loss function
+    return x
 
-    return x, cost_fun_ht
+
+def compute_objective(x, B, omega_bar):
+    """
+    Computes the objective value using heavy traffic approximation.
+    See (3) in draft.
+
+    NOTE
+    - B == S (service times)
+    - Why is the regular omega not included?
+
+    TODO
+    - Add travel times
+    """
+    sum_sqrt_s = sum([np.sqrt(B[i]) for i in range(len(x))])
+    coeff = np.sqrt(2 * omega_bar * (1 - omega_bar))
+    return coeff * sum_sqrt_s
