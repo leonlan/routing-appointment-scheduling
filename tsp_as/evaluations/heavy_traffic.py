@@ -8,33 +8,28 @@ def compute_schedule(means, SCVs, omega_b):
 
     Eq. (2) in draft.
     """
-    # TODO Remove this when means and SCVs are np array by default
-    means = np.array(means)
-    SCVs = np.array(SCVs)
-
     var = SCVs * means**2  # Variance of U
     B = _compute_service_times(var)
 
     # Eq. (2) but without omega from travels
     coeff = (1 - omega_b) / (2 * omega_b)
-    return means + np.sqrt(coeff * B), B  # TODO remove service times
+    return means + np.sqrt(coeff * B)
 
 
-def compute_objective(x, B, omega_bar):
+def compute_objective(means, SCVs, omega_bar):
     """
     Computes the objective value using heavy traffic approximation.
     See (3) in draft.
 
-    NOTE
-    - B == S (service times)
-    - Why is the regular omega not included?
-
     TODO
-    - Add travel times
+    - Add travel times? Or keep this separate?
+    - Am I correct that this calculation is independent from x?
     """
-    sum_sqrt_s = sum([np.sqrt(B[i]) for i in range(len(x))])
-    coeff = np.sqrt(2 * omega_bar * (1 - omega_bar))
-    return coeff * sum_sqrt_s
+    var = SCVs * means**2  # Variance of U
+    B = _compute_service_times(var)
+
+    weight = np.sqrt(2 * omega_bar * (1 - omega_bar))
+    return weight * np.sqrt(B).sum()
 
 
 def _compute_service_times(var):
