@@ -76,6 +76,8 @@ def create_Vn(gamma, T):
 def compute_objective(x, gamma, Vn, Vn_inv, omega_b):
     """
     Compute the objective value of a schedule.
+
+    Theorem (1).
     """
     n = len(gamma)
 
@@ -107,8 +109,7 @@ def compute_objective(x, gamma, Vn, Vn_inv, omega_b):
 
 def compute_objective_(x, means, SCVs, omega_b):
     """
-    TODO This functions is used for HTM.
-    Not sure if these args can be used for both.
+    TODO This functions is used for HTM. Try to refactor with ``compute_objective``.
     """
     n = len(means)
     gamma, T = zip(*[phase_parameters(means[i], SCVs[i]) for i in range(n)])
