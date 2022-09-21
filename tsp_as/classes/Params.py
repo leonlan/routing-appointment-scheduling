@@ -13,6 +13,8 @@ class Params:
         self.service = 0.5 * np.ones(dimension)
         self.service_scv = 0.5 * np.ones(dimension)
 
+        self.objective = "htp"
+
     @classmethod
     def from_tsplib(cls, path, rng, max_dim=None):
         problem = tsplib95.load(path)
