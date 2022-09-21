@@ -8,8 +8,8 @@ def tour2params(tour, params):
     """
     n = len(tour)
 
-    mean_service = params.service
-    scv_service = params.service_scv
+    mean_service = params.service[tour]
+    scv_service = params.service_scv[tour]
     var_service = scv_service * np.power(mean_service, 2)
 
     mean_travel = np.array(
