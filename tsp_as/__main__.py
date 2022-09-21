@@ -46,29 +46,38 @@ def test():
 def main():
 
     rng = rnd.default_rng(1)
-
     params = Params.from_tsplib("instances/atsp/br17.atsp", rng=rng, max_dim=20)
     omega_b = params.omega_b
     tour = np.arange(params.dimension)
 
     test()
+    costs = []
     for _ in range(100):
+        cost_ = []
         rng.shuffle(tour)
-        means, SCVs = tour2params(tour, params, rng)
+        means, SCVs = tour2params(tour, params)
 
         # Heavy traffic pure
         x = ht.compute_schedule(means, SCVs, omega_b)
         cost = ht.compute_objective(means, SCVs, omega_b)
         print("HTP:", cost)
+        cost_.append(cost)
 
         # Heavy traffic optimal
         x = ht.compute_schedule(means, SCVs, omega_b)
         cost = to.compute_objective_(x, means, SCVs, omega_b)
         print("HTO:", cost)
+        cost_.append(cost)
 
         # True optimal
         x, cost = to.compute_schedule(means, SCVs, omega_b, tol=1e-2)
         print("TO:", cost)
+        cost_.append(cost)
+
+        costs.append(cost_)
+
+    costs = np.array(costs)
+    breakpoint()
 
 
 if __name__ == "__main__":

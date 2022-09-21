@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def tour2params(tour, params, rng):
+def tour2params(tour, params):
     """
     Compute parameters from the passed-in tour, which are used to calculate the
     schedule.
