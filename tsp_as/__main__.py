@@ -44,11 +44,11 @@ def test():
 
 
 def main():
-    omega_b = 0.8
 
     rng = rnd.default_rng(1)
 
-    params = Params.from_tsplib("instances/atsp/br17.atsp", rng=rng, max_dim=10)
+    params = Params.from_tsplib("instances/atsp/br17.atsp", rng=rng, max_dim=20)
+    omega_b = params.omega_b
     tour = np.arange(params.dimension)
 
     test()

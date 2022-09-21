@@ -3,8 +3,7 @@ import numpy as np
 
 def compute_schedule(means, SCVs, omega_b):
     """
-    Computes the optimal schedule, i.e., appointment times, using heavy traffic
-    approximation.
+    Computes the schedule using heavy traffic approximation.
 
     Eq. (2) in draft.
     """
