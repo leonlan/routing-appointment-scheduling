@@ -7,6 +7,8 @@ from scipy.optimize import LinearConstraint, minimize
 from scipy.sparse.linalg import expm  # matrix exponential
 from scipy.stats import poisson
 
+from .tour2params import tour2params
+
 
 def phase_parameters(mean, SCV):
     """
@@ -82,27 +84,28 @@ def compute_objective(x, gamma, Vn, Vn_inv, omega_b):
     n = len(gamma)
 
     Pi = gamma[0]
+
     cost = omega_b * np.sum(x)
-    sum_di = 0
+    dim_csum = np.cumsum([gamma[i].shape[1] for i in range(n)])
 
     # cost of clients to be scheduled
-    for i in range(1, n + 1):
-        sum_di += gamma[i - 1].shape[1]
-        exp_Vi = expm(Vn[0:sum_di, 0:sum_di] * x[i - 1])
-        cost += float(
-            dgemv(
-                1,
-                dgemm(1, Pi, Vn_inv[0:sum_di, 0:sum_di]),
-                np.sum(omega_b * np.eye(sum_di) - exp_Vi, 1),
-            )
+    for i in range(n):
+        d = dim_csum[i]
+        exp_Vi = expm(Vn[:d, :d] * x[i])
+        expr = dgemv(
+            1,
+            dgemm(1, Pi, Vn_inv[:d, :d]),
+            np.sum(omega_b * np.eye(d) - exp_Vi, 1),
         )
+        cost += expr[0]  # dgemv returns np.array
 
-        if i == n:
+        # Stop creation of next matrices when all i are checked
+        if i == n - 1:
             break
 
         P = dgemm(1, Pi, exp_Vi)
         Fi = 1 - np.sum(P)
-        Pi = np.hstack((np.matrix(P), gamma[i] * Fi))
+        Pi = np.concatenate((P, gamma[i + 1] * Fi), axis=1)
 
     return cost
 
@@ -136,3 +139,9 @@ def compute_schedule(means, SCVs, omega_b, tol=None):
     optim = minimize(cost_fun, x_init, constraints=lin_cons, method="SLSQP", tol=tol)
 
     return optim.x, optim.fun
+
+
+def true_optimal(tour, params):
+    means, SCVs = tour2params([0] + tour, params)
+    x, cost = compute_schedule(means, SCVs, params.omega_b, tol=1e-2)
+    return x, cost

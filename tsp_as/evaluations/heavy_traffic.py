@@ -1,5 +1,7 @@
 import numpy as np
 
+from .tour2params import tour2params
+
 
 def compute_schedule(means, SCVs, omega_b):
     """
@@ -41,3 +43,11 @@ def _compute_service_times(var):
 
     # Eq (?) for S_i on page 3.
     return np.cumsum(beta_var) / np.cumsum(betas)
+
+
+def heavy_traffic_pure(tour, params):
+    means, SCVs = tour2params([0] + tour, params)
+    x = compute_schedule(means, SCVs, params.omega_b)
+    cost = compute_objective(means, SCVs, params.omega_b)
+
+    return x, cost
