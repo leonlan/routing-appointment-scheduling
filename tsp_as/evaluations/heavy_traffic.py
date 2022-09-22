@@ -1,44 +1,53 @@
 import numpy as np
-from objht import objht
+
+from .tour2params import tour2params
 
 
-def Transient_IA(means, SCVs, omega_b):
+def compute_schedule(means, SCVs, omega_b):
     """
-    Computes the optimal schedule, i.e., appointment times.
+    Computes the schedule using heavy traffic approximation.
 
-    Notes:
-    - wis = waiting in system.
+    Eq. (2) in draft.
     """
+    var = SCVs * means**2  # Variance of U
+    B = _compute_service_times(var)
 
-    n = len(means)
+    # Eq. (2) but without omega from travels
+    coeff = (1 - omega_b) / (2 * omega_b)
+    return means + np.sqrt(coeff * B)
 
-    # TODO what is v?
-    v = [SCVs[i] * pow(means[i], 2) for i in range(n)]
 
-    # assigning new variables for heavy traffic computations
-    # (equation number 2 in the writeup)
-    x = np.zeros(n)
-    B = np.zeros(n)
-    Nu = np.zeros(n)
-    De = np.zeros(n)
+def compute_objective(means, SCVs, omega_bar):
+    """
+    Computes the objective value using heavy traffic approximation.
+    See (3) in draft.
 
-    nu = 0
-    de = 0
-    al = 0.5
+    TODO
+    - Add travel times? Or keep this separate?
+    - Am I correct that this calculation is independent from x?
+    """
+    var = SCVs * means**2  # Variance of U
+    B = _compute_service_times(var)
 
-    for i in range(1, n + 1):
-        for j in range(i):
-            nu += v[j] * pow(al, i - j)
-            de += pow(al, i - j)
+    weight = np.sqrt(2 * omega_bar * (1 - omega_bar))
+    return weight * np.sqrt(B).sum()
 
-        Nu[i - 1] = nu
-        De[i - 1] = de
-        B[i - 1] = nu / de  # S(i) for heavy traffic in code
 
-    for i in range(0, n):
-        x[i] = means[i] + np.sqrt(((1 - omega_b) * B[i]) / (2 * omega_b))
+def _compute_service_times(var):
+    BETA = 0.5  # TODO this should be a parameter
+    n = len(var)
 
-    # minimization
-    cost_fun_ht = objht(x, B, omega_b)  # heavy traffic loss function
+    beta = BETA * np.ones(n)
+    betas = np.power(beta, np.arange(n))  # b^0, b^1, ..., b^{n-1}
+    beta_var = betas * var  # b^0 * U_0, b^1 * U_1, ..., b^{n-1} * U_{n-1}
 
-    return x, cost_fun_ht
+    # Eq (?) for S_i on page 3.
+    return np.cumsum(beta_var) / np.cumsum(betas)
+
+
+def heavy_traffic_pure(tour, params):
+    means, SCVs = tour2params([0] + tour, params)
+    x = compute_schedule(means, SCVs, params.omega_b)
+    cost = compute_objective(means, SCVs, params.omega_b)
+
+    return x, cost
