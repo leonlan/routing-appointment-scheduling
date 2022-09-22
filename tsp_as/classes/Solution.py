@@ -44,20 +44,22 @@ class Solution(State):
     def objective(self):
         return self.compute_objective(self.tour, self.params)
 
-    def insert_cost(self, job: int, idx: int) -> float:
+    def insert_cost(self, idx: int, customer: int) -> float:
+        """
+        Compute the cost for inserting customer at position idx.
+        """
         cand = copy(self.tour)
-        cand.insert(idx, job)
+        cand.insert(idx, customer)
         return self.compute_objective(cand, self.params)
 
-    def insert(self, job: int, idx: int) -> None:
+    def insert(self, idx: int, customer: int) -> None:
         """
-        Insert the job at position idx.
-        # TODO refactor to same signature as list.insert method
+        Insert the customer at position idx.
         """
-        self.tour.insert(idx, job)
+        self.tour.insert(idx, customer)
 
-    def remove(self, job: int) -> None:
+    def remove(self, customer: int) -> None:
         """
-        Remove the job from the current schedule.
+        Remove the customer from the current schedule.
         """
-        self.tour.remove(job)
+        self.tour.remove(customer)
