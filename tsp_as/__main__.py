@@ -79,7 +79,6 @@ def main():
         costs.append(cost_)
 
     costs = np.array(costs)
-    breakpoint()
 
 
 if __name__ == "__main__":

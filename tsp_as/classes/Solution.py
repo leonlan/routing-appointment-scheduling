@@ -21,6 +21,7 @@ class Solution(State):
         self.params = params
 
     def __deepcopy__(self, memodict={}):
+        self.params.trajectory.append(self.tour)
         return Solution(self.params, copy(self.tour), copy(self.unassigned))
 
     def __repr__(self):
