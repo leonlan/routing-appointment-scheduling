@@ -3,27 +3,33 @@ import tsplib95
 
 
 class Params:
-    def __init__(self, name, rng, dimension, distances):
+    def __init__(self, name, rng, dimension, distances, **kwargs):
         self.name = name
         self.dimension = dimension
-        self.omega = 0.0
-        self.omega_b = 0.8
         self.distances = distances
-        self.distances_scv = rng.uniform(low=0.1, high=0.4, size=distances.shape)
-        self.service = 0.5 * np.ones(dimension)
-        self.service_scv = 0.5 * np.ones(dimension)
+        self.distances_scv = rng.uniform(
+            low=kwargs.get("distances_csv_min", 0.1),
+            high=kwargs.get("distances_csv_max", 0.5),
+            size=distances.shape,
+        )
 
-        self.objective = "htp"
+        self.service = 0.5 * np.ones(dimension)  # TODO How to determine this?
+        self.service_scv = 0.5 * np.ones(dimension)  # TODO How to determine this?
+
+        self.omega = kwargs.get("omega", 0.0)
+        self.omega_b = kwargs.get("omega_", 0.8)
+
+        self.objective = kwargs.get("objective", "hto")
+
+        # TODO Remove this later
+        self.trajectory = []
 
     @classmethod
-    def from_tsplib(cls, path, rng, max_dim=None):
+    def from_tsplib(cls, path, rng, **kwargs):
         problem = tsplib95.load(path)
 
         name = problem.name
-        dimension = (
-            problem.dimension if max_dim is None else min(problem.dimension, max_dim)
-        )
+        dimension = min(problem.dimension, kwargs.get("max_dim", problem.dimension))
         distances = np.array(problem.edge_weights)[:dimension, :dimension]
 
-        # TODO Need to define all stochasticity at instantiation as well
-        return cls(name, rng, dimension, distances)
+        return cls(name, rng, dimension, distances, **kwargs)
