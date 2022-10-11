@@ -3,7 +3,7 @@ import tsplib95
 
 
 class Params:
-    def __init__(self, name, rng, dimension, distances, **kwargs):
+    def __init__(self, name, rng, dimension, distances, G, **kwargs):
         self.name = name
         self.dimension = dimension
         self.distances = distances
@@ -12,6 +12,7 @@ class Params:
             high=kwargs.get("distances_csv_max", 0.5),
             size=distances.shape,
         )
+        self.G = G
 
         self.service = 0.5 * np.ones(dimension)  # TODO How to determine this?
         self.service_scv = 0.5 * np.ones(dimension)  # TODO How to determine this?
@@ -30,6 +31,8 @@ class Params:
 
         name = problem.name
         dimension = min(problem.dimension, kwargs.get("max_dim", problem.dimension))
-        distances = np.array(problem.edge_weights)[:dimension, :dimension]
 
-        return cls(name, rng, dimension, distances, **kwargs)
+        distances = np.array(problem.edge_weights)[:dimension, :dimension]
+        G = problem.get_graph()  # Used for plotting
+
+        return cls(name, rng, dimension, distances, G, **kwargs)

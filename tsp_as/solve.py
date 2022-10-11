@@ -96,6 +96,8 @@ def solve_alns(loc: str, seed: int = 1, **kwargs):
     res = alns.iterate(init, weights, accept, stop, **kwargs)
     stats = res.statistics
 
+    res.best_state.plot()
+
     return (
         path.stem,
         res.best_state.objective(),
@@ -140,7 +142,7 @@ def main():
     *_, params = solve(path, "htp")
 
     # Save figure with passed-in title
-    plot_trajectory(params, f"Search trajectory guided by HTP\n Instance {path.stem}")
+    # plot_trajectory(params, f"Search trajectory guided by HTP\n Instance {path.stem}")
 
 
 if __name__ == "__main__":
