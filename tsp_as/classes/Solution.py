@@ -4,8 +4,7 @@ from typing import Optional
 from alns import State
 
 from tsp_as.classes import Params
-from tsp_as.evaluations import (heavy_traffic_optimal, heavy_traffic_pure,
-                                true_optimal)
+from tsp_as.evaluations import heavy_traffic_optimal, heavy_traffic_pure, true_optimal
 from tsp_as.evaluations.tour2params import tour2params
 
 
@@ -64,8 +63,20 @@ class Solution(State):
         Compute the cost for inserting customer at position idx.
         """
         cand = copy(self.tour)
+
+        if len(self.tour) == 0:
+            pred, succ = 0, 0
+        elif idx == 0:
+            pred, succ = 0, cand[idx]
+        elif idx == len(self.tour):
+            pred, succ = cand[idx - 1], 0
+        else:
+            pred, succ = cand[idx - 1], cand[idx]
+
+        dist = self.params.distances[pred, succ]
         cand.insert(idx, customer)
-        return self.compute_objective(cand, self.params)
+
+        return dist + self.compute_objective(cand, self.params)
 
     def insert(self, idx: int, customer: int) -> None:
         """
