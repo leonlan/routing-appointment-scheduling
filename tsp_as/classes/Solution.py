@@ -34,6 +34,19 @@ class Solution(State):
         return self.tour == other.tour
 
     @staticmethod
+    def compute_distance(tour, params):
+        """
+        Compute the distance of the tour.
+        """
+        # TODO refactor this
+        dist = 0
+        tr = [0] + tour + [0]
+        for idx in range(len(tour) - 1):
+            dist += params.distances[tr[idx], tr[idx + 1]]
+
+        return dist
+
+    @staticmethod
     def compute_objective(tour, params):
         if params.objective == "htp":
             return heavy_traffic_pure(tour, params)[1]
@@ -43,7 +56,11 @@ class Solution(State):
             return true_optimal(tour, params)[1]
 
     def objective(self):
-        return self.compute_objective(self.tour, self.params)
+        dist = self.compute_distance(self.tour, self.params)
+        idle_wait = self.compute_objective(self.tour, self.params)
+
+        # TODO Need to add weights here?
+        return dist + idle_wait
 
     def insert_cost(self, idx: int, customer: int) -> float:
         """
