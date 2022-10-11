@@ -38,13 +38,10 @@ class Solution(State):
         """
         Compute the distance of the tour.
         """
-        # TODO refactor this
-        dist = 0
-        tr = [0] + tour + [0]
-        for idx in range(len(tour) - 1):
-            dist += params.distances[tr[idx], tr[idx + 1]]
-
-        return dist
+        # TODO double check if this is correct
+        to = [0] + tour
+        fr = tour + [0]
+        return params.distances[to, fr].sum()
 
     @staticmethod
     def compute_objective(tour, params):
