@@ -11,8 +11,7 @@ from alns.stop import MaxIterations
 from alns.weights import SimpleWeights
 
 from tsp_as.classes import Params, Solution
-from tsp_as.evaluations import (heavy_traffic_optimal, heavy_traffic_pure,
-                                true_optimal)
+from tsp_as.evaluations import heavy_traffic_optimal, heavy_traffic_pure, true_optimal
 
 
 def parse_args():
@@ -120,7 +119,7 @@ def plot_trajectory(params, title):
     plt.plot(to, marker="s", label="$\\mathscr{L}(i, x^*)$")
 
     plt.title(title)
-    plt.ylabel("Idle + waiting")
+    plt.ylabel("Distance + idle + waiting")
     plt.ylim(min([x for x in to if x is not None]) * 0.9, min(hto) * 1.5)
     plt.xlabel("Iterations (#)")
 
@@ -129,10 +128,12 @@ def plot_trajectory(params, title):
 
     plt.savefig(f"{title}.png")
 
+    # TODO Can we separate distance, idle and waiting?
+
 
 def main():
     # Setup configuration
-    config = {"max_iterations": 10, "n_destroy": 3, "max_dim": 10}
+    config = {"max_iterations": 20, "n_destroy": 3, "max_dim": 10}
     solve = lambda path, objective: solve_alns(path, objective=objective, **config)
 
     # Solve the instance with provided objective function strategy
