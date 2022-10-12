@@ -38,6 +38,8 @@ def random_destroy(solution, rng, **kwargs):
         destroyed.unassigned.append(cust)
         destroyed.tour.remove(cust)
 
+    destroyed.update()  # Update the costs
+
     assert len(solution.tour) == len(destroyed.tour) + n_destroy
 
     return destroyed
@@ -62,6 +64,9 @@ def greedy_insert(solution, rng, **kwargs):
                 best_idx = idx
 
         solution.insert(best_idx, cust)
+
+        # TODO This should re-use the costs from insert_cost computations
+        solution.update()  # Update the costs
 
     return solution
 
