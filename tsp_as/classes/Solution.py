@@ -4,7 +4,8 @@ from typing import Optional
 from alns import State
 
 from tsp_as.classes import Params
-from tsp_as.evaluations import heavy_traffic_optimal, heavy_traffic_pure, true_optimal
+from tsp_as.evaluations import (heavy_traffic_optimal, heavy_traffic_pure,
+                                true_optimal)
 from tsp_as.evaluations.tour2params import tour2params
 
 
@@ -19,14 +20,8 @@ class Solution(State):
         self.unassigned = unassigned if unassigned is not None else []
         self.params = params
 
-        # TODO Is it really necessary to split the distance and idle wait costs?
-        # What are the benefits from doing so? Do we need them separately when
-        # updating costs? I think so, yes, because we need the original distance
-        # when updating the cost. But can't we just update the final in full?
-        # I think it's not neeed to update distance_cost in full after each
-        # insert_cost update.
-        self._distance_cost = None
-        self._idle_wait_cost = None
+        self._cost = None
+        self.update()
 
     def __deepcopy__(self, memodict={}):
         self.params.trajectory.append(self.tour)
@@ -42,12 +37,12 @@ class Solution(State):
         return self.tour == other.tour
 
     @property
-    def distance_cost(self):
-        return self._distance_cost
-
-    @property
-    def idle_wait_cost(self):
-        return self._idle_wait_cost
+    def cost(self):
+        """
+        Return the objective value. This is a weighted sum of the distance
+        and the idle and waiting times.
+        """
+        return self._cost
 
     @staticmethod
     def compute_distance(tour, params):
@@ -69,12 +64,9 @@ class Solution(State):
 
     def objective(self):
         """
-        Return the objective value. This is a weighted sum of the distance
-        and the idle and waiting times.
+        Alias for cost, because the ALNS interface uses ``State.objective()`` method.
         """
-        # TODO Need to add omega weights here? Or should it be included in
-        # the computation of the costs?
-        return self.distance_cost + self.idle_wait_cost
+        return self._cost
 
     def insert_cost(self, idx: int, customer: int) -> float:
         """
@@ -108,15 +100,13 @@ class Solution(State):
         """
         self.tour.remove(customer)
 
-    def update(self, distance_cost=None, idle_wait_cost=None):
+    def update(self):
         """
         Update the current tour's total cost using the passed-in costs.
-
-        If no costs are passed-in, then re-compute the costs.
         """
-        if distance_cost is None or idle_wait_cost is None:
-            self._distance_cost = self.compute_distance(self.tour, self.params)
-            self._idle_wait_cost = self.compute_idle_wait(self.tour, self.params)
-        else:
-            self._distance_cost = distance_cost
-            self._idle_wait_cost = idle_wait_cost
+        distance_cost = self.compute_distance(self.tour, self.params)
+        idle_wait_cost = self.compute_idle_wait(self.tour, self.params)
+
+        # TODO Need to add omega weights here? Or should it be included in
+        # the computation of the costs?
+        self._cost = distance_cost + idle_wait_cost

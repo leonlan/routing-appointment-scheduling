@@ -66,8 +66,7 @@ def greedy_insert(solution, rng, **kwargs):
 
         solution.insert(best_idx, cust)
 
-        # TODO This should re-use the costs from insert_cost computations
-        solution.update()  # Update the costs
+    solution.update()
 
     return solution
 
@@ -91,7 +90,7 @@ def solve_alns(loc: str, seed: int = 1, **kwargs):
     weights = SimpleWeights([5, 2, 1, 0.5], 1, 1, 1)  # dummy scheme
     accept = RecordToRecordTravel.autofit(
         init_obj=init.objective(),
-        start_gap=0.05,
+        start_gap=0.02,
         end_gap=0.0,
         num_iters=kwargs["max_iterations"],
     )
@@ -100,6 +99,8 @@ def solve_alns(loc: str, seed: int = 1, **kwargs):
 
     res = alns.iterate(init, weights, accept, stop, **kwargs)
     stats = res.statistics
+
+    breakpoint()
 
     return (
         path.stem,
@@ -126,7 +127,7 @@ def plot_trajectory(params, title):
 
     plt.title(title)
     plt.ylabel("Distance + idle + waiting")
-    plt.ylim(min([x for x in to if x is not None]) * 0.9, min(hto) * 1.5)
+    plt.ylim(min([x for x in hto if x is not None]) * 0.9, min(hto) * 1.5)
     plt.xlabel("Iterations (#)")
 
     plt.grid(color="grey", linestyle="--", linewidth=0.25)
@@ -139,15 +140,18 @@ def plot_trajectory(params, title):
 
 def main():
     # Setup configuration
-    config = {"max_iterations": 20, "n_destroy": 3, "max_dim": 10}
+    config = {"max_iterations": 10, "n_destroy": 3, "max_dim": 10}
     solve = lambda path, objective: solve_alns(path, objective=objective, **config)
 
     # Solve the instance with provided objective function strategy
     path = Path("instances/atsp/p43.atsp")
     *_, params = solve(path, "htp")
 
-    # Save figure with passed-in title
-    plot_trajectory(params, f"Search trajectory guided by HTP\n Instance {path.stem}")
+    # # Save figure with passed-in title
+    plot_trajectory(
+        params,
+        f"Search trajectory guided by HTO\n Instance {path.stem} with {config['max_dim']=}",
+    )
 
 
 if __name__ == "__main__":
