@@ -4,8 +4,7 @@ from typing import Optional
 from alns import State
 
 from tsp_as.classes import Params
-from tsp_as.evaluations import (heavy_traffic_optimal, heavy_traffic_pure,
-                                true_optimal)
+from tsp_as.evaluations import heavy_traffic_optimal, heavy_traffic_pure, true_optimal
 from tsp_as.evaluations.tour2params import tour2params
 
 
@@ -20,6 +19,12 @@ class Solution(State):
         self.unassigned = unassigned if unassigned is not None else []
         self.params = params
 
+        # TODO Is it really necessary to split the distance and idle wait costs?
+        # What are the benefits from doing so? Do we need them separately when
+        # updating costs? I think so, yes, because we need the original distance
+        # when updating the cost. But can't we just update the final in full?
+        # I think it's not neeed to update distance_cost in full after each
+        # insert_cost update.
         self._distance_cost = None
         self._idle_wait_cost = None
 
@@ -67,13 +72,9 @@ class Solution(State):
         Return the objective value. This is a weighted sum of the distance
         and the idle and waiting times.
         """
-        # TODO Need to add omega weights here?
+        # TODO Need to add omega weights here? Or should it be included in
+        # the computation of the costs?
         return self.distance_cost + self.idle_wait_cost
-        # dist = self.compute_distance(self.tour, self.params)
-        # idle_wait = self.compute_idle_wait(self.tour, self.params)
-
-        # # TODO Need to add omega weights here?
-        # return dist + idle_wait
 
     def insert_cost(self, idx: int, customer: int) -> float:
         """
