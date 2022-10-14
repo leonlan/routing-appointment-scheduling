@@ -11,7 +11,8 @@ from alns.stop import MaxIterations
 from alns.weights import SimpleWeights
 
 from tsp_as.classes import Params, Solution
-from tsp_as.evaluations import heavy_traffic_optimal, heavy_traffic_pure, true_optimal
+from tsp_as.evaluations import (heavy_traffic_optimal, heavy_traffic_pure,
+                                true_optimal)
 
 
 def parse_args():

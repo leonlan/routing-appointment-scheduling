@@ -4,7 +4,8 @@ from typing import Optional
 from alns import State
 
 from tsp_as.classes import Params
-from tsp_as.evaluations import heavy_traffic_optimal, heavy_traffic_pure, true_optimal
+from tsp_as.evaluations import (heavy_traffic_optimal, heavy_traffic_pure,
+                                true_optimal)
 from tsp_as.evaluations.tour2params import tour2params
 
 
