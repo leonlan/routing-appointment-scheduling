@@ -39,6 +39,8 @@ def random_destroy(solution, rng, **kwargs):
         destroyed.unassigned.append(cust)
         destroyed.tour.remove(cust)
 
+    destroyed.update()  # Update the costs
+
     assert len(solution.tour) == len(destroyed.tour) + n_destroy
 
     return destroyed
@@ -64,6 +66,8 @@ def greedy_insert(solution, rng, **kwargs):
 
         solution.insert(best_idx, cust)
 
+    solution.update()
+
     return solution
 
 
@@ -86,7 +90,7 @@ def solve_alns(loc: str, seed: int = 1, **kwargs):
     weights = SimpleWeights([5, 2, 1, 0.5], 1, 1, 1)  # dummy scheme
     accept = RecordToRecordTravel.autofit(
         init_obj=init.objective(),
-        start_gap=0.05,
+        start_gap=0.02,
         end_gap=0.0,
         num_iters=kwargs["max_iterations"],
     )
@@ -95,6 +99,8 @@ def solve_alns(loc: str, seed: int = 1, **kwargs):
 
     res = alns.iterate(init, weights, accept, stop, **kwargs)
     stats = res.statistics
+
+    breakpoint()
 
     return (
         path.stem,
@@ -120,14 +126,16 @@ def plot_trajectory(params, title):
     plt.plot(to, marker="s", label="$\\mathscr{L}(i, x^*)$")
 
     plt.title(title)
-    plt.ylabel("Idle + waiting")
-    plt.ylim(min([x for x in to if x is not None]) * 0.9, min(hto) * 1.5)
+    plt.ylabel("Distance + idle + waiting")
+    plt.ylim(min([x for x in hto if x is not None]) * 0.9, min(hto) * 1.5)
     plt.xlabel("Iterations (#)")
 
     plt.grid(color="grey", linestyle="--", linewidth=0.25)
     plt.legend()
 
     plt.savefig(f"{title}.png")
+
+    # TODO Can we separate distance, idle and waiting?
 
 
 def main():
@@ -139,8 +147,11 @@ def main():
     path = Path("instances/atsp/p43.atsp")
     *_, params = solve(path, "htp")
 
-    # Save figure with passed-in title
-    plot_trajectory(params, f"Search trajectory guided by HTP\n Instance {path.stem}")
+    # # Save figure with passed-in title
+    plot_trajectory(
+        params,
+        f"Search trajectory guided by HTO\n Instance {path.stem} with {config['max_dim']=}",
+    )
 
 
 if __name__ == "__main__":

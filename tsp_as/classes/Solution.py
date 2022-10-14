@@ -20,6 +20,9 @@ class Solution(State):
         self.unassigned = unassigned if unassigned is not None else []
         self.params = params
 
+        self._cost = None
+        self.update()
+
     def __deepcopy__(self, memodict={}):
         self.params.trajectory.append(self.tour)
         return Solution(self.params, copy(self.tour), copy(self.unassigned))
@@ -33,8 +36,25 @@ class Solution(State):
     def __eq__(self, other):
         return self.tour == other.tour
 
+    @property
+    def cost(self):
+        """
+        Return the objective value. This is a weighted sum of the distance
+        and the idle and waiting times.
+        """
+        return self._cost
+
     @staticmethod
-    def compute_objective(tour, params):
+    def compute_distance(tour, params):
+        """
+        Compute the distance of the tour.
+        """
+        to = [0] + tour
+        fr = tour + [0]
+        return params.distances[to, fr].sum()
+
+    @staticmethod
+    def compute_idle_wait(tour, params):
         if params.objective == "htp":
             return heavy_traffic_pure(tour, params)[1]
         elif params.objective == "hto":
@@ -43,24 +63,50 @@ class Solution(State):
             return true_optimal(tour, params)[1]
 
     def objective(self):
-        return self.compute_objective(self.tour, self.params)
+        """
+        Alias for cost, because the ALNS interface uses ``State.objective()`` method.
+        """
+        return self._cost
 
     def insert_cost(self, idx: int, customer: int) -> float:
         """
         Compute the cost for inserting customer at position idx.
         """
         cand = copy(self.tour)
-        cand.insert(idx, customer)
-        return self.compute_objective(cand, self.params)
 
-    def insert(self, idx: int, customer: int) -> None:
+        if len(self.tour) == 0:
+            pred, succ = 0, 0
+        elif idx == 0:
+            pred, succ = 0, cand[idx]
+        elif idx == len(self.tour):
+            pred, succ = cand[idx - 1], 0
+        else:
+            pred, succ = cand[idx - 1], cand[idx]
+
+        dist = self.params.distances[pred, succ]
+        cand.insert(idx, customer)
+
+        return dist + self.compute_idle_wait(cand, self.params)
+
+    def insert(self, idx: int, customer: int):
         """
         Insert the customer at position idx.
         """
         self.tour.insert(idx, customer)
 
-    def remove(self, customer: int) -> None:
+    def remove(self, customer: int):
         """
         Remove the customer from the current schedule.
         """
         self.tour.remove(customer)
+
+    def update(self):
+        """
+        Update the current tour's total cost using the passed-in costs.
+        """
+        distance_cost = self.compute_distance(self.tour, self.params)
+        idle_wait_cost = self.compute_idle_wait(self.tour, self.params)
+
+        # TODO Need to add omega weights here? Or should it be included in
+        # the computation of the costs?
+        self._cost = distance_cost + idle_wait_cost
