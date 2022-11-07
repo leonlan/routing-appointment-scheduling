@@ -4,8 +4,7 @@ from typing import Optional
 from alns import State
 
 from tsp_as.classes import Params
-from tsp_as.evaluations import (heavy_traffic_optimal, heavy_traffic_pure,
-                                true_optimal)
+from tsp_as.evaluations import heavy_traffic_optimal, heavy_traffic_pure, true_optimal
 from tsp_as.evaluations.tour2params import tour2params
 
 
@@ -13,9 +12,7 @@ class Solution(State):
     tour: list[int]
     unassigned: list[int]
 
-    def __init__(
-        self, params: Params, tour: list[int], unassigned: Optional[list[int]] = None
-    ):
+    def __init__(self, params, tour: list[int], unassigned: Optional[list[int]] = None):
         self.tour = tour
         self.unassigned = unassigned if unassigned is not None else []
         self.params = params
@@ -24,7 +21,7 @@ class Solution(State):
         self.update()
 
     def __deepcopy__(self, memodict={}):
-        self.params.trajectory.append(self.tour)
+        self.params.trajectory.append(self)
         return Solution(self.params, copy(self.tour), copy(self.unassigned))
 
     def __repr__(self):

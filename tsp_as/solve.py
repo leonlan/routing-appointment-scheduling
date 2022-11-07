@@ -11,8 +11,7 @@ from alns.stop import MaxIterations
 from alns.weights import SimpleWeights
 
 from tsp_as.classes import Params, Solution
-from tsp_as.evaluations import (heavy_traffic_optimal, heavy_traffic_pure,
-                                true_optimal)
+from tsp_as.evaluations import heavy_traffic_optimal, heavy_traffic_pure, true_optimal
 
 
 def parse_args():
@@ -90,7 +89,7 @@ def solve_alns(loc: str, seed: int = 1, **kwargs):
     weights = SimpleWeights([5, 2, 1, 0.5], 1, 1, 1)  # dummy scheme
     accept = RecordToRecordTravel.autofit(
         init_obj=init.objective(),
-        start_gap=0.02,
+        start_gap=0.05,
         end_gap=0.0,
         num_iters=kwargs["max_iterations"],
     )
@@ -99,8 +98,6 @@ def solve_alns(loc: str, seed: int = 1, **kwargs):
 
     res = alns.iterate(init, weights, accept, stop, **kwargs)
     stats = res.statistics
-
-    breakpoint()
 
     return (
         path.stem,
@@ -113,21 +110,19 @@ def solve_alns(loc: str, seed: int = 1, **kwargs):
 
 def plot_trajectory(params, title):
     solutions = params.trajectory
-    htp = [heavy_traffic_pure(sol, params)[1] for sol in solutions]
-    hto = [heavy_traffic_optimal(sol, params)[1] for sol in solutions]
-    to = [
-        (true_optimal(sol, params)[1] if idx % 1 == 0 else None)
-        for idx, sol in enumerate(solutions)
-    ]
+
+    total = [sol.cost for sol in solutions]
+    dist = [Solution.compute_distance(sol.tour, params) for sol in solutions]
+    idle_wait = [Solution.compute_idle_wait(sol.tour, params) for sol in solutions]
 
     fig = plt.figure(figsize=(20, 8))
-    plt.plot(htp, marker="x", label="$\\mathscr{L}_{ht}(i, x^{ht})$")
-    plt.plot(hto, marker="o", label="$\\mathscr{L}(i, x^{ht})$")
-    plt.plot(to, marker="s", label="$\\mathscr{L}(i, x^*)$")
+    plt.plot(total, marker="x", label="total")
+    plt.plot(dist, marker="o", label="distance")
+    plt.plot(idle_wait, marker="^", label="idle + wait")
 
     plt.title(title)
-    plt.ylabel("Distance + idle + waiting")
-    plt.ylim(min([x for x in hto if x is not None]) * 0.9, min(hto) * 1.5)
+    plt.ylabel("Cost")
+    plt.ylim(min((min(dist), min(idle_wait))) * 0.9, min(total) * 1.5)
     plt.xlabel("Iterations (#)")
 
     plt.grid(color="grey", linestyle="--", linewidth=0.25)
@@ -140,17 +135,17 @@ def plot_trajectory(params, title):
 
 def main():
     # Setup configuration
-    config = {"max_iterations": 10, "n_destroy": 3, "max_dim": 10}
+    config = {"max_iterations": 50, "n_destroy": 2, "max_dim": 15}
     solve = lambda path, objective: solve_alns(path, objective=objective, **config)
 
     # Solve the instance with provided objective function strategy
     path = Path("instances/atsp/p43.atsp")
-    *_, params = solve(path, "htp")
+    *_, params = solve(path, "hto")
 
-    # # Save figure with passed-in title
+    # Save figure with passed-in title
     plot_trajectory(
         params,
-        f"Search trajectory guided by HTO\n Instance {path.stem} with {config['max_dim']=}",
+        f"figs/14oct/Search trajectory by HTO\n Instance {path.stem} with {config['max_dim']=}",
     )
 
 
