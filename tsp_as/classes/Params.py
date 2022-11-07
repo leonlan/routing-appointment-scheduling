@@ -32,8 +32,6 @@ class Params:
         """
         path = Path(loc)
 
-        name = path.stem
-
         with open(path, "r") as fi:
             data = fi.readlines()
 
@@ -58,6 +56,7 @@ class Params:
 
         distances = np.reshape(dist, (n, n))
 
+        name = path.stem
         # Possibly reduce the dimensions of the data
         dimension = min(n, kwargs.get("max_dim", n))
         distances = distances[:dimension, :dimension]
