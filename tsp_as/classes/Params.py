@@ -1,5 +1,6 @@
+from pathlib import Path
+
 import numpy as np
-import tsplib95
 
 
 class Params:
@@ -25,11 +26,43 @@ class Params:
         self.trajectory = []
 
     @classmethod
-    def from_tsplib(cls, path, rng, **kwargs):
-        problem = tsplib95.load(path)
+    def from_tsplib(cls, loc, rng, **kwargs):
+        """
+        Read an ATSP instance from TSPLIB.
 
-        name = problem.name
-        dimension = min(problem.dimension, kwargs.get("max_dim", problem.dimension))
-        distances = np.array(problem.edge_weights)[:dimension, :dimension]
+        Reference:
+        https://scipopt.github.io/PySCIPOpt/docs/html/read__tsplib_8py_source.html
+        """
+        path = Path(loc)
+
+        name = path.stem
+
+        with open(path, "r") as fi:
+            data = fi.readlines()
+
+        for line in data:
+            if line.startswith("DIMENSION:"):
+                n = int(line.split()[1])
+                break
+
+        # k is the line that edge weight section starts
+        for k, line in enumerate(data):
+            if line.startswith("EDGE_WEIGHT_SECTION"):
+                break
+
+        # flatten list of distances
+        dist = []
+        for line in data[k + 1 :]:
+            if line.startswith("EOF"):
+                break
+
+            for val in line.split():
+                dist.append(int(val))
+
+        distances = np.reshape(dist, (n, n))
+
+        # Possibly reduce the dimensions of the data
+        dimension = min(n, kwargs.get("max_dim", n))
+        distances = distances[:dimension, :dimension]
 
         return cls(name, rng, dimension, distances, **kwargs)

@@ -3,14 +3,10 @@ import numpy.random as rnd
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 from tsp_as.classes import Params
-from tsp_as.evaluations import (heavy_traffic_optimal, heavy_traffic_pure,
-                                true_optimal)
-from tsp_as.evaluations.heavy_traffic import \
-    compute_objective as ht_compute_objective
-from tsp_as.evaluations.heavy_traffic import \
-    compute_schedule as ht_compute_schedule
-from tsp_as.evaluations.true_optimal import \
-    compute_schedule as to_compute_schedule
+from tsp_as.evaluations import heavy_traffic_optimal, heavy_traffic_pure, true_optimal
+from tsp_as.evaluations.heavy_traffic import compute_objective as ht_compute_objective
+from tsp_as.evaluations.heavy_traffic import compute_schedule as ht_compute_schedule
+from tsp_as.evaluations.true_optimal import compute_schedule as to_compute_schedule
 
 
 def test():
@@ -49,7 +45,6 @@ def test():
 
 
 def main():
-
     rng = rnd.default_rng(1)
     params = Params.from_tsplib("instances/atsp/p43.atsp", rng=rng, max_dim=10)
     omega_b = params.omega_b
