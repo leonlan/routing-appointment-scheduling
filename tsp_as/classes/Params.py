@@ -29,9 +29,6 @@ class Params:
     def from_tsplib(cls, loc, rng, **kwargs):
         """
         Read an ATSP instance from TSPLIB.
-
-        Reference:
-        https://scipopt.github.io/PySCIPOpt/docs/html/read__tsplib_8py_source.html
         """
         path = Path(loc)
 
