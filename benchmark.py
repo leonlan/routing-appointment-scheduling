@@ -23,6 +23,7 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--num_procs", type=int, default=8)
     parser.add_argument("--instance_pattern", default="instances/atsp/*")
+    parser.add_argument("--debug", action="store_true")
 
     parser.add_argument("--objective", type=str, default="htp")
     parser.add_argument("--n_destroy", type=int, default=2)
@@ -97,8 +98,11 @@ def main():
     func = partial(solve_alns, **vars(args))
     func_args = sorted(glob(args.instance_pattern))
 
-    tqdm_kwargs = dict(max_workers=args.num_procs, unit="instance")
-    data = process_map(func, func_args, **tqdm_kwargs)
+    if args.debug:  # disable parallelization to debug
+        data = [func(arg) for arg in func_args]
+    else:
+        tqdm_kwargs = dict(max_workers=args.num_procs, unit="instance")
+        data = process_map(func, func_args, **tqdm_kwargs)
 
     dtypes = [
         ("inst", "U37"),
