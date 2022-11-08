@@ -60,8 +60,7 @@ def create_Vn(gamma, T):
     # Initialize parameters
     n = len(T)
     d = [T[idx].shape[0] for idx in range(n)]
-    dim_V = np.cumsum(d)
-
+    dim_V = np.cumsum(d)  # dimensions to find indices in Vn
     dim_Vn = dim_V[-1]  # dimension of the final matrix Vn
     Vn = np.zeros((dim_Vn, dim_Vn))
 
@@ -84,28 +83,32 @@ def compute_objective(x, gamma, Vn, Vn_inv, omega_b):
     """
     Compute the objective value of a schedule.
 
+    x: np.array
+        the interappointment times
+    gamma: ...
+
     Theorem (1).
     """
     n = len(gamma)
-
     Pi = gamma[0]
 
     cost = omega_b * np.sum(x)
-    dim_csum = np.cumsum([gamma[i].shape[1] for i in range(n)])
+    dim_csum = np.cumsum([gamma[i].shape[1] for i in range(n)])  # REVIEW why shape 1?
 
     # cost of clients to be scheduled
     for i in range(n):
         d = dim_csum[i]
         exp_Vi = expm(Vn[:d, :d] * x[i])
-        expr = dgemv(
+
+        expr = dgemv(  # dgemv returns np.array
             1,
             dgemm(1, Pi, Vn_inv[:d, :d]),
             np.sum(omega_b * np.eye(d) - exp_Vi, 1),
-        )
-        cost += expr[0]  # dgemv returns np.array
+        )[0]
+        cost += expr
+        # breakpoint()
 
-        # Stop creation of next matrices when all i are checked
-        if i == n - 1:
+        if i == n - 1:  # stop
             break
 
         P = dgemm(1, Pi, exp_Vi)
