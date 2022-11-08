@@ -60,21 +60,22 @@ def create_Vn(gamma, T):
     # Initialize parameters
     n = len(T)
     d = [T[idx].shape[0] for idx in range(n)]
-    dim_V = np.cumsum([0] + d)
-    Vn = np.zeros((dim_V[n], dim_V[n]))
+    dim_V = np.cumsum(d)
 
-    # compute Vn recursively
-    for i in range(1, n + 1):
+    dim_Vn = dim_V[-1]  # dimension of the final matrix Vn
+    Vn = np.zeros((dim_Vn, dim_Vn))
+
+    # Compute Vn recursively
+    for i in range(n):
         l = dim_V[i - 1] if i > 0 else 0
         u = dim_V[i]
-
         t = T[i - 1]
 
         Vn[l:u, l:u] = t
 
-        if i != n:
+        if i != n - 1:
             k = dim_V[i + 1]
-            Vn[l:u, u:k] = np.matrix(-t @ np.ones((d[i - 1], 1))) @ gamma[i]
+            Vn[l:u, u:k] = -t @ np.ones((d[i - 1], 1)) @ gamma[i]
 
     return Vn
 
