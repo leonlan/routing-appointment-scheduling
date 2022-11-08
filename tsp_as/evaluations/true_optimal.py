@@ -56,25 +56,30 @@ def create_Vn(gamma, T):
     """
     Creates the matrix Vn given the initial distributions `gamma` and the
     corresponding transition matrices `T`.
-    """
-    # Initialize parameters
-    n = len(T)
-    d = [T[idx].shape[0] for idx in range(n)]
-    dim_V = np.cumsum(d)  # dimensions to find indices in Vn
-    dim_Vn = dim_V[-1]  # dimension of the final matrix Vn
-    Vn = np.zeros((dim_Vn, dim_Vn))
 
-    # Compute Vn recursively
-    for i in range(n):
-        l = dim_V[i - 1] if i > 0 else 0
+    gamma
+        Initial distribution
+    T
+        Transition matrix
+    """
+    # NOTE Keep original for debugging
+    # initialize Vn
+    n = len(T)
+    d = [T[i].shape[0] for i in range(n)]
+    dim_V = np.cumsum([0] + d)
+    Vn = np.zeros((dim_V[n], dim_V[n]))
+
+    # compute Vn recursively
+    for i in range(1, n):
+        l = dim_V[i - 1]
         u = dim_V[i]
+        k = dim_V[i + 1]
         t = T[i - 1]
 
-        Vn[l:u, l:u] = t
+        Vn[l:u, l:u] = T[i - 1]
+        Vn[l:u, u:k] = -T[i - 1] @ np.ones((d[i - 1], 1)) @ gamma[i]
 
-        if i != n - 1:
-            k = dim_V[i + 1]
-            Vn[l:u, u:k] = -t @ np.ones((d[i - 1], 1)) @ gamma[i]
+    Vn[dim_V[n - 1] : dim_V[n], dim_V[n - 1] : dim_V[n]] = T[n - 1]
 
     return Vn
 
@@ -85,7 +90,7 @@ def compute_objective(x, gamma, Vn, Vn_inv, omega_b):
 
     x: np.array
         the interappointment times
-    gamma: ...
+    gamma: np.ndarray (1-by-n)
 
     Theorem (1).
     """
@@ -93,7 +98,7 @@ def compute_objective(x, gamma, Vn, Vn_inv, omega_b):
     Pi = gamma[0]
 
     cost = omega_b * np.sum(x)
-    dim_csum = np.cumsum([gamma[i].shape[1] for i in range(n)])  # REVIEW why shape 1?
+    dim_csum = np.cumsum([gamma[i].size for i in range(n)])
 
     # cost of clients to be scheduled
     for i in range(n):
@@ -106,7 +111,6 @@ def compute_objective(x, gamma, Vn, Vn_inv, omega_b):
             np.sum(omega_b * np.eye(d) - exp_Vi, 1),
         )[0]
         cost += expr
-        # breakpoint()
 
         if i == n - 1:  # stop
             break
