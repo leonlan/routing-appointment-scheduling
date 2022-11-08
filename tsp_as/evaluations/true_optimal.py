@@ -57,20 +57,24 @@ def create_Vn(gamma, T):
     Creates the matrix Vn given the initial distributions `gamma` and the
     corresponding transition matrices `T`.
     """
-    # initialize Vn
+    # Initialize parameters
     n = len(T)
-    d = [T[i].shape[0] for i in range(n)]
+    d = [T[idx].shape[0] for idx in range(n)]
     dim_V = np.cumsum([0] + d)
     Vn = np.zeros((dim_V[n], dim_V[n]))
 
     # compute Vn recursively
-    for i in range(1, n):
-        Vn[dim_V[i - 1] : dim_V[i], dim_V[i - 1] : dim_V[i]] = T[i - 1]
-        Vn[dim_V[i - 1] : dim_V[i], dim_V[i] : dim_V[i + 1]] = (
-            np.matrix(-T[i - 1] @ np.ones((d[i - 1], 1))) @ gamma[i]
-        )
+    for i in range(1, n + 1):
+        l = dim_V[i - 1] if i > 0 else 0
+        u = dim_V[i]
 
-    Vn[dim_V[n - 1] : dim_V[n], dim_V[n - 1] : dim_V[n]] = T[n - 1]
+        t = T[i - 1]
+
+        Vn[l:u, l:u] = t
+
+        if i != n:
+            k = dim_V[i + 1]
+            Vn[l:u, u:k] = np.matrix(-t @ np.ones((d[i - 1], 1))) @ gamma[i]
 
     return Vn
 
