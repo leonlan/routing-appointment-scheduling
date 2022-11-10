@@ -1,4 +1,7 @@
 import argparse
+import cProfile
+import pstats
+from datetime import datetime
 from functools import partial
 from glob import glob
 from pathlib import Path
@@ -24,8 +27,9 @@ def parse_args():
     parser.add_argument("--num_procs", type=int, default=8)
     parser.add_argument("--instance_pattern", default="instances/atsp/*")
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--profile", action="store_true")
 
-    parser.add_argument("--objective", type=str, default="htp")
+    parser.add_argument("--objective", type=str, default="to")
     parser.add_argument("--n_destroy", type=int, default=2)
     parser.add_argument("--max_dim", type=int, default=10)
 
@@ -99,7 +103,18 @@ def main():
     func_args = sorted(glob(args.instance_pattern))
 
     if args.debug:  # disable parallelization to debug
-        data = [func(arg) for arg in func_args]
+        if args.profile:
+            with cProfile.Profile() as profiler:
+                data = [func(arg) for arg in func_args]
+
+            stats = pstats.Stats(profiler).strip_dirs().sort_stats("time")
+            stats.print_stats()
+
+            now = datetime.now().isoformat()
+            stats.dump_stats(f"tmp/profile-{now}.pstat")
+
+        else:
+            data = [func(arg) for arg in func_args]
     else:
         tqdm_kwargs = dict(max_workers=args.num_procs, unit="instance")
         data = process_map(func, func_args, **tqdm_kwargs)
