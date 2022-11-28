@@ -55,34 +55,31 @@ def phase_parameters(mean, SCV):
     return alpha_i, transition
 
 
-def create_Vn(alpha, T):
+def create_Vn(alphas, T):
     """
-    Creates the matrix Vn given the initial distributions `alpha` and the
+    Creates the Vn matrix given the initial distributions `alphas` and the
     corresponding transition matrices `T`.
 
-    alpha
-        Initial distribution
+    alphas
+        List of initial distribution arrays
     T
-        Transition matrix
+        List of transition matrices
     """
-    # NOTE Keep original for debugging
-    # initialize Vn
     n = len(T)
     d = [T[i].shape[0] for i in range(n)]
-    dim_V = np.cumsum([0] + d)
-    Vn = np.zeros((dim_V[n], dim_V[n]))
+    dims = np.cumsum([0] + d)
 
-    # compute Vn recursively
+    Vn = np.zeros((dims[n], dims[n]))
+
     for i in range(1, n):
-        l = dim_V[i - 1]
-        u = dim_V[i]
-        k = dim_V[i + 1]
-        t = T[i - 1]
+        l = dims[i - 1]
+        u = dims[i]
+        k = dims[i + 1]
 
         Vn[l:u, l:u] = T[i - 1]
-        Vn[l:u, u:k] = -T[i - 1] @ np.ones((d[i - 1], 1)) @ alpha[i]
+        Vn[l:u, u:k] = -T[i - 1] @ np.ones((d[i - 1], 1)) @ alphas[i]
 
-    Vn[dim_V[n - 1] : dim_V[n], dim_V[n - 1] : dim_V[n]] = T[n - 1]
+    Vn[dims[n - 1] : dims[n], dims[n - 1] : dims[n]] = T[n - 1]
 
     return Vn
 
@@ -116,11 +113,12 @@ def compute_objective(x, alphas, Vn, omega_b):
         expVx = expm(Vn[:d, :d] * x[i])
 
         # The idle and waiting terms in the objective function can be decomposed
-        # in the following two terms, reducing several matrix computations.
+        # in the following three terms, reducing several matrix computations.
         term1 = dgemm(1, beta, Vn_inv[:d, :d])
         term2 = (omega_b * np.eye(d) - (1 - omega) * expVx).sum(axis=1)
+        term3 = omega_b * x[i]
 
-        cost += np.dot(term1, term2)[0]
+        cost += np.dot(term1, term2)[0] + term3
 
         if i == n - 1:  # stop
             break
