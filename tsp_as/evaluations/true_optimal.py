@@ -1,13 +1,10 @@
 import math
-import time
 
 import numpy as np
-from numpy.testing import assert_almost_equal
-from scipy.linalg import inv  # matrix inversion
-from scipy.linalg.blas import dgemm, dgemv  # matrix multiplication
+from scipy.linalg import inv
+from scipy.linalg.blas import dgemm
 from scipy.optimize import LinearConstraint, minimize
-from scipy.sparse import csr_matrix
-from scipy.sparse.linalg import expm, expm_multiply  # matrix exponential
+from scipy.sparse.linalg import expm
 from scipy.stats import poisson
 
 from .tour2params import tour2params
@@ -96,8 +93,8 @@ def compute_objective(x, alphas, Vn, omega_b):
         The recursively-defined matrix $V^{(n)}$.
     omega_b
         The weight associated with idle time.
-        # TODO this should become part of the params
-        # TODO Check if this is idle time or waiting time...
+        # TODO This should become part of the params
+        # TODO Check if this is idle time or waiting time.
 
     """
     n = len(alphas)
