@@ -26,7 +26,6 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--num_procs", type=int, default=8)
     parser.add_argument("--instance_pattern", default="instances/atsp/*")
-    parser.add_argument("--debug", action="store_true")
     parser.add_argument("--profile", action="store_true")
 
     parser.add_argument("--objective", type=str, default="to")
@@ -102,22 +101,21 @@ def main():
     func = partial(solve_alns, **vars(args))
     func_args = sorted(glob(args.instance_pattern))
 
-    if args.debug:  # disable parallelization to debug
+    if args.num_procs > 1:
+        tqdm_kwargs = dict(max_workers=args.num_procs, unit="instance")
+        data = process_map(func, func_args, **tqdm_kwargs)
+    else:  # process_map cannot be used with interactive debugging
         if args.profile:
             with cProfile.Profile() as profiler:
-                data = [func(arg) for arg in func_args]
+                data = [func(args) for args in func_args]
 
             stats = pstats.Stats(profiler).strip_dirs().sort_stats("time")
             stats.print_stats()
 
             now = datetime.now().isoformat()
             stats.dump_stats(f"tmp/profile-{now}.pstat")
-
         else:
-            data = [func(arg) for arg in func_args]
-    else:
-        tqdm_kwargs = dict(max_workers=args.num_procs, unit="instance")
-        data = process_map(func, func_args, **tqdm_kwargs)
+            data = [func(args) for args in func_args]
 
     dtypes = [
         ("inst", "U37"),
