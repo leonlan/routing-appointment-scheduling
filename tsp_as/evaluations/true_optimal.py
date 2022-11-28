@@ -104,14 +104,12 @@ def compute_objective(x, alphas, Vn, omega_b):
 
     """
     n = len(alphas)
-    beta = alphas[0]
-
+    omega = 0  # TODO this need to be added as parameter at some point
+    dims = np.cumsum([alphas[i].size for i in range(n)])
     Vn_inv = inv(Vn)
 
+    beta = alphas[0]
     cost = omega_b * np.sum(x)
-    dims = np.cumsum([alphas[i].size for i in range(n)])
-
-    omega = 0  # TODO this need to be added as some point
 
     for i in range(n):
         d = dims[i]
@@ -124,7 +122,7 @@ def compute_objective(x, alphas, Vn, omega_b):
 
         cost += np.dot(term1, term2)[0]
 
-        if i == n - 1:  # stop creation of new matrices
+        if i == n - 1:  # stop
             break
 
         P = dgemm(1, beta, expVx)
@@ -132,52 +130,6 @@ def compute_objective(x, alphas, Vn, omega_b):
         beta = np.hstack((P, alphas[i + 1] * Fi))
 
     return cost
-
-
-def compute_objective2(x, alphas, Vn):
-    n = len(x)
-
-    dims = np.cumsum([alphas[i].size for i in range(n)])
-
-    Vn_inv = inv(Vn)  # REVIEW why can this be negative?
-
-    start = time.perf_counter()
-
-    total = 0
-
-    beta = alphas[0]
-    expVx = expm(Vn[: dims[0], : dims[0]] * x[0])
-    P = beta @ expVx
-
-    omega_idle = 1
-    omega_wait = 1
-
-    for i in range(n):
-        d = dims[i]
-
-        term1 = dgemm(1, beta, Vn_inv[:d, :d])  # shared term
-        term2 = (1 - omega_wait) * expVx
-        wait = term @ expVx @ np.ones(d)
-        idle = x[i] + term @ np.ones(d)
-        total += wait + idle
-        # breakpoint()
-
-        if i == 0:
-            print(total)
-
-        if i == n - 1:
-            break
-
-        # Update for next iteration
-        F = 1 - np.sum(P)
-        beta = np.hstack((P, alphas[i + 1] * F))
-        expVx = expm(Vn[: dims[i + 1], : dims[i + 1]] * x[i + 1])
-        P = beta @ expVx
-
-        assert_almost_equal(beta.sum(), 1)
-
-    end = time.perf_counter() - start
-    print("obje2", total, end)
 
 
 def compute_objective_(x, means, SCVs, omega_b):
@@ -213,42 +165,3 @@ def true_optimal(tour, params):
     means, SCVs = tour2params([0] + tour, params)
     x, cost = compute_schedule(means, SCVs, params.omega_b, tol=1e-2)
     return x, cost
-
-
-# ----------------
-def compute_idle_time(x, alphas, Vn):
-    """
-    Computes the idle time.
-    """
-    n = len(x)
-
-    dims = np.cumsum([alphas[i].size for i in range(n)])
-
-    Vn_inv = inv(Vn)  # REVIEW why can this be negative?
-
-    start = time.perf_counter()
-    idle = 0
-
-    beta = alphas[0]
-    P = expm_multiply((csr_matrix(Vn[: dims[0], : dims[0]] * x[0])).T, beta.T).T
-
-    for i in range(n):
-        d = dims[i]
-
-        expr = np.dot(beta, (Vn_inv[:d, :d] @ np.ones(d)))
-        idle += x[i] + expr
-
-        if i == n - 1:
-            break
-
-        # Update for next iteration
-        F = 1 - np.sum(P)
-        beta = np.hstack((P, alphas[i + 1] * F))
-        P = expm_multiply((Vn[: dims[i + 1], : dims[i + 1]] * x[i + 1]).T, beta.T).T
-
-        assert_almost_equal(beta.sum(), 1)
-
-    end = time.perf_counter() - start
-    print("idle", idle, end)
-
-    return idle
