@@ -1,10 +1,12 @@
+from itertools import combinations
 from pathlib import Path
 
 import numpy as np
+import tsplib95
 
 
 class Params:
-    def __init__(self, name, rng, dimension, distances, **kwargs):
+    def __init__(self, name, rng, dimension, distances, coords, **kwargs):
         self.name = name
         self.dimension = dimension
         self.distances = distances
@@ -13,6 +15,7 @@ class Params:
             high=kwargs.get("distances_csv_max", 0.5),
             size=distances.shape,
         )
+        self.coords = coords
 
         self.service = 0.5 * np.ones(dimension)  # TODO How to determine this?
         self.service_scv = 0.5 * np.ones(dimension)  # TODO How to determine this?
@@ -28,37 +31,22 @@ class Params:
     @classmethod
     def from_tsplib(cls, loc, rng, **kwargs):
         """
-        Read an ATSP instance from TSPLIB.
+        Reads a TSP instance from TSPLIB.
         """
         path = Path(loc)
-
-        with open(path, "r") as fi:
-            data = fi.readlines()
-
-        for line in data:
-            if line.startswith("DIMENSION:"):
-                n = int(line.split()[1])
-                break
-
-        # k is the line that edge weight section starts
-        for k, line in enumerate(data):
-            if line.startswith("EDGE_WEIGHT_SECTION"):
-                break
-
-        # flatten list of distances
-        dist = []
-        for line in data[k + 1 :]:
-            if line.startswith("EOF"):
-                break
-
-            for val in line.split():
-                dist.append(int(val))
-
-        distances = np.reshape(dist, (n, n))
+        problem = tsplib95.load(path)
 
         name = path.stem
-        # Possibly reduce the dimensions of the data
-        dimension = min(n, kwargs.get("max_dim", n))
-        distances = distances[:dimension, :dimension]
+        name = problem.name
+        dimension = min(problem.dimension, kwargs.get("max_dim", problem.dimension))
 
-        return cls(name, rng, dimension, distances, **kwargs)
+        # We need to explicitly retrieve the dimensions ourselves
+        distances = np.zeros((dimension, dimension))
+        for i, j in combinations(range(dimension), r=2):
+            d_ij = problem.get_weight(i + 1, j + 1)  # start at idx 1
+            distances[i, j] = d_ij
+            distances[j, i] = d_ij
+
+        coords = np.array([coord for coord in problem.node_coords.values()])
+
+        return cls(name, rng, dimension, distances, coords, **kwargs)
