@@ -6,6 +6,7 @@ from functools import partial
 from glob import glob
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.random as rnd
 from alns import ALNS
@@ -17,6 +18,7 @@ from tqdm.contrib.concurrent import process_map
 from tsp_as.classes import Params, Solution
 from tsp_as.destroy_operators import random_destroy
 from tsp_as.evaluations import heavy_traffic_optimal, heavy_traffic_pure, true_optimal
+from tsp_as.plot import plot_instance
 from tsp_as.repair_operators import greedy_insert
 
 
@@ -66,6 +68,12 @@ def solve_alns(loc: str, seed: int, **kwargs):
 
     res = alns.iterate(init, weights, accept, stop, **kwargs)
     stats = res.statistics
+
+    # Plot the solution
+    fig, ax = plt.subplots(figsize=[10, 7.5], dpi=150)
+    plot_instance(ax, params, res.best_state)
+    fig.savefig(f"tmp/{path.stem}")
+    plt.close()
 
     return (
         path.stem,
