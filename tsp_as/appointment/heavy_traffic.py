@@ -21,10 +21,6 @@ def compute_objective(means, SCVs, omega_bar):
     """
     Computes the objective value using heavy traffic approximation.
     See (3) in draft.
-
-    TODO
-    - Add travel times? Or keep this separate?
-    - Am I correct that this calculation is independent from x?
     """
     var = SCVs * means**2  # Variance of U
     B = _compute_service_times(var)

@@ -3,9 +3,8 @@ from typing import Optional
 
 from alns import State
 
-from tsp_as.appointment import heavy_traffic_optimal, heavy_traffic_pure, true_optimal
-from tsp_as.appointment.tour2params import tour2params
-from tsp_as.classes import Params
+import tsp_as.appointment.heavy_traffic as ht
+import tsp_as.appointment.true_optimal as to
 
 
 class Solution(State):
@@ -14,6 +13,7 @@ class Solution(State):
 
     def __init__(self, params, tour: list[int], unassigned: Optional[list[int]] = None):
         self.tour = tour
+        self.schedule = None
         self.unassigned = unassigned if unassigned is not None else []
         self.params = params
 
@@ -46,18 +46,21 @@ class Solution(State):
         """
         Compute the distance of the tour.
         """
-        to = [0] + tour
-        fr = tour + [0]
-        return params.distances[to, fr].sum()
+        visits = [0] + tour + [0]
+        return params.distances[visits[1:], visits[:-1]].sum()
 
     @staticmethod
     def compute_idle_wait(tour, params):
-        if params.objective == "htp":
-            return heavy_traffic_pure(tour, params)[1]
-        elif params.objective == "hto":
-            return heavy_traffic_optimal(tour, params)[1]
+        if params.objective in ["htp", "hto"]:
+            schedule = ht.compute_schedule(tour, params)
+
+            if params.objective == "htp":
+                return schedule, ht.compute_objective(tour, params)
+            elif params.objective == "hto":
+                return schedule, to.compute_objective(tour, params)
         else:
-            return true_optimal(tour, params)[1]
+            schedule, cost = to.true_optimal(tour, params)
+            return schedule, cost
 
     def objective(self):
         """
@@ -83,7 +86,8 @@ class Solution(State):
         dist = self.params.distances[pred, succ]
         cand.insert(idx, customer)
 
-        return dist + self.compute_idle_wait(cand, self.params)
+        schedule, idle_wait = self.compute_idle_wait(cand, self.params)
+        return dist + idle_wait
 
     def insert(self, idx: int, customer: int):
         """
@@ -101,9 +105,10 @@ class Solution(State):
         """
         Update the current tour's total cost using the passed-in costs.
         """
-        distance_cost = self.compute_distance(self.tour, self.params)
-        idle_wait_cost = self.compute_idle_wait(self.tour, self.params)
+        distance = self.compute_distance(self.tour, self.params)
+        schedule, idle_wait = self.compute_idle_wait(self.tour, self.params)
 
         # TODO Need to add omega weights here? Or should it be included in
         # the computation of the costs?
-        self._cost = distance_cost + idle_wait_cost
+        self.schedule = schedule
+        self._cost = distance + idle_wait

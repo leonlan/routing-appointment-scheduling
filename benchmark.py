@@ -15,7 +15,6 @@ from alns.stop import MaxIterations
 from alns.weights import SimpleWeights
 from tqdm.contrib.concurrent import process_map
 
-from tsp_as.appointment import heavy_traffic_optimal, heavy_traffic_pure, true_optimal
 from tsp_as.classes import Params, Solution
 from tsp_as.destroy_operators import random_destroy
 from tsp_as.plot import plot_instance
