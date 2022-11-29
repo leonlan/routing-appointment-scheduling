@@ -47,6 +47,6 @@ class Params:
             distances[i, j] = d_ij
             distances[j, i] = d_ij
 
-        coords = np.array([coord for coord in problem.node_coords.values()])
+        coords = np.array([coord for coord in problem.node_coords.values()])[:dimension]
 
         return cls(name, rng, dimension, distances, coords, **kwargs)

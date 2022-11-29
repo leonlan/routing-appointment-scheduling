@@ -3,7 +3,7 @@ import math
 import numpy as np
 from scipy.linalg import inv
 from scipy.linalg.blas import dgemm
-from scipy.optimize import LinearConstraint, minimize
+from scipy.optimize import minimize
 from scipy.sparse.linalg import expm
 from scipy.stats import poisson
 
@@ -15,41 +15,36 @@ def phase_parameters(mean, SCV):
     Returns the initial distribution alpha and the transition rate
     matrix T of the phase-fitted service times given the mean, SCV,
     and the elapsed service time u of the client in service.
+
+    # TODO These phase parameters can be computed in params?.
     """
     if SCV < 1:  # Weighted Erlang case
-        # REVIEW how is this calculated?
         K = math.floor(1 / SCV)
-        # REVIEW where is the formula for this?
-        p = ((K + 1) * SCV - math.sqrt((K + 1) * (1 - K * SCV))) / (SCV + 1)
-        # REVIEW where is the formula for this?
-        mu = (K + 1 - p) / mean
+        prob = ((K + 1) * SCV - math.sqrt((K + 1) * (1 - K * SCV))) / (SCV + 1)
+        mu = (K + 1 - prob) / mean
 
-        # REVIEW where/what is alpha?
-        alpha_i = np.zeros((1, K + 1))
-        # REVIEW where/what is B-sf?
-        B_sf = poisson.cdf(K - 1, mu) + (1 - p) * poisson.pmf(K, mu)
+        alpha = np.zeros((1, K + 1))
+        B_sf = poisson.cdf(K - 1, mu) + (1 - prob) * poisson.pmf(K, mu)
 
-        # REVIEW where is this found?
-        alpha_i[0, :] = [poisson.pmf(z, mu) / B_sf for z in range(K + 1)]
-        alpha_i[0, K] *= 1 - p
+        alpha[0, :] = [poisson.pmf(z, mu) / B_sf for z in range(K + 1)]
+        alpha[0, K] *= 1 - prob
 
         transition = -mu * np.eye(K + 1)
         transition += mu * np.diag(np.ones(K), k=1)  # one above diagonal
-        # REVIEW why is this element multiplied by (1-p)?
-        transition[K - 1, K] = (1 - p) * mu
+        transition[K - 1, K] = (1 - prob) * mu
 
-    else:  # hyperexponential case
-        p = (1 + np.sqrt((SCV - 1) / (SCV + 1))) / 2
-        mu1 = 2 * p / mean  # REVIEW where can this be found?
-        mu2 = 2 * (1 - p) / mean  # REVIEW where can this be found?
+    else:  # Hyperexponential case
+        prob = (1 + np.sqrt((SCV - 1) / (SCV + 1))) / 2
+        mu1 = 2 * prob / mean
+        mu2 = 2 * (1 - prob) / mean
 
-        B_sf = p * np.exp(-mu1) + (1 - p) * np.exp(-mu2)
-        elt = p * np.exp(-mu1) / B_sf  # TODO find better name than element
+        B_sf = prob * np.exp(-mu1) + (1 - prob) * np.exp(-mu2)
+        term = prob * np.exp(-mu1) / B_sf
 
-        alpha_i = np.array([elt, 1 - elt])
+        alpha = np.array([term, 1 - term])
         transition = np.diag([-mu1, -mu2])
 
-    return alpha_i, transition
+    return alpha, transition
 
 
 def create_Vn(alphas, T):
@@ -150,8 +145,14 @@ def compute_schedule(means, SCVs, omega_b, tol=None):
         return compute_objective(x, alpha, Vn, omega_b)
 
     x_init = 1.5 * np.ones(n)
-    lin_cons = LinearConstraint(np.eye(n), 0, np.inf)
-    optim = minimize(cost_fun, x_init, constraints=lin_cons, method="SLSQP", tol=tol)
+
+    optim = minimize(
+        cost_fun,
+        x_init,
+        method="SLSQP",
+        tol=tol,
+        bounds=[(0, None) for _ in range(x_init.size)],
+    )
 
     return optim.x, optim.fun
 

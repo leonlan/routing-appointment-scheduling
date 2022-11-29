@@ -15,9 +15,9 @@ from alns.stop import MaxIterations
 from alns.weights import SimpleWeights
 from tqdm.contrib.concurrent import process_map
 
+from tsp_as.appointment import heavy_traffic_optimal, heavy_traffic_pure, true_optimal
 from tsp_as.classes import Params, Solution
 from tsp_as.destroy_operators import random_destroy
-from tsp_as.evaluations import heavy_traffic_optimal, heavy_traffic_pure, true_optimal
 from tsp_as.plot import plot_instance
 from tsp_as.repair_operators import greedy_insert
 
@@ -30,9 +30,9 @@ def parse_args():
     parser.add_argument("--instance_pattern", default="instances/atsp/*")
     parser.add_argument("--profile", action="store_true")
 
-    parser.add_argument("--objective", type=str, default="hto")
-    parser.add_argument("--n_destroy", type=int, default=2)
-    parser.add_argument("--max_dim", type=int, default=100)
+    parser.add_argument("--objective", type=str, default="to")
+    parser.add_argument("--n_destroy", type=int, default=1)
+    parser.add_argument("--max_dim", type=int, default=5)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)

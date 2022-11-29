@@ -1,8 +1,8 @@
 import numpy as np
 import numpy.random as rnd
 
+from tsp_as.appointment import heavy_traffic_optimal, heavy_traffic_pure, true_optimal
 from tsp_as.classes import Params
-from tsp_as.evaluations import heavy_traffic_optimal, heavy_traffic_pure, true_optimal
 
 
 def main():
