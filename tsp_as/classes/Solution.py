@@ -57,9 +57,11 @@ class Solution(State):
             if params.objective == "htp":
                 return schedule, ht.compute_objective(tour, params)
             elif params.objective == "hto":
-                return schedule, to.compute_objective(tour, params)
+                return schedule, to.compute_objective_given_schedule(
+                    tour, schedule, params
+                )
         else:
-            schedule, cost = to.true_optimal(tour, params)
+            schedule, cost = to.compute_optimal_schedule(tour, params)
             return schedule, cost
 
     def objective(self):

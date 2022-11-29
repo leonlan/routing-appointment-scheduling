@@ -14,7 +14,7 @@ def phase_parameters(mean, SCV):
     matrix T of the phase-fitted service times given the mean, SCV,
     and the elapsed service time u of the client in service.
 
-    # TODO These phase parameters can be computed in params?.
+    # TODO These phase parameters can be computed in params as well?
     """
     if SCV < 1:  # Weighted Erlang case
         K = math.floor(1 / SCV)
@@ -120,15 +120,21 @@ def compute_objective(x, alphas, Vn, omega_b):
     return cost
 
 
-def compute_objective_(x, means, SCVs, omega_b):
+def compute_objective_given_schedule(tour, x, params):
     """
     TODO This functions is used for HTM. Try to refactor with ``compute_objective``.
     """
+    fr = [0] + tour
+    to = tour + [0]
+
+    means = params.means[fr, to]
+    SCVs = params.scvs[fr, to]
+
     n = len(means)
     alpha, T = zip(*[phase_parameters(means[i], SCVs[i]) for i in range(n)])
     Vn = create_Vn(alpha, T)
 
-    return compute_objective(x, alpha, Vn, omega_b)
+    return compute_objective(x, alpha, Vn, params.omega_b)
 
 
 def compute_schedule(means, SCVs, omega_b, tol=None):
@@ -155,7 +161,7 @@ def compute_schedule(means, SCVs, omega_b, tol=None):
     return optim.x, optim.fun
 
 
-def true_optimal(tour, params):
+def compute_optimal_schedule(tour, params):
     fr = [0] + tour
     to = tour + [0]
 
