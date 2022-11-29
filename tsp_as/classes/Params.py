@@ -15,10 +15,17 @@ class Params:
             high=kwargs.get("distances_csv_max", 0.5),
             size=distances.shape,
         )
+        self.distances_var = self.distances_scv * np.power(self.distances, 2)
+
         self.coords = coords
 
-        self.service = 0.5 * np.ones(dimension)  # TODO How to determine this?
-        self.service_scv = 0.5 * np.ones(dimension)  # TODO How to determine this?
+        self.service = np.append([0], 0.5 * np.ones(dimension - 1))
+        self.service_scv = np.append([0], 0.5 * np.ones(dimension - 1))
+        self.service_var = self.service_scv * np.power(self.service, 2)
+
+        self.means = self.service[np.newaxis, :].T + self.distances
+        self.var = self.service_var[np.newaxis, :].T + self.distances_var
+        self.scvs = np.divide(self.var, np.power(self.means, 2))
 
         self.omega = kwargs.get("omega", 0.0)
         self.omega_b = kwargs.get("omega_", 0.8)

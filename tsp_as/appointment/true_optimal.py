@@ -158,6 +158,11 @@ def compute_schedule(means, SCVs, omega_b, tol=None):
 
 
 def true_optimal(tour, params):
-    means, SCVs = tour2params([0] + tour, params)
+    fr = [0] + tour
+    to = tour + [0]
+
+    means = params.means[fr, to]
+    SCVs = params.scvs[fr, to]
+
     x, cost = compute_schedule(means, SCVs, params.omega_b, tol=1e-2)
     return x, cost
