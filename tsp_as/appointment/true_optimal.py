@@ -7,8 +7,6 @@ from scipy.optimize import minimize
 from scipy.sparse.linalg import expm
 from scipy.stats import poisson
 
-from .tour2params import tour2params
-
 
 def phase_parameters(mean, SCV):
     """

@@ -86,7 +86,7 @@ class Solution(State):
         dist = self.params.distances[pred, succ]
         cand.insert(idx, customer)
 
-        schedule, idle_wait = self.compute_idle_wait(cand, self.params)
+        _, idle_wait = self.compute_idle_wait(cand, self.params)
         return dist + idle_wait
 
     def insert(self, idx: int, customer: int):

@@ -1,35 +1,46 @@
 import numpy as np
 
-from .tour2params import tour2params
 
-
-def compute_schedule(means, SCVs, omega_b):
+def compute_schedule(tour, params):
     """
     Computes the schedule using heavy traffic approximation.
 
     Eq. (2) in draft.
     """
+    fr = [0] + tour
+    to = tour + [0]
+
+    means = params.means[fr, to]
+    SCVs = params.scvs[fr, to]
+
     var = SCVs * means**2  # Variance of U
     B = _compute_service_times(var)
 
     # Eq. (2) but without omega from travels
-    coeff = (1 - omega_b) / (2 * omega_b)
+    coeff = (1 - params.omega_b) / (2 * params.omega_b)
     return means + np.sqrt(coeff * B)
 
 
-def compute_objective(means, SCVs, omega_bar):
+def compute_objective(tour, params):
     """
     Computes the objective value using heavy traffic approximation.
     See (3) in draft.
     """
+    fr = [0] + tour
+    to = tour + [0]
+
+    means = params.means[fr, to]
+    SCVs = params.scvs[fr, to]
+
     var = SCVs * means**2  # Variance of U
     B = _compute_service_times(var)
 
-    weight = np.sqrt(2 * omega_bar * (1 - omega_bar))
+    weight = np.sqrt(2 * params.omega_b * (1 - params.omega_b))
     return weight * np.sqrt(B).sum()
 
 
 def _compute_service_times(var):
+    # TODO Cache this function
     BETA = 0.5  # TODO this should be a parameter
     n = len(var)
 
@@ -39,11 +50,3 @@ def _compute_service_times(var):
 
     # Eq (?) for S_i on page 3.
     return np.cumsum(beta_var) / np.cumsum(betas)
-
-
-def heavy_traffic_pure(tour, params):
-    means, SCVs = tour2params([0] + tour, params)
-    x = compute_schedule(means, SCVs, params.omega_b)
-    cost = compute_objective(means, SCVs, params.omega_b)
-
-    return x, cost
