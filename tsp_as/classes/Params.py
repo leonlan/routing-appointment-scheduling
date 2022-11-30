@@ -67,11 +67,10 @@ class Params:
         # We need to explicitly retrieve the dimensions ourselves
         distances = np.zeros((dimension, dimension))
         for i, j in combinations(range(dimension), r=2):
+
             # The distance indices depends on the edge weight formats.
-            if problem.edge_weight_type == "EXPLICIT":
-                d_ij = problem.get_weight(i, j)  # start at 0
-            else:
-                d_ij = problem.get_weight(i + 1, j + 1)  # start at idx 1
+            shift = 0 if problem.edge_weight_type == "EXPLICIT" else 1
+            d_ij = problem.get_weight(i + shift, j + shift)
 
             distances[i, j] = d_ij
             distances[j, i] = d_ij
