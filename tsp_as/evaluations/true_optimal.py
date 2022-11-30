@@ -103,6 +103,9 @@ def compute_objective(x, alphas, Vn, omega_b):
         # TODO Check if this is idle time or waiting time...
 
     """
+    compute_idle_time(x, alphas, Vn)
+    return 0
+
     n = len(alphas)
     beta = alphas[0]
 
@@ -230,7 +233,8 @@ def compute_idle_time(x, alphas, Vn):
     idle = 0
 
     beta = alphas[0]
-    P = expm_multiply((csr_matrix(Vn[: dims[0], : dims[0]] * x[0])).T, beta.T).T
+    A = Vn[: dims[0], : dims[0]] * x[0]
+    P = expm_multiply(csr_matrix(A).T, beta.T).T
 
     for i in range(n):
         d = dims[i]
@@ -244,7 +248,8 @@ def compute_idle_time(x, alphas, Vn):
         # Update for next iteration
         F = 1 - np.sum(P)
         beta = np.hstack((P, alphas[i + 1] * F))
-        P = expm_multiply((Vn[: dims[i + 1], : dims[i + 1]] * x[i + 1]).T, beta.T).T
+        A = Vn[: dims[i + 1], : dims[i + 1]] * x[i + 1]
+        P = expm_multiply(csr_matrix(A).T, beta.T).T
 
         assert_almost_equal(beta.sum(), 1)
 
