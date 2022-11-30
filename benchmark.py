@@ -31,7 +31,7 @@ def parse_args():
 
     parser.add_argument("--objective", type=str, default="hto")
     parser.add_argument("--n_destroy", type=int, default=3)
-    parser.add_argument("--max_dim", type=int, default=100)
+    parser.add_argument("--max_dim", type=int, default=20)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
@@ -70,7 +70,7 @@ def solve_alns(loc: str, seed: int, **kwargs):
     stats = res.statistics
 
     # Plot the solution if coords are available
-    if params.coords:
+    if params.coords != []:
         fig, ax = plt.subplots(figsize=[10, 7.5], dpi=150)
         plot_instance(ax, params, res.best_state)
         fig.savefig(f"tmp/{path.stem}")
