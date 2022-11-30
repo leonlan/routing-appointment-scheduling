@@ -29,9 +29,9 @@ def parse_args():
     parser.add_argument("--instance_pattern", default="instances/*")
     parser.add_argument("--profile", action="store_true")
 
-    parser.add_argument("--objective", type=str, default="hto")
-    parser.add_argument("--n_destroy", type=int, default=2)
-    parser.add_argument("--max_dim", type=int, default=10)
+    parser.add_argument("--objective", type=str, default="to")
+    parser.add_argument("--n_destroy", type=int, default=1)
+    parser.add_argument("--max_dim", type=int, default=5)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)

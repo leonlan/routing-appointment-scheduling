@@ -4,6 +4,8 @@ from scipy.linalg.blas import dgemm
 from scipy.optimize import minimize
 from scipy.sparse.linalg import expm
 
+from .heavy_traffic import compute_schedule as ht_compute_schedule
+
 
 def create_Vn(alphas, T):
     """
@@ -108,14 +110,16 @@ def compute_optimal_schedule(tour, params, **kwargs):
     def cost_fun(x):
         return compute_objective(x, alpha, Vn, params)
 
-    x_init = 1.5 * np.ones(len(fr))
+    # Warm start with heavy traffic x's.
+    x_ht = ht_compute_schedule(tour, params)
+    # x_ht = 1.5 * np.ones(len(fr))
 
     optim = minimize(
         cost_fun,
-        x_init,
+        x_ht,
         method="SLSQP",
-        tol=kwargs.get("tol", 0.01),
-        bounds=[(0, None) for _ in range(x_init.size)],
+        tol=kwargs.get("tol", 0.1),
+        bounds=[(0, None) for _ in range(x_ht.size)],
     )
 
     return optim.x, optim.fun
