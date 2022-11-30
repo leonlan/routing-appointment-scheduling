@@ -34,7 +34,7 @@ def create_Vn(alphas, T):
     return Vn
 
 
-def compute_objective(x, alphas, Vn, omega_b):
+def compute_objective(x, alphas, Vn, params):
     """
     Compute the objective value of a schedule. See Theorem (1).
 
@@ -44,13 +44,11 @@ def compute_objective(x, alphas, Vn, omega_b):
         The alpha parameters of the phase-type distribution.
     Vn
         The recursively-defined matrix $V^{(n)}$.
-    omega_b
-        The weight associated with idle time.
-        # TODO This should become part of the params
-        # TODO Check if this is idle time or waiting time.
-
+    params
+        The parameters of the problem.
     """
     n = len(alphas)
+    omega_b = params.omega_b
     omega = 0  # TODO this need to be added as parameter at some point
     dims = np.cumsum([alphas[i].size for i in range(n)])
     Vn_inv = inv(Vn)
@@ -82,7 +80,8 @@ def compute_objective(x, alphas, Vn, omega_b):
 
 def compute_objective_given_schedule(tour, x, params):
     """
-    TODO This functions is used for HTM. Try to refactor with ``compute_objective``.
+    Compute the objective function assuming that the schedule is given. This
+    is used for the mixed heavy traffic and true optimal strategy.
     """
     fr = [0] + tour
     to = tour + [0]
@@ -91,7 +90,7 @@ def compute_objective_given_schedule(tour, x, params):
     T = tuple(params.transitions[fr, to])
     Vn = create_Vn(alpha, T)
 
-    return compute_objective(x, alpha, Vn, params.omega_b)
+    return compute_objective(x, alpha, Vn, params)
 
 
 def compute_optimal_schedule(tour, params, **kwargs):
@@ -107,7 +106,7 @@ def compute_optimal_schedule(tour, params, **kwargs):
     Vn = create_Vn(alpha, T)
 
     def cost_fun(x):
-        return compute_objective(x, alpha, Vn, params.omega_b)
+        return compute_objective(x, alpha, Vn, params)
 
     x_init = 1.5 * np.ones(len(fr))
 
