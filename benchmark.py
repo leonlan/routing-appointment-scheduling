@@ -10,13 +10,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.random as rnd
 from alns import ALNS
-from alns.accept import RecordToRecordTravel
+from alns.accept import RecordToRecordTravel, SimulatedAnnealing
 from alns.stop import MaxIterations
 from alns.weights import SimpleWeights
 from tqdm.contrib.concurrent import process_map
 
 from tsp_as.classes import Params, Solution
-from tsp_as.destroy_operators import random_destroy
+from tsp_as.destroy_operators import adjacent_destroy, random_destroy
 from tsp_as.plot import plot_instance
 from tsp_as.repair_operators import greedy_insert
 
@@ -30,8 +30,8 @@ def parse_args():
     parser.add_argument("--profile", action="store_true")
 
     parser.add_argument("--objective", type=str, default="hto")
-    parser.add_argument("--n_destroy", type=int, default=1)
-    parser.add_argument("--max_dim", type=int, default=30)
+    parser.add_argument("--n_destroy", type=int, default=3)
+    parser.add_argument("--max_dim", type=int, default=100)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
@@ -53,14 +53,15 @@ def solve_alns(loc: str, seed: int, **kwargs):
 
     alns = ALNS(rng)
     alns.add_destroy_operator(random_destroy)
+    alns.add_destroy_operator(adjacent_destroy)
     alns.add_repair_operator(greedy_insert)
 
     init = Solution(params, np.arange(1, params.dimension).tolist())  # ordered
-    weights = SimpleWeights([5, 2, 1, 0.5], 1, 1, 1)  # dummy scheme
-    accept = RecordToRecordTravel.autofit(
+    weights = SimpleWeights([5, 2, 1, 0.5], 1, 1, 0.8)  # dummy scheme
+    accept = SimulatedAnnealing.autofit(
         init_obj=init.objective(),
-        start_gap=0.05,
-        end_gap=0.0,
+        worse=0.025,
+        accept_prob=0.5,
         num_iters=kwargs["max_iterations"],  # TODO this should work with time stop
     )
     stop = MaxIterations(kwargs["max_iterations"])
@@ -68,11 +69,12 @@ def solve_alns(loc: str, seed: int, **kwargs):
     res = alns.iterate(init, weights, accept, stop, **kwargs)
     stats = res.statistics
 
-    # Plot the solution
-    fig, ax = plt.subplots(figsize=[10, 7.5], dpi=150)
-    plot_instance(ax, params, res.best_state)
-    fig.savefig(f"tmp/{path.stem}")
-    plt.close()
+    # Plot the solution if coords are available
+    if params.coords:
+        fig, ax = plt.subplots(figsize=[10, 7.5], dpi=150)
+        plot_instance(ax, params, res.best_state)
+        fig.savefig(f"tmp/{path.stem}")
+        plt.close()
 
     return (
         path.stem,
