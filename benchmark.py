@@ -30,8 +30,8 @@ def parse_args():
     parser.add_argument("--profile", action="store_true")
 
     parser.add_argument("--objective", type=str, default="hto")
-    parser.add_argument("--n_destroy", type=int, default=2)
-    parser.add_argument("--max_dim", type=int, default=10)
+    parser.add_argument("--n_destroy", type=int, default=1)
+    parser.add_argument("--max_dim", type=int, default=30)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
@@ -59,7 +59,7 @@ def solve_alns(loc: str, seed: int, **kwargs):
     weights = SimpleWeights([5, 2, 1, 0.5], 1, 1, 1)  # dummy scheme
     accept = RecordToRecordTravel.autofit(
         init_obj=init.objective(),
-        start_gap=0.025,
+        start_gap=0.05,
         end_gap=0.0,
         num_iters=kwargs["max_iterations"],  # TODO this should work with time stop
     )
