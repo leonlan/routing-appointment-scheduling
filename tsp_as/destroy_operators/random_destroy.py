@@ -1,12 +1,11 @@
 from copy import deepcopy
 
 
-def random_destroy(solution, rng, **kwargs):
+def random_destroy(solution, rng, n_destroy=2, **kwargs):
     """
     Randomly remove clients from the solution.
     """
     destroyed = deepcopy(solution)
-    n_destroy = kwargs["n_destroy"]
 
     for cust in rng.choice(destroyed.tour, n_destroy, replace=False):
         destroyed.unassigned.append(cust)
