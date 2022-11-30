@@ -6,7 +6,7 @@ from numpy.testing import assert_almost_equal
 from scipy.linalg import inv  # matrix inversion
 from scipy.linalg.blas import dgemm, dgemv  # matrix multiplication
 from scipy.optimize import LinearConstraint, minimize
-from scipy.sparse import csr_matrix
+from scipy.sparse import csc_matrix, csr_matrix
 from scipy.sparse.linalg import expm, expm_multiply  # matrix exponential
 from scipy.stats import poisson
 
@@ -137,52 +137,6 @@ def compute_objective(x, alphas, Vn, omega_b):
     return cost
 
 
-def compute_objective2(x, alphas, Vn):
-    n = len(x)
-
-    dims = np.cumsum([alphas[i].size for i in range(n)])
-
-    Vn_inv = inv(Vn)  # REVIEW why can this be negative?
-
-    start = time.perf_counter()
-
-    total = 0
-
-    beta = alphas[0]
-    expVx = expm(Vn[: dims[0], : dims[0]] * x[0])
-    P = beta @ expVx
-
-    omega_idle = 1
-    omega_wait = 1
-
-    for i in range(n):
-        d = dims[i]
-
-        term1 = dgemm(1, beta, Vn_inv[:d, :d])  # shared term
-        term2 = (1 - omega_wait) * expVx
-        wait = term @ expVx @ np.ones(d)
-        idle = x[i] + term @ np.ones(d)
-        total += wait + idle
-        # breakpoint()
-
-        if i == 0:
-            print(total)
-
-        if i == n - 1:
-            break
-
-        # Update for next iteration
-        F = 1 - np.sum(P)
-        beta = np.hstack((P, alphas[i + 1] * F))
-        expVx = expm(Vn[: dims[i + 1], : dims[i + 1]] * x[i + 1])
-        P = beta @ expVx
-
-        assert_almost_equal(beta.sum(), 1)
-
-    end = time.perf_counter() - start
-    print("obje2", total, end)
-
-
 def compute_objective_(x, means, SCVs, omega_b):
     """
     TODO This functions is used for HTM. Try to refactor with ``compute_objective``.
@@ -234,7 +188,9 @@ def compute_idle_time(x, alphas, Vn):
 
     beta = alphas[0]
     A = Vn[: dims[0], : dims[0]] * x[0]
-    P = expm_multiply(csr_matrix(A).T, beta.T).T
+    # P = expm_multiply(csr_matrix(A).T, beta.T).T
+    P = beta @ expm(A)
+    # breakpoint()
 
     for i in range(n):
         d = dims[i]
@@ -249,7 +205,9 @@ def compute_idle_time(x, alphas, Vn):
         F = 1 - np.sum(P)
         beta = np.hstack((P, alphas[i + 1] * F))
         A = Vn[: dims[i + 1], : dims[i + 1]] * x[i + 1]
-        P = expm_multiply(csr_matrix(A).T, beta.T).T
+
+        P = beta @ expm(csc_matrix(A))
+        # P = expm_multiply(csr_matrix(A).T, beta.T).T
 
         assert_almost_equal(beta.sum(), 1)
 
