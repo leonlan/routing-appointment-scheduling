@@ -51,6 +51,13 @@ class Solution(State):
 
     @staticmethod
     def compute_idle_wait(tour, params):
+        """
+        Computes the idle and waiting time cost.
+        """
+        # Shortcut when there are no weights for the appointment costs
+        if params.omega_idle + params.omega_wait == 0:
+            return None, 0
+
         if params.objective in ["htp", "hto"]:
             schedule = ht.compute_schedule(tour, params)
 
@@ -70,26 +77,44 @@ class Solution(State):
         """
         return self._cost
 
+    def _insert_cost_travel(self, idx: int, cust: int) -> float:
+        """
+        Computes the travel cost for inserting customer at position idx.
+        """
+        if len(self.tour) == 0:
+            pred, succ = 0, 0
+        elif idx == 0:
+            pred, succ = 0, self.tour[idx]
+        elif idx == len(self.tour):
+            pred, succ = self.tour[idx - 1], 0
+        else:
+            pred, succ = self.tour[idx - 1], self.tour[idx]
+
+        cost = self.params.distances[pred, cust] + self.params.distances[cust, succ]
+        cost -= self.params.distances[pred, succ]
+
+        return cost
+
+    def _insert_cost_idle_wait(self, idx: int, customer: int) -> float:
+        """
+        Computes the idle and wait costs for insertion customer at position idx.
+        """
+        # Shortcut when there are no weights for the appointment costs
+        if self.params.omega_idle + self.params.omega_wait == 0:
+            return 0
+
+        cand = copy(self.tour)
+        cand.insert(idx, customer)
+        _, idle_wait = self.compute_idle_wait(cand, self.params)
+        return idle_wait
+
     def insert_cost(self, idx: int, customer: int) -> float:
         """
         Compute the cost for inserting customer at position idx.
         """
-        cand = copy(self.tour)
-
-        if len(self.tour) == 0:
-            pred, succ = 0, 0
-        elif idx == 0:
-            pred, succ = 0, cand[idx]
-        elif idx == len(self.tour):
-            pred, succ = cand[idx - 1], 0
-        else:
-            pred, succ = cand[idx - 1], cand[idx]
-
-        dist = self.params.distances[pred, succ]
-        cand.insert(idx, customer)
-
-        _, idle_wait = self.compute_idle_wait(cand, self.params)
-        return dist + idle_wait
+        travel_cost = self._insert_cost_travel(idx, customer)
+        idle_wait_cost = self._insert_cost_idle_wait(idx, customer)
+        return travel_cost + idle_wait_cost
 
     def insert(self, idx: int, customer: int):
         """

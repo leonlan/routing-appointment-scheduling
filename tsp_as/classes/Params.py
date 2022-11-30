@@ -67,7 +67,11 @@ class Params:
         # We need to explicitly retrieve the dimensions ourselves
         distances = np.zeros((dimension, dimension))
         for i, j in combinations(range(dimension), r=2):
-            d_ij = problem.get_weight(i + 1, j + 1)  # start at idx 1
+
+            # The distance indices depends on the edge weight formats.
+            shift = 0 if problem.edge_weight_type == "EXPLICIT" else 1
+            d_ij = problem.get_weight(i + shift, j + shift)
+
             distances[i, j] = d_ij
             distances[j, i] = d_ij
 
@@ -81,8 +85,6 @@ def compute_phase_parameters(mean, SCV):
     Returns the initial distribution alpha and the transition rate
     matrix T of the phase-fitted service times given the mean, SCV,
     and the elapsed service time u of the client in service.
-
-    # TODO These phase parameters can be computed in params as well?
     """
     if SCV < 1:  # Weighted Erlang case
         K = math.floor(1 / SCV)
