@@ -1,48 +1,8 @@
-import math
-
 import numpy as np
 from scipy.linalg import inv
 from scipy.linalg.blas import dgemm
 from scipy.optimize import minimize
 from scipy.sparse.linalg import expm
-from scipy.stats import poisson
-
-
-def phase_parameters(mean, SCV):
-    """
-    Returns the initial distribution alpha and the transition rate
-    matrix T of the phase-fitted service times given the mean, SCV,
-    and the elapsed service time u of the client in service.
-
-    # TODO These phase parameters can be computed in params as well?
-    """
-    if SCV < 1:  # Weighted Erlang case
-        K = math.floor(1 / SCV)
-        prob = ((K + 1) * SCV - math.sqrt((K + 1) * (1 - K * SCV))) / (SCV + 1)
-        mu = (K + 1 - prob) / mean
-
-        alpha = np.zeros((1, K + 1))
-        B_sf = poisson.cdf(K - 1, mu) + (1 - prob) * poisson.pmf(K, mu)
-
-        alpha[0, :] = [poisson.pmf(z, mu) / B_sf for z in range(K + 1)]
-        alpha[0, K] *= 1 - prob
-
-        transition = -mu * np.eye(K + 1)
-        transition += mu * np.diag(np.ones(K), k=1)  # one above diagonal
-        transition[K - 1, K] = (1 - prob) * mu
-
-    else:  # Hyperexponential case
-        prob = (1 + np.sqrt((SCV - 1) / (SCV + 1))) / 2
-        mu1 = 2 * prob / mean
-        mu2 = 2 * (1 - prob) / mean
-
-        B_sf = prob * np.exp(-mu1) + (1 - prob) * np.exp(-mu2)
-        term = prob * np.exp(-mu1) / B_sf
-
-        alpha = np.array([term, 1 - term])
-        transition = np.diag([-mu1, -mu2])
-
-    return alpha, transition
 
 
 def create_Vn(alphas, T):
@@ -127,46 +87,36 @@ def compute_objective_given_schedule(tour, x, params):
     fr = [0] + tour
     to = tour + [0]
 
-    means = params.means[fr, to]
-    SCVs = params.scvs[fr, to]
-
-    n = len(means)
-    alpha, T = zip(*[phase_parameters(means[i], SCVs[i]) for i in range(n)])
+    alpha = tuple(params.alphas[fr, to])
+    T = tuple(params.transitions[fr, to])
     Vn = create_Vn(alpha, T)
 
     return compute_objective(x, alpha, Vn, params.omega_b)
 
 
-def compute_schedule(means, SCVs, omega_b, tol=None):
+def compute_optimal_schedule(tour, params, **kwargs):
     """
-    Return the appointment times and the cost of the true optimal schedule.
+    Computes the optimal schedule of the tour by minimizing the true optimal
+    objective function.
     """
-    n = len(means)
-    alpha, T = zip(*[phase_parameters(means[i], SCVs[i]) for i in range(n)])
+    fr = [0] + tour
+    to = tour + [0]
+
+    alpha = tuple(params.alphas[fr, to])
+    T = tuple(params.transitions[fr, to])
     Vn = create_Vn(alpha, T)
 
     def cost_fun(x):
-        return compute_objective(x, alpha, Vn, omega_b)
+        return compute_objective(x, alpha, Vn, params.omega_b)
 
-    x_init = 1.5 * np.ones(n)
+    x_init = 1.5 * np.ones(len(fr))
 
     optim = minimize(
         cost_fun,
         x_init,
         method="SLSQP",
-        tol=tol,
+        tol=kwargs.get("tol", 0.01),
         bounds=[(0, None) for _ in range(x_init.size)],
     )
 
     return optim.x, optim.fun
-
-
-def compute_optimal_schedule(tour, params):
-    fr = [0] + tour
-    to = tour + [0]
-
-    means = params.means[fr, to]
-    SCVs = params.scvs[fr, to]
-
-    x, cost = compute_schedule(means, SCVs, params.omega_b, tol=1e-2)
-    return x, cost
