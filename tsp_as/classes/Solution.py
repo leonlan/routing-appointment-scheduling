@@ -77,7 +77,7 @@ class Solution(State):
         """
         return self._cost
 
-    def _insert_cost_travel(self, idx: int, customer: int) -> float:
+    def _insert_cost_travel(self, idx: int, cust: int) -> float:
         """
         Computes the travel cost for inserting customer at position idx.
         """
@@ -90,7 +90,10 @@ class Solution(State):
         else:
             pred, succ = self.tour[idx - 1], self.tour[idx]
 
-        return self.params.distances[pred, succ]
+        cost = self.params.distances[pred, cust] + self.params.distances[cust, succ]
+        cost -= self.params.distances[pred, succ]
+
+        return cost
 
     def _insert_cost_idle_wait(self, idx: int, customer: int) -> float:
         """
