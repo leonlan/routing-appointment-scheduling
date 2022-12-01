@@ -56,6 +56,7 @@ class Params:
         self.omega_wait = kwargs.get("omega_wait", 0.8)
 
         self.objective = kwargs.get("objective", "hto")
+        self.lag = 4
 
         # TODO Remove this later
         self.trajectory = []

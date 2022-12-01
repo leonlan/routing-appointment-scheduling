@@ -1,9 +1,11 @@
 from copy import copy
 from typing import Optional
 
+import numpy as np
 from alns import State
 
 import tsp_as.appointment.heavy_traffic as ht
+import tsp_as.appointment.lag as lag
 import tsp_as.appointment.true_optimal as to
 
 
@@ -60,7 +62,7 @@ class Solution(State):
         if params.omega_idle + params.omega_wait == 0:
             return None, 0
 
-        if params.objective in ["htp", "hto"]:
+        if params.objective in ["htp", "hto", "lag"]:
             schedule = ht.compute_schedule(tour, params)
 
             # No need to multiply by omega here because the compute schedule
@@ -69,6 +71,10 @@ class Solution(State):
                 return schedule, ht.compute_objective(tour, params)
             elif params.objective == "hto":
                 return schedule, to.compute_objective_given_schedule(
+                    tour, schedule, params
+                )
+            elif params.objective == "lag":
+                return schedule, lag.compute_objective_given_schedule(
                     tour, schedule, params
                 )
         else:
