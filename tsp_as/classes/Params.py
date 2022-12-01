@@ -11,6 +11,8 @@ class Params:
     def __init__(self, name, rng, dimension, distances, coords, **kwargs):
         self.name = name
         self.dimension = dimension
+        self.coords = coords
+
         self.distances = distances
         self.distances_scv = rng.uniform(
             low=kwargs.get("distances_csv_min", 0.1),
@@ -19,12 +21,19 @@ class Params:
         )
         self.distances_var = self.distances_scv * np.power(self.distances, 2)
 
-        self.coords = coords
-
-        self.service = np.append([0], 0.5 * np.ones(dimension - 1))
-        self.service_scv = np.append([0], 0.5 * np.ones(dimension - 1))
+        # Mean service time is given as the average travel time to the
+        # 10 closest customers
+        self.service = np.append(
+            [0], np.sort(self.distances, axis=1)[1:, :10].mean(axis=1)
+        )
+        self.service_scv = rng.uniform(
+            low=kwargs.get("service_csv_min", 0.1),
+            high=kwargs.get("service_csv_max", 0.5),
+            size=self.service.shape,
+        )
         self.service_var = self.service_scv * np.power(self.service, 2)
 
+        # Combined travel and service times
         self.means = self.service[np.newaxis, :].T + self.distances
         self.var = self.service_var[np.newaxis, :].T + self.distances_var
         self.scvs = np.divide(self.var, np.power(self.means, 2))
