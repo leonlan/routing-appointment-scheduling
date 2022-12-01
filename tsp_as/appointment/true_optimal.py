@@ -39,7 +39,7 @@ def create_Vn(alphas, T):
     return Vn
 
 
-def compute_objective(x, alphas, Vn, params):
+def compute_objective(x, alphas, Vn, params, lag=False):
     """
     Compute the objective value of a schedule. See Theorem (1).
 
@@ -59,28 +59,30 @@ def compute_objective(x, alphas, Vn, params):
     Vn_inv = inv(Vn)
 
     beta = alphas[0]
-    cost = omega_idle * np.sum(x)
+    cost = 0
 
     for i in range(n):
         d = dims[i]
         expVx = expm(Vn[:d, :d] * x[i])
 
         # The idle and waiting terms in the objective function can be decomposed
-        # in the following three terms, reducing several matrix computations.
+        # in the following two terms, reducing several matrix computations.
         term1 = dgemm(1, beta, Vn_inv[:d, :d])
         term2 = (omega_idle * np.eye(d) - (1 - omega_travel) * expVx).sum(axis=1)
-        term3 = omega_idle * x[i]
 
-        cost += np.dot(term1, term2)[0] + term3
+        cost += np.dot(term1, term2)[0]
 
         if i == n - 1:  # stop
+            if lag:  # If used as subprocedure in the lag-based obj function
+                return np.dot(term1, term2)[0]
             break
 
         P = dgemm(1, beta, expVx)
         Fi = 1 - np.sum(P)
         beta = np.hstack((P, alphas[i + 1] * Fi))
 
-    return cost
+    # Final term for all interappointment times
+    return cost + omega_idle * np.sum(x)
 
 
 def compute_objective_given_schedule(tour, x, params):

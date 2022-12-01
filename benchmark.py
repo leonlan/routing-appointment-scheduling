@@ -29,7 +29,7 @@ def parse_args():
     parser.add_argument("--instance_pattern", default="instances/*")
     parser.add_argument("--profile", action="store_true")
 
-    parser.add_argument("--objective", type=str, default="hto")
+    parser.add_argument("--objective", type=str, default="lag")
     parser.add_argument("--n_destroy", type=int, default=3)
     parser.add_argument("--max_dim", type=int, default=20)
 
