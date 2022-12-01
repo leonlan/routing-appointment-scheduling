@@ -70,7 +70,7 @@ def solve_alns(loc: str, seed: int, **kwargs):
     stats = res.statistics
 
     # Plot the solution if coords are available
-    if params.coords != []:
+    if np.any(params.coords):
         fig, ax = plt.subplots(figsize=[10, 7.5], dpi=150)
         plot_instance(ax, params, res.best_state)
         fig.savefig(f"tmp/{path.stem}")

@@ -75,6 +75,14 @@ class Solution(State):
             schedule, cost = to.compute_optimal_schedule(tour, params)
             return schedule, cost
 
+    def compute_optimal_schedule(self):
+        """
+        Computes the optimal schedule. This function is called after the
+        heuristic search to evaluate the final performance.
+        """
+        schedule, cost = to.compute_optimal_schedule(self.tour, self.params)
+        return schedule, cost
+
     def objective(self):
         """
         Alias for cost, because the ALNS interface uses ``State.objective()`` method.

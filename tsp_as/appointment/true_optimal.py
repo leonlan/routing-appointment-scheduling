@@ -6,6 +6,7 @@ from scipy.sparse.linalg import expm
 
 from tsp_as.appointment.utils import get_alphas_transitions
 
+from .heavy_traffic import compute_schedule as ht_compute_schedule
 from .utils import get_alphas_transitions
 
 
@@ -93,7 +94,7 @@ def compute_objective_given_schedule(tour, x, params):
     return compute_objective(x, alpha, Vn, params)
 
 
-def compute_optimal_schedule(tour, params, **kwargs):
+def compute_optimal_schedule(tour, params, warmstart=True, **kwargs):
     """
     Computes the optimal schedule of the tour by minimizing the true optimal
     objective function.
@@ -104,14 +105,19 @@ def compute_optimal_schedule(tour, params, **kwargs):
     def cost_fun(x):
         return compute_objective(x, alpha, Vn, params)
 
-    x_init = 1.5 * np.ones(len(alpha))
+    if warmstart:
+        x_init = ht_compute_schedule(tour, params)
+    else:
+        # Use means of travel time and service as initial value
+        x_init = params.distances[[0] + tour, tour + [0]] + params.service[[0] + tour]
 
     optim = minimize(
         cost_fun,
         x_init,
-        method="SLSQP",
+        method=kwargs.get("method", "trust-constr"),
         tol=kwargs.get("tol", 0.01),
         bounds=[(0, None) for _ in range(x_init.size)],
+        options={"disp": True},
     )
 
     return optim.x, optim.fun
