@@ -51,10 +51,9 @@ class Params:
                     self.alphas[i, j] = alpha
                     self.transitions[i, j] = transition
 
-        self.omega_travel = kwargs.get("omega_travel", 0.0)
-        self.omega_idle = kwargs.get("omega_idle", 0.8)
+        self.omega_travel = kwargs.get("omega_travel", 0.1)
+        self.omega_idle = kwargs.get("omega_idle", 0.1)
         self.omega_wait = kwargs.get("omega_wait", 0.8)
-        self.omega_b = kwargs.get("omega_b", 0.8)
 
         self.objective = kwargs.get("objective", "hto")
 

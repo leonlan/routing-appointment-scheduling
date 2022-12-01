@@ -4,6 +4,10 @@ from scipy.linalg.blas import dgemm
 from scipy.optimize import minimize
 from scipy.sparse.linalg import expm
 
+from tsp_as.appointment.utils import get_alphas_transitions
+
+from .utils import get_alphas_transitions
+
 
 def create_Vn(alphas, T):
     """
@@ -48,13 +52,13 @@ def compute_objective(x, alphas, Vn, params):
         The parameters of the problem.
     """
     n = len(alphas)
-    omega_b = params.omega_b
-    omega = 0  # TODO this need to be added as parameter at some point
+    omega_idle = params.omega_idle
+    omega_travel = params.omega_travel
     dims = np.cumsum([alphas[i].size for i in range(n)])
     Vn_inv = inv(Vn)
 
     beta = alphas[0]
-    cost = omega_b * np.sum(x)
+    cost = omega_idle * np.sum(x)
 
     for i in range(n):
         d = dims[i]
@@ -63,8 +67,8 @@ def compute_objective(x, alphas, Vn, params):
         # The idle and waiting terms in the objective function can be decomposed
         # in the following three terms, reducing several matrix computations.
         term1 = dgemm(1, beta, Vn_inv[:d, :d])
-        term2 = (omega_b * np.eye(d) - (1 - omega) * expVx).sum(axis=1)
-        term3 = omega_b * x[i]
+        term2 = (omega_idle * np.eye(d) - (1 - omega_travel) * expVx).sum(axis=1)
+        term3 = omega_idle * x[i]
 
         cost += np.dot(term1, term2)[0] + term3
 
@@ -83,11 +87,7 @@ def compute_objective_given_schedule(tour, x, params):
     Compute the objective function assuming that the schedule is given. This
     is used for the mixed heavy traffic and true optimal strategy.
     """
-    fr = [0] + tour
-    to = tour + [0]
-
-    alpha = tuple(params.alphas[fr, to])
-    T = tuple(params.transitions[fr, to])
+    alpha, T = get_alphas_transitions(tour, params)
     Vn = create_Vn(alpha, T)
 
     return compute_objective(x, alpha, Vn, params)
@@ -98,17 +98,13 @@ def compute_optimal_schedule(tour, params, **kwargs):
     Computes the optimal schedule of the tour by minimizing the true optimal
     objective function.
     """
-    fr = [0] + tour
-    to = tour + [0]
-
-    alpha = tuple(params.alphas[fr, to])
-    T = tuple(params.transitions[fr, to])
+    alpha, T = get_alphas_transitions(tour, params)
     Vn = create_Vn(alpha, T)
 
     def cost_fun(x):
         return compute_objective(x, alpha, Vn, params)
 
-    x_init = 1.5 * np.ones(len(fr))
+    x_init = 1.5 * np.ones(len(alpha))
 
     optim = minimize(
         cost_fun,

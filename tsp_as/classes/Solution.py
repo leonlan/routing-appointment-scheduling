@@ -37,7 +37,9 @@ class Solution(State):
     def cost(self):
         """
         Return the objective value. This is a weighted sum of the distance
-        and the idle and waiting times.
+        and the idle and waiting times. The weights are included in the cost
+        computations, e.g., `compute_distance` returns the distance
+        multiplied by the corresponding travel weight.
         """
         return self._cost
 
@@ -47,7 +49,7 @@ class Solution(State):
         Compute the distance of the tour.
         """
         visits = [0] + tour + [0]
-        return params.distances[visits[1:], visits[:-1]].sum()
+        return params.omega_travel * params.distances[visits[1:], visits[:-1]].sum()
 
     @staticmethod
     def compute_idle_wait(tour, params):
@@ -61,6 +63,8 @@ class Solution(State):
         if params.objective in ["htp", "hto"]:
             schedule = ht.compute_schedule(tour, params)
 
+            # No need to multiply by omega here because the compute schedule
+            # already takes this into account
             if params.objective == "htp":
                 return schedule, ht.compute_objective(tour, params)
             elif params.objective == "hto":
@@ -93,7 +97,7 @@ class Solution(State):
         cost = self.params.distances[pred, cust] + self.params.distances[cust, succ]
         cost -= self.params.distances[pred, succ]
 
-        return cost
+        return self.params.omega_travel * cost
 
     def _insert_cost_idle_wait(self, idx: int, customer: int) -> float:
         """
@@ -106,6 +110,8 @@ class Solution(State):
         cand = copy(self.tour)
         cand.insert(idx, customer)
         _, idle_wait = self.compute_idle_wait(cand, self.params)
+
+        # No need to multiply by omega because it is already included in func
         return idle_wait
 
     def insert_cost(self, idx: int, customer: int) -> float:
@@ -135,7 +141,5 @@ class Solution(State):
         distance = self.compute_distance(self.tour, self.params)
         schedule, idle_wait = self.compute_idle_wait(self.tour, self.params)
 
-        # TODO Need to add omega weights here? Or should it be included in
-        # the computation of the costs?
         self.schedule = schedule
         self._cost = distance + idle_wait

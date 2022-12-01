@@ -1,5 +1,7 @@
 import numpy as np
 
+from .utils import get_means_scvs
+
 
 def compute_schedule(tour, params):
     """
@@ -7,17 +9,13 @@ def compute_schedule(tour, params):
 
     Eq. (2) in draft.
     """
-    fr = [0] + tour
-    to = tour + [0]
+    means, scvs = get_means_scvs(tour, params)
 
-    means = params.means[fr, to]
-    SCVs = params.scvs[fr, to]
-
-    var = SCVs * means**2  # Variance of U
+    var = scvs * means**2  # Variance of U
     B = _compute_service_times(var)
 
     # Eq. (2) but without omega from travels
-    coeff = (1 - params.omega_b) / (2 * params.omega_b)
+    coeff = (1 - params.omega_wait - params.omega_idle) / (2 * params.omega_idle)
     return means + np.sqrt(coeff * B)
 
 
@@ -26,16 +24,14 @@ def compute_objective(tour, params):
     Computes the objective value using heavy traffic approximation.
     See (3) in draft.
     """
-    fr = [0] + tour
-    to = tour + [0]
+    means, scvs = get_means_scvs(tour, params)
 
-    means = params.means[fr, to]
-    SCVs = params.scvs[fr, to]
-
-    var = SCVs * means**2  # Variance of U
+    var = scvs * means**2  # Variance of U
     B = _compute_service_times(var)
 
-    weight = np.sqrt(2 * params.omega_b * (1 - params.omega_b))
+    weight = np.sqrt(
+        2 * params.omega_idle * (1 - params.omega_wait - params.omega_idle)
+    )
     return weight * np.sqrt(B).sum()
 
 
