@@ -59,19 +59,18 @@ def compute_objective(x, alphas, Vn, params):
     Vn_inv = inv(Vn)
 
     beta = alphas[0]
-    cost = omega_idle * np.sum(x)
+    cost = omega_idle * np.sum(x)  # See objective function
 
     for i in range(n):
         d = dims[i]
         expVx = expm(Vn[:d, :d] * x[i])
 
         # The idle and waiting terms in the objective function can be decomposed
-        # in the following three terms, reducing several matrix computations.
+        # in the following two terms, reducing several matrix computations.
         term1 = dgemm(1, beta, Vn_inv[:d, :d])
         term2 = (omega_idle * np.eye(d) - (1 - omega_travel) * expVx).sum(axis=1)
-        term3 = omega_idle * x[i]
 
-        cost += np.dot(term1, term2)[0] + term3
+        cost += np.dot(term1, term2)[0]
 
         if i == n - 1:  # stop
             break
