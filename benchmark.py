@@ -10,14 +10,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.random as rnd
 from alns import ALNS
-from alns.accept import RecordToRecordTravel, SimulatedAnnealing
-from alns.stop import MaxIterations
+from alns.accept import HillClimbing
+from alns.stop import MaxIterations, MaxRuntime
 from alns.weights import SimpleWeights
 from tqdm.contrib.concurrent import process_map
 
 from tsp_as.classes import Params, Solution
 from tsp_as.destroy_operators import adjacent_destroy, random_destroy
-from tsp_as.plot import plot_instance
+from tsp_as.plot import plot_graph, plot_instance
 from tsp_as.repair_operators import greedy_insert
 
 
@@ -29,9 +29,18 @@ def parse_args():
     parser.add_argument("--instance_pattern", default="instances/*")
     parser.add_argument("--profile", action="store_true")
 
-    parser.add_argument("--objective", type=str, default="lag")
+    parser.add_argument("--objective", type=str, default="hto")
     parser.add_argument("--n_destroy", type=int, default=3)
+
+    parser.add_argument("--omega_travel", type=float, default=4 / 9)
+    parser.add_argument("--omega_idle", type=float, default=4 / 9)
+    parser.add_argument("--omega_wait", type=float, default=1 / 9)
+
     parser.add_argument("--max_dim", type=int, default=20)
+    parser.add_argument("--distances_scv_min", type=float, default=0.1)
+    parser.add_argument("--distances_scv_max", type=float, default=0.5)
+    parser.add_argument("--service_scv_min", type=float, default=0.1)
+    parser.add_argument("--service_scv_max", type=float, default=0.5)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
@@ -47,9 +56,7 @@ def solve_alns(loc: str, seed: int, **kwargs):
     path = Path(loc)
     rng = rnd.default_rng(seed)
 
-    params = Params.from_tsplib(
-        path, rng, max_dim=kwargs["max_dim"], objective=kwargs["objective"]
-    )
+    params = Params.from_tsplib(path, rng, **kwargs)
 
     alns = ALNS(rng)
     alns.add_destroy_operator(random_destroy)
@@ -57,28 +64,27 @@ def solve_alns(loc: str, seed: int, **kwargs):
     alns.add_repair_operator(greedy_insert)
 
     init = Solution(params, np.arange(1, params.dimension).tolist())  # ordered
-    weights = SimpleWeights([5, 2, 1, 0.5], 1, 1, 0.8)  # dummy scheme
-    accept = SimulatedAnnealing.autofit(
-        init_obj=init.objective(),
-        worse=0.025,
-        accept_prob=0.5,
-        num_iters=kwargs["max_iterations"],  # TODO this should work with time stop
-    )
-    stop = MaxIterations(kwargs["max_iterations"])
+    weights = SimpleWeights([5, 2, 1, 0.5], 2, 2, 0.8)
+    accept = HillClimbing()
+    # stop = MaxIterations(kwargs["max_iterations"])
+    stop = MaxRuntime(kwargs["max_runtime"] * 60)
 
     res = alns.iterate(init, weights, accept, stop, **kwargs)
     stats = res.statistics
 
-    # Plot the solution if coords are available
+    # Compute the final, optimal objective
+    schedule, cost = res.best_state.compute_optimal_schedule()
+    res.best_state.schedule = schedule
+
     if np.any(params.coords):
-        fig, ax = plt.subplots(figsize=[10, 7.5], dpi=150)
-        plot_instance(ax, params, res.best_state)
-        fig.savefig(f"tmp/{path.stem}")
+        fig, ax = plt.subplots(figsize=[16, 12], dpi=150)
+        plot_graph(ax, params, res.best_state)
+        fig.savefig(f"tmp/{path.stem}-dim{kwargs['max_dim']}.svg")
         plt.close()
 
     return (
         path.stem,
-        res.best_state.objective(),
+        cost,
         len(stats.objectives),
         round(stats.total_runtime, 3),
     )
@@ -107,8 +113,17 @@ def tabulate(headers, rows) -> str:
 def main():
     args = parse_args()
 
+    def taboo(inst):
+        L = ["bayg29", "bays29", "dantzig42", "gr120", "pa561", "dsj1000", "pla"]
+        for name in L:
+            if name in inst:
+                return True
+        return False
+
     func = partial(solve_alns, **vars(args))
-    func_args = sorted(glob(args.instance_pattern))
+    func_args = [
+        inst for inst in sorted(glob(args.instance_pattern)) if not taboo(inst)
+    ]
 
     if args.num_procs > 1:
         tqdm_kwargs = dict(max_workers=args.num_procs, unit="instance")

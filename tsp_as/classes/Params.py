@@ -15,8 +15,8 @@ class Params:
 
         self.distances = distances
         self.distances_scv = rng.uniform(
-            low=kwargs.get("distances_csv_min", 0.1),
-            high=kwargs.get("distances_csv_max", 0.5),
+            low=kwargs.get("distances_scv_min", 0.1),
+            high=kwargs.get("distances_scv_max", 1.5),
             size=distances.shape,
         )
         self.distances_var = self.distances_scv * np.power(self.distances, 2)
@@ -27,8 +27,8 @@ class Params:
             [0], np.sort(self.distances, axis=1)[1:, :10].mean(axis=1)
         )
         self.service_scv = rng.uniform(
-            low=kwargs.get("service_csv_min", 0.1),
-            high=kwargs.get("service_csv_max", 0.5),
+            low=kwargs.get("service_scv_min", 0.1),
+            high=kwargs.get("service_scv_max", 1.5),
             size=self.service.shape,
         )
         self.service_var = self.service_scv * np.power(self.service, 2)
@@ -118,7 +118,7 @@ def compute_phase_parameters(mean, SCV):
         B_sf = prob * np.exp(-mu1) + (1 - prob) * np.exp(-mu2)
         term = prob * np.exp(-mu1) / B_sf
 
-        alpha = np.array([term, 1 - term])
+        alpha = np.array([[term, 1 - term]])
         transition = np.diag([-mu1, -mu2])
 
     return alpha, transition
