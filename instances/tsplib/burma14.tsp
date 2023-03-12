@@ -21,6 +21,3 @@ NODE_COORD_SECTION
   13  19.41       97.13
   14  20.09       94.55
 EOF
-
-
-
