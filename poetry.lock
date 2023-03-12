@@ -2652,6 +2652,21 @@ docs = ["furo (>=2022.12.7)", "proselint (>=0.13)", "sphinx (>=6.1.3)", "sphinx-
 test = ["covdefaults (>=2.2.2)", "coverage (>=7.1)", "coverage-enable-subprocess (>=1)", "flaky (>=3.7)", "packaging (>=23)", "pytest (>=7.2.1)", "pytest-env (>=0.8.1)", "pytest-freezegun (>=0.4.2)", "pytest-mock (>=3.10)", "pytest-randomly (>=3.12)", "pytest-timeout (>=2.1)"]
 
 [[package]]
+name = "vrplib"
+version = "1.0.1"
+description = "Python library for reading vehicle routing problem instances."
+category = "main"
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "vrplib-1.0.1-py3-none-any.whl", hash = "sha256:a79c70836b99e11e8b887ff49d762c0d594f8a386bd8749bae9112ad0869d5f1"},
+    {file = "vrplib-1.0.1.tar.gz", hash = "sha256:3076eff6630d116bc4bc7cc917e7ce582ba82fa0bcc4535d2920f518483192c1"},
+]
+
+[package.dependencies]
+numpy = ">=1.19,<2.0"
+
+[[package]]
 name = "wcwidth"
 version = "0.2.6"
 description = "Measures the displayed width of unicode strings in a terminal"
@@ -2820,4 +2835,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "242e7b5662ccdce69f457f062008d04dc1057bf0ec2e9ae3836e0e6cfab860f6"
+content-hash = "885a1d3b68c406c8d37105679ee3053f4f9c701ea4128b360c9f36355cb0b729"

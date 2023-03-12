@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import tsplib95
+import vrplib
 from scipy.stats import poisson
 
 
@@ -87,13 +88,23 @@ class Params:
 
         return cls(name, rng, dimension, distances, coords, **kwargs)
 
-    def from_solomon(cls, rng):
+    @classmethod
+    def from_solomon(cls, loc, rng, **kwargs):
         """
         Reads a TSP instance from Solomon instances. The Solomon instances
         are used merely for the coordinates.
         """
-        # TODO
-        ...
+        instance = vrplib.read_instance(loc, "solomon")
+        dim = instance["node_coord"].size
+
+        return cls(
+            instance["name"],
+            rng,
+            min(dim, kwargs.get("max_dim", dim)),
+            instance["edge_weight"],
+            instance["node_coord"],
+            **kwargs
+        )
 
 
 def compute_phase_parameters(mean, SCV):
