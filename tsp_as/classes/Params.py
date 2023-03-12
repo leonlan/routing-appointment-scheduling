@@ -89,8 +89,10 @@ class Params:
 
     def from_solomon(cls, rng):
         """
-        Reads a TSP instance from Solomon instances.
+        Reads a TSP instance from Solomon instances. The Solomon instances
+        are used merely for the coordinates.
         """
+        # TODO
         ...
 
 
