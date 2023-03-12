@@ -37,10 +37,10 @@ def parse_args():
     parser.add_argument("--omega_wait", type=float, default=1 / 9)
 
     parser.add_argument("--max_dim", type=int, default=20)
-    parser.add_argument("--distances_scv_min", type=float, default=0.1)
-    parser.add_argument("--distances_scv_max", type=float, default=0.5)
-    parser.add_argument("--service_scv_min", type=float, default=0.1)
-    parser.add_argument("--service_scv_max", type=float, default=0.5)
+    parser.add_argument("--distances_scv_min", type=float, default=1.1)
+    parser.add_argument("--distances_scv_max", type=float, default=1.5)
+    parser.add_argument("--service_scv_min", type=float, default=1.1)
+    parser.add_argument("--service_scv_max", type=float, default=1.5)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
@@ -66,15 +66,15 @@ def solve_alns(loc: str, seed: int, **kwargs):
     init = Solution(params, np.arange(1, params.dimension).tolist())  # ordered
     weights = SimpleWeights([5, 2, 1, 0.5], 2, 2, 0.8)
     accept = HillClimbing()
-    # stop = MaxIterations(kwargs["max_iterations"])
-    stop = MaxRuntime(kwargs["max_runtime"] * 60)
+    stop = MaxIterations(kwargs["max_iterations"])
+    # stop = MaxRuntime(kwargs["max_runtime"] * 60)
 
     res = alns.iterate(init, weights, accept, stop, **kwargs)
     stats = res.statistics
 
-    # Compute the final, optimal objective
-    schedule, cost = res.best_state.compute_optimal_schedule()
-    res.best_state.schedule = schedule
+    # # Compute the final, optimal objective
+    # schedule, cost = res.best_state.compute_optimal_schedule()
+    # res.best_state.schedule = schedule
 
     if np.any(params.coords):
         fig, ax = plt.subplots(figsize=[16, 12], dpi=150)
@@ -84,7 +84,8 @@ def solve_alns(loc: str, seed: int, **kwargs):
 
     return (
         path.stem,
-        cost,
+        res.best_state.objective(),
+        # cost,
         len(stats.objectives),
         round(stats.total_runtime, 3),
     )
