@@ -1,7 +1,4 @@
 import numpy as np
-from scipy.linalg import inv
-from scipy.linalg.blas import dgemm
-from scipy.sparse.linalg import expm
 
 import tsp_as.appointment.true_optimal as to
 from tsp_as.appointment.utils import get_alphas_transitions

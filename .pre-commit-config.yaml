@@ -1,18 +1,25 @@
+fail_fast: true
+
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.2.0
+    rev: v4.4.0
     hooks:
-    -   id: check-yaml
     -   id: debug-statements
+        id: trailing-whitespace
+        id: end-of-file-fixer
 
 -   repo: https://github.com/psf/black
-    rev: 22.3.0
+    rev: 23.1.0
     hooks:
-    -    id: black
+    -   id: black
 
--   repo: https://github.com/pycqa/isort
-    rev: 5.10.1
+-   repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: 'v0.0.246'
     hooks:
-      - id: isort
-        name: isort (python)
-        args: ["--profile", "black"]
+    -   id: ruff
+        args: [--fix]
+
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.0.0
+    hooks:
+    -   id: mypy

@@ -76,7 +76,6 @@ class Params:
         # We need to explicitly retrieve the dimensions ourselves
         distances = np.zeros((dimension, dimension))
         for i, j in combinations(range(dimension), r=2):
-
             # The distance indices depends on the edge weight formats.
             shift = 0 if problem.edge_weight_type == "EXPLICIT" else 1
             d_ij = problem.get_weight(i + shift, j + shift)
@@ -84,9 +83,15 @@ class Params:
             distances[i, j] = d_ij
             distances[j, i] = d_ij
 
-        coords = np.array([coord for coord in problem.node_coords.values()])[:dimension]
+        coords = np.array(list(problem.node_coords.values()))[:dimension]
 
         return cls(name, rng, dimension, distances, coords, **kwargs)
+
+    def from_solomon(cls, rng):
+        """
+        Reads a TSP instance from Solomon instances.
+        """
+        ...
 
 
 def compute_phase_parameters(mean, SCV):
