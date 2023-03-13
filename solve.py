@@ -69,9 +69,8 @@ def main():
     plot_graph(ax, params, best)
     plt.show()
 
-    # fig.savefig(f"tmp/{path.stem}-dim{parameters['max_dim']}.svg")
-
-    # plt.close()
+    fig.savefig(f"tmp/{path.stem}-dim{parameters['max_dim']}.svg")
+    plt.close()
 
 
 if __name__ == "__main__":
