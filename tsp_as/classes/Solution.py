@@ -50,7 +50,7 @@ class Solution:
         return params.omega_travel * params.distances[visits[1:], visits[:-1]].sum()
 
     @staticmethod
-    def compute_idle_wait(tour, params):  # TODO rename idle_wait to appointment
+    def compute_idle_wait(tour, params):
         """
         Computes the idle and waiting time cost.
         """
