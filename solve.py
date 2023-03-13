@@ -42,13 +42,13 @@ def solve(params, seed: int, max_runtime: int, **kwargs):
 
 def main():
     # Set path to instance (it uses only coordinates)
-    path = Path("instances/solomon/C101.txt")
+    path = Path("instances/solomon/C102.txt")
 
     # Specify instance characteristics
     parameters = {
         "max_dim": 5,  # number of locations
-        "distances_scv_min": 1.1,
-        "distances_scv_max": 1.5,
+        "distances_scv_min": 0.1,
+        "distances_scv_max": 0.1,
         "service_scv_min": 1.1,
         "service_scv_max": 1.5,
         "omega_travel": 0.2,
