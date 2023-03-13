@@ -1,15 +1,12 @@
 from copy import copy
 from typing import Optional
 
-import numpy as np
-from alns import State
-
 import tsp_as.appointment.heavy_traffic as ht
 import tsp_as.appointment.lag as lag
 import tsp_as.appointment.true_optimal as to
 
 
-class Solution(State):
+class Solution:
     tour: list[int]
     unassigned: list[int]
 
@@ -22,8 +19,7 @@ class Solution(State):
         self._cost = None
         self.update()
 
-    def __deepcopy__(self, memodict={}):
-        self.params.trajectory.append(self)
+    def __deepcopy__(self, memodict):
         return Solution(self.params, copy(self.tour), copy(self.unassigned))
 
     def __repr__(self):
@@ -54,7 +50,7 @@ class Solution(State):
         return params.omega_travel * params.distances[visits[1:], visits[:-1]].sum()
 
     @staticmethod
-    def compute_idle_wait(tour, params):
+    def compute_idle_wait(tour, params):  # TODO rename idle_wait to appointment
         """
         Computes the idle and waiting time cost.
         """

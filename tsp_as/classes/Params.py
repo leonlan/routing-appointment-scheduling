@@ -59,9 +59,6 @@ class Params:
         self.objective = kwargs.get("objective", "hto")
         self.lag = 3
 
-        # TODO Remove this later
-        self.trajectory = []
-
     @classmethod
     def from_tsplib(cls, loc, rng, **kwargs):
         """
