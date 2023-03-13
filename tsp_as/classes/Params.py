@@ -93,13 +93,14 @@ class Params:
         """
         instance = vrplib.read_instance(loc, "solomon")
         dim = instance["node_coord"].size
+        dim = min(dim, kwargs.get("max_dim", dim))
 
         return cls(
             instance["name"],
             rng,
-            min(dim, kwargs.get("max_dim", dim)),
-            instance["edge_weight"],
-            instance["node_coord"],
+            dim,
+            instance["edge_weight"][:dim, :dim],
+            instance["node_coord"][:dim],
             **kwargs
         )
 
