@@ -55,5 +55,6 @@ def plot_graph(ax, params, solution=None):
         font_color="red",
     )
 
-    ax.set_title(params.name)
+    title = f"Instance: {params.name}\n Cost: {solution.cost:.2f}"
+    ax.set_title(title)
     ax.grid(color="grey", linestyle="--", linewidth=0.25)

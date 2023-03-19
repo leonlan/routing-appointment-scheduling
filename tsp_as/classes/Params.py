@@ -75,8 +75,13 @@ class Params:
         # scheduling times. The means and vars are the combined service and
         # travel times.
         self.means = self.service[np.newaxis, :].T + self.distances
+        np.fill_diagonal(self.means, 0)
+
         self.var = self.service_var[np.newaxis, :].T + self.distances_var
+        np.fill_diagonal(self.var, 0)
+
         self.scvs = np.divide(self.var, np.power(self.means, 2))
+        np.fill_diagonal(self.scvs, 0)
 
         n = self.scvs.shape[0]
         self.alphas = np.zeros((n, n), dtype=object)
