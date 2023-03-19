@@ -56,7 +56,8 @@ class Solution:
         """
         # Shortcut when there are no weights for the appointment costs
         if params.omega_idle + params.omega_wait == 0:
-            return None, 0
+            fr, to = [0] + tour, tour + [0]
+            return params.distances[fr, to], 0
 
         if params.objective in ["htp", "hto", "htl"]:
             schedule = ht.compute_schedule(tour, params)

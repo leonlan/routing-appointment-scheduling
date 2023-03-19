@@ -62,6 +62,7 @@ class Params:
                 size=self.service.shape,
             )
         self.service_scv = service_scv
+        self.service_scv[0] = 0  # no scv for depot
         self.service_var = self.service_scv * np.power(self.service, 2)
 
         self.omega_travel = omega_travel
