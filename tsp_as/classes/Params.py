@@ -9,32 +9,71 @@ from scipy.stats import poisson
 
 
 class Params:
-    def __init__(self, name, rng, dimension, distances, coords, **kwargs):
+    def __init__(
+        self,
+        rng,
+        name,
+        dimension,
+        coords,
+        distances=None,
+        distances_scv_min=0.1,
+        distances_scv_max=0.5,
+        service=None,
+        service_scv=None,
+        service_scv_min=1.1,
+        service_scv_max=1.5,
+        omega_travel=0.2,
+        omega_idle=0.2,
+        omega_wait=0.8,
+        objective="hto",
+        lag=3,
+        instance=None,
+        **kwargs,
+    ):
         self.name = name
         self.dimension = dimension
         self.coords = coords
 
+        # TODO this is really ugly but I don't know how to efficiently
+        # pass the distances to overwrite the Solomon data otherwise.
+        if distances is None and instance is not None:
+            distances = instance["edge_weight"][:dimension, :dimension]
+
         self.distances = distances
         self.distances_scv = rng.uniform(
-            low=kwargs.get("distances_scv_min", 0.1),
-            high=kwargs.get("distances_scv_max", 1.5),
+            low=distances_scv_min,
+            high=distances_scv_max,
             size=distances.shape,
         )
         self.distances_var = self.distances_scv * np.power(self.distances, 2)
 
-        # Mean service time is given as the average travel time to the
-        # 10 closest customers
-        self.service = np.append(
-            [0], np.sort(self.distances, axis=1)[1:, :10].mean(axis=1)
-        )
-        self.service_scv = rng.uniform(
-            low=kwargs.get("service_scv_min", 0.1),
-            high=kwargs.get("service_scv_max", 1.5),
-            size=self.service.shape,
-        )
+        # Default service time is given as the average travel time to the
+        # 10 closest customers to have the same dimensionality
+        if service is None:
+            avg_dist = np.sort(self.distances, axis=1)[1:, :10].mean(axis=1)
+            service = np.append([0], avg_dist)
+
+        self.service = service
+
+        if service_scv is None:
+            service_scv = rng.uniform(
+                low=service_scv_min,
+                high=service_scv_max,
+                size=self.service.shape,
+            )
+        self.service_scv = service_scv
         self.service_var = self.service_scv * np.power(self.service, 2)
 
-        # Combined travel and service times
+        self.omega_travel = omega_travel
+        self.omega_idle = omega_idle
+        self.omega_wait = omega_wait
+
+        self.objective = objective
+        self.lag = lag
+
+        # Below we instantiate the data that are used to compute appointment
+        # scheduling times. The means and vars are the combined service and
+        # travel times.
         self.means = self.service[np.newaxis, :].T + self.distances
         self.var = self.service_var[np.newaxis, :].T + self.distances_var
         self.scvs = np.divide(self.var, np.power(self.means, 2))
@@ -51,13 +90,6 @@ class Params:
                     )
                     self.alphas[i, j] = alpha
                     self.transitions[i, j] = transition
-
-        self.omega_travel = kwargs.get("omega_travel", 0.1)
-        self.omega_idle = kwargs.get("omega_idle", 0.1)
-        self.omega_wait = kwargs.get("omega_wait", 0.8)
-
-        self.objective = kwargs.get("objective", "hto")
-        self.lag = 3
 
     @classmethod
     def from_tsplib(cls, loc, rng, **kwargs):
@@ -89,19 +121,19 @@ class Params:
     def from_solomon(cls, loc, rng, **kwargs):
         """
         Reads a TSP instance from Solomon instances. The Solomon instances
-        are used merely for the coordinates.
+        are used merely for the coordinates and distances.
         """
         instance = vrplib.read_instance(loc, "solomon")
         dim = instance["node_coord"].size
         dim = min(dim, kwargs.get("max_dim", dim))
 
         return cls(
-            instance["name"],
             rng,
+            instance["name"],
             dim,
-            instance["edge_weight"][:dim, :dim],
             instance["node_coord"][:dim],
-            **kwargs
+            **kwargs,
+            instance=instance,
         )
 
 

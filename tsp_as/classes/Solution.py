@@ -58,7 +58,7 @@ class Solution:
         if params.omega_idle + params.omega_wait == 0:
             return None, 0
 
-        if params.objective in ["htp", "hto", "lag"]:
+        if params.objective in ["htp", "hto", "htl"]:
             schedule = ht.compute_schedule(tour, params)
 
             # No need to multiply by omega here because the compute schedule
@@ -69,13 +69,15 @@ class Solution:
                 return schedule, to.compute_objective_given_schedule(
                     tour, schedule, params
                 )
-            elif params.objective == "lag":
+            elif params.objective == "htl":
                 return schedule, lag.compute_objective_given_schedule(
                     tour, schedule, params
                 )
-        else:
+        if params.objective == "to":
             schedule, cost = to.compute_optimal_schedule(tour, params)
             return schedule, cost
+
+        raise ValueError(f"{params.objective=} unknown.")
 
     def compute_optimal_schedule(self):
         """
