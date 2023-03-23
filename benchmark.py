@@ -11,13 +11,13 @@ import numpy as np
 import numpy.random as rnd
 from alns import ALNS
 from alns.accept import HillClimbing
-from alns.stop import MaxIterations, MaxRuntime
+from alns.stop import MaxIterations
 from alns.weights import SimpleWeights
 from tqdm.contrib.concurrent import process_map
 
 from tsp_as.classes import Params, Solution
 from tsp_as.destroy_operators import adjacent_destroy, random_destroy
-from tsp_as.plot import plot_graph, plot_instance
+from tsp_as.plot import plot_graph
 from tsp_as.repair_operators import greedy_insert
 
 
@@ -26,7 +26,7 @@ def parse_args():
 
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--num_procs", type=int, default=8)
-    parser.add_argument("--instance_pattern", default="instances/*")
+    parser.add_argument("--instance_pattern", default="instances/solomon/*")
     parser.add_argument("--profile", action="store_true")
 
     parser.add_argument("--objective", type=str, default="hto")
@@ -36,7 +36,7 @@ def parse_args():
     parser.add_argument("--omega_idle", type=float, default=4 / 9)
     parser.add_argument("--omega_wait", type=float, default=1 / 9)
 
-    parser.add_argument("--max_dim", type=int, default=20)
+    parser.add_argument("--max_dim", type=int, default=5)
     parser.add_argument("--distances_scv_min", type=float, default=1.1)
     parser.add_argument("--distances_scv_max", type=float, default=1.5)
     parser.add_argument("--service_scv_min", type=float, default=1.1)
@@ -56,7 +56,10 @@ def solve_alns(loc: str, seed: int, **kwargs):
     path = Path(loc)
     rng = rnd.default_rng(seed)
 
-    params = Params.from_tsplib(path, rng, **kwargs)
+    if ".tsp" in loc:
+        params = Params.from_tsplib(path, rng, **kwargs)
+    else:
+        params = Params.from_solomon(path, rng, **kwargs)
 
     alns = ALNS(rng)
     alns.add_destroy_operator(random_destroy)
@@ -127,7 +130,7 @@ def main():
     ]
 
     if args.num_procs > 1:
-        tqdm_kwargs = dict(max_workers=args.num_procs, unit="instance")
+        tqdm_kwargs = {"max_workers": args.num_procs, "unit": "instance"}
         data = process_map(func, func_args, **tqdm_kwargs)
     else:  # process_map cannot be used with interactive debugging
         if args.profile:

@@ -3,7 +3,7 @@ from copy import deepcopy
 from tsp_as.classes import Solution
 
 
-def adjacent_destroy(solution: Solution, rng, n_destroy, **kwargs) -> Solution:
+def adjacent_destroy(solution: Solution, rng, n_destroy=3, **kwargs) -> Solution:
     """
     Randomly remove a number adjacent customers from the solution.
     """

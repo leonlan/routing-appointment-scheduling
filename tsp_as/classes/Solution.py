@@ -1,15 +1,12 @@
 from copy import copy
 from typing import Optional
 
-import numpy as np
-from alns import State
-
 import tsp_as.appointment.heavy_traffic as ht
 import tsp_as.appointment.lag as lag
 import tsp_as.appointment.true_optimal as to
 
 
-class Solution(State):
+class Solution:
     tour: list[int]
     unassigned: list[int]
 
@@ -22,8 +19,7 @@ class Solution(State):
         self._cost = None
         self.update()
 
-    def __deepcopy__(self, memodict={}):
-        self.params.trajectory.append(self)
+    def __deepcopy__(self, memodict):
         return Solution(self.params, copy(self.tour), copy(self.unassigned))
 
     def __repr__(self):
@@ -60,9 +56,10 @@ class Solution(State):
         """
         # Shortcut when there are no weights for the appointment costs
         if params.omega_idle + params.omega_wait == 0:
-            return None, 0
+            fr, to = [0] + tour, tour + [0]
+            return params.distances[fr, to], 0
 
-        if params.objective in ["htp", "hto", "lag"]:
+        if params.objective in ["htp", "hto", "htl"]:
             schedule = ht.compute_schedule(tour, params)
 
             # No need to multiply by omega here because the compute schedule
@@ -73,13 +70,15 @@ class Solution(State):
                 return schedule, to.compute_objective_given_schedule(
                     tour, schedule, params
                 )
-            elif params.objective == "lag":
+            elif params.objective == "htl":
                 return schedule, lag.compute_objective_given_schedule(
                     tour, schedule, params
                 )
-        else:
+        if params.objective == "to":
             schedule, cost = to.compute_optimal_schedule(tour, params)
             return schedule, cost
+
+        raise ValueError(f"{params.objective=} unknown.")
 
     def compute_optimal_schedule(self):
         """

@@ -4,39 +4,85 @@ from pathlib import Path
 
 import numpy as np
 import tsplib95
+import vrplib
 from scipy.stats import poisson
 
 
 class Params:
-    def __init__(self, name, rng, dimension, distances, coords, **kwargs):
+    def __init__(
+        self,
+        rng,
+        name,
+        dimension,
+        coords,
+        distances=None,
+        distances_scv_min=0.1,
+        distances_scv_max=0.5,
+        service=None,
+        service_scv=None,
+        service_scv_min=1.1,
+        service_scv_max=1.5,
+        omega_travel=0.2,
+        omega_idle=0.2,
+        omega_wait=0.8,
+        objective="hto",
+        lag=3,
+        instance=None,
+        **kwargs,
+    ):
         self.name = name
         self.dimension = dimension
         self.coords = coords
 
+        # TODO this is really ugly but I don't know how to efficiently
+        # pass the distances to overwrite the Solomon data otherwise.
+        if distances is None and instance is not None:
+            distances = instance["edge_weight"][:dimension, :dimension]
+
         self.distances = distances
         self.distances_scv = rng.uniform(
-            low=kwargs.get("distances_scv_min", 0.1),
-            high=kwargs.get("distances_scv_max", 1.5),
+            low=distances_scv_min,
+            high=distances_scv_max,
             size=distances.shape,
         )
         self.distances_var = self.distances_scv * np.power(self.distances, 2)
 
-        # Mean service time is given as the average travel time to the
-        # 10 closest customers
-        self.service = np.append(
-            [0], np.sort(self.distances, axis=1)[1:, :10].mean(axis=1)
-        )
-        self.service_scv = rng.uniform(
-            low=kwargs.get("service_scv_min", 0.1),
-            high=kwargs.get("service_scv_max", 1.5),
-            size=self.service.shape,
-        )
+        # Default service time is given as the average travel time to the
+        # 10 closest customers to have the same dimensionality
+        if service is None:
+            avg_dist = np.sort(self.distances, axis=1)[1:, :10].mean(axis=1)
+            service = np.append([0], avg_dist)
+
+        self.service = service
+
+        if service_scv is None:
+            service_scv = rng.uniform(
+                low=service_scv_min,
+                high=service_scv_max,
+                size=self.service.shape,
+            )
+        self.service_scv = service_scv
+        self.service_scv[0] = 0  # no scv for depot
         self.service_var = self.service_scv * np.power(self.service, 2)
 
-        # Combined travel and service times
+        self.omega_travel = omega_travel
+        self.omega_idle = omega_idle
+        self.omega_wait = omega_wait
+
+        self.objective = objective
+        self.lag = lag
+
+        # Below we instantiate the data that are used to compute appointment
+        # scheduling times. The means and vars are the combined service and
+        # travel times.
         self.means = self.service[np.newaxis, :].T + self.distances
+        np.fill_diagonal(self.means, 0)
+
         self.var = self.service_var[np.newaxis, :].T + self.distances_var
+        np.fill_diagonal(self.var, 0)
+
         self.scvs = np.divide(self.var, np.power(self.means, 2))
+        np.fill_diagonal(self.scvs, 0)
 
         n = self.scvs.shape[0]
         self.alphas = np.zeros((n, n), dtype=object)
@@ -50,16 +96,6 @@ class Params:
                     )
                     self.alphas[i, j] = alpha
                     self.transitions[i, j] = transition
-
-        self.omega_travel = kwargs.get("omega_travel", 0.1)
-        self.omega_idle = kwargs.get("omega_idle", 0.1)
-        self.omega_wait = kwargs.get("omega_wait", 0.8)
-
-        self.objective = kwargs.get("objective", "hto")
-        self.lag = 3
-
-        # TODO Remove this later
-        self.trajectory = []
 
     @classmethod
     def from_tsplib(cls, loc, rng, **kwargs):
@@ -76,7 +112,6 @@ class Params:
         # We need to explicitly retrieve the dimensions ourselves
         distances = np.zeros((dimension, dimension))
         for i, j in combinations(range(dimension), r=2):
-
             # The distance indices depends on the edge weight formats.
             shift = 0 if problem.edge_weight_type == "EXPLICIT" else 1
             d_ij = problem.get_weight(i + shift, j + shift)
@@ -84,9 +119,28 @@ class Params:
             distances[i, j] = d_ij
             distances[j, i] = d_ij
 
-        coords = np.array([coord for coord in problem.node_coords.values()])[:dimension]
+        coords = np.array(list(problem.node_coords.values()))[:dimension]
 
         return cls(name, rng, dimension, distances, coords, **kwargs)
+
+    @classmethod
+    def from_solomon(cls, loc, rng, **kwargs):
+        """
+        Reads a TSP instance from Solomon instances. The Solomon instances
+        are used merely for the coordinates and distances.
+        """
+        instance = vrplib.read_instance(loc, "solomon")
+        dim = instance["node_coord"].size
+        dim = min(dim, kwargs.get("max_dim", dim))
+
+        return cls(
+            rng,
+            instance["name"],
+            dim,
+            instance["node_coord"][:dim],
+            **kwargs,
+            instance=instance,
+        )
 
 
 def compute_phase_parameters(mean, SCV):

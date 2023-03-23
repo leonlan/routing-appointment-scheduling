@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 
-def random_destroy(solution, rng, n_destroy, **kwargs):
+def random_destroy(solution, rng, n_destroy=3, **kwargs):
     """
     Randomly remove clients from the solution.
     """

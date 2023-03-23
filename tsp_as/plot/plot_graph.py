@@ -1,11 +1,10 @@
-import matplotlib.pyplot as plt
 import networkx as nx
 
 
 def plot_graph(ax, params, solution=None):
     """
     Plots the instance on a graph. This is an alternative to `plot_instance`,
-    because it is easy to add labels to graph plots.
+    because it much easier to add edge labels to graph plots.
     """
     coords = params.coords
 
@@ -14,16 +13,18 @@ def plot_graph(ax, params, solution=None):
     visits = [0] + solution.tour + [0]
     pos = dict(enumerate(coords))
 
-    appointment_times = {}
+    labels = {}
     for idx in range(len(visits) - 1):
         to, fr = visits[idx], visits[idx + 1]
-        G.add_edge(to, fr)
+        edge = (to, fr)
+        G.add_edge(*edge)
 
-        e = (to, fr)
-        appointment_times[
-            (to, fr)
-        ] = f"x = {int(solution.schedule[idx])},\
-\n(T:{params.distances[e]:.0f}, {params.distances_scv[e]:.2f})"
+        interarrival_time = int(solution.schedule[idx])
+        dist = params.distances[edge]
+        dist_scv = params.distances_scv[edge]
+
+        label = f"x={interarrival_time}\n T=({dist:.0f}, {dist_scv:.2f})"
+        labels[edge] = label
 
     nx.draw_networkx(
         G,
@@ -34,12 +35,13 @@ def plot_graph(ax, params, solution=None):
         edge_color="black",
     )
 
-    nx.draw_networkx_labels(
+    _ = nx.draw_networkx_labels(
         G,
         pos={k: v * [1, 1.01] for k, v in pos.items()},
         ax=ax,
+        font_size=8,
         labels={
-            k: f"B:({params.service[k]:.0f}, {params.service_scv[k]:.2f})"
+            k: f"B=({params.service[k]:.0f}, {params.service_scv[k]:.2f})"
             for k in pos.keys()
         },
     )
@@ -48,9 +50,11 @@ def plot_graph(ax, params, solution=None):
         G,
         pos=pos,
         ax=ax,
-        edge_labels=appointment_times,
+        font_size=9,
+        edge_labels=labels,
         font_color="red",
     )
 
-    ax.set_title(params.name)
+    title = f"Instance: {params.name}\n Cost: {solution.cost:.2f}"
+    ax.set_title(title)
     ax.grid(color="grey", linestyle="--", linewidth=0.25)
