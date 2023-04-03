@@ -11,10 +11,10 @@ class Solution:
     unassigned: list[int]
 
     def __init__(self, data, tour: list[int], unassigned: Optional[list[int]] = None):
+        self.data = data
         self.tour = tour
         self.schedule = None
         self.unassigned = unassigned if unassigned is not None else []
-        self.data = data
 
         self._cost = None
         self.update()
