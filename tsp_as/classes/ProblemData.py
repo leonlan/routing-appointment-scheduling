@@ -22,28 +22,13 @@ class ProblemData:
     ):
         self.name = name
         self.coords = coords
-
         self.distances = distances
         self.distances_scv = distances_scv
-
         self.service = service
         self.service_scv = service_scv
-
-        # Compute the variances of the combined service and travel times,
-        # which in turn are used to compute the scvs.
-        _service_var = self.service_scv * np.power(self.service, 2)
-        _distances_var = self.distances_scv * np.power(self.distances, 2)
-        _var = _service_var[np.newaxis, :].T + _distances_var
-
-        # The means and scvs are the combined service and travel times, where
-        # entry (i, j) denotes the travel time from i to j and the service
-        # time at location i.
-        self.means = self.service[np.newaxis, :].T + self.distances
-        self.scvs = np.divide(_var, np.power(self.means, 2))
-
-        np.fill_diagonal(self.means, 0)
-        np.fill_diagonal(self.scvs, 0)
-
+        self.means, self.scvs = compute_means_scvs(
+            distances, distances_scv, service, service_scv
+        )
         self.alphas, self.transitions = compute_phase_parameters(self.means, self.scvs)
 
         self.objective = objective
@@ -63,18 +48,18 @@ class ProblemData:
         distances_scv_max=0.1,
         service_scv_min=1.1,
         service_scv_max=1.5,
+        name=None,
         **kwargs,
     ):
         """
-        Creates a random instance with ``dimension`` locations, including the
-        depot.
+        Creates a random instance with ``dimension`` locations.
 
         Customer locations are randomly sampled from a grid of size `max_size`.
         The Euclidean distances are computed for the distances, and service
         times are drawn uniformly between one and `max_service_time`.
         """
         rng = rnd.default_rng(seed)
-        name = "Random instance."
+        name = "Random instance." if name is None else name
         coords = rng.integers(max_size, size=(dimension, dimension))
 
         distances = pairwise_euclidean(coords)
@@ -100,6 +85,29 @@ class ProblemData:
             service_scv,
             **kwargs,
         )
+
+
+def compute_means_scvs(distances, distances_scv, service, service_scv):
+    """
+    Computes the means and SCVs of the random variable that is the sum of
+    the travel time and the service time.
+    """
+    # Compute the variances of the combined service and travel times,
+    # which in turn are used to compute the scvs.
+    _service_var = service_scv * np.power(service, 2)
+    _distances_var = distances_scv * np.power(distances, 2)
+    _var = _service_var[np.newaxis, :].T + _distances_var
+
+    # The means and scvs are the combined service and travel times, where
+    # entry (i, j) denotes the travel time from i to j and the service
+    # time at location i.
+    means = service[np.newaxis, :].T + distances
+    scvs = np.divide(_var, np.power(means, 2))
+
+    np.fill_diagonal(means, 0)
+    np.fill_diagonal(scvs, 0)
+
+    return means, scvs
 
 
 def compute_phase_parameters(means, scvs):
