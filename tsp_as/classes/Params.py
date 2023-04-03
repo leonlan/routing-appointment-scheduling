@@ -1,149 +1,129 @@
 import math
-from itertools import combinations
-from pathlib import Path
 
 import numpy as np
-import tsplib95
-import vrplib
+import numpy.random as rnd
 from scipy.stats import poisson
 
 
 class Params:
     def __init__(
         self,
-        rng,
         name,
-        dimension,
         coords,
-        distances=None,
-        distances_scv_min=0.1,
-        distances_scv_max=0.5,
-        service=None,
-        service_scv=None,
-        service_scv_min=1.1,
-        service_scv_max=1.5,
+        distances,
+        distances_scv,
+        service,
+        service_scv,
+        objective="hto",
         omega_travel=0.2,
         omega_idle=0.2,
         omega_wait=0.8,
-        objective="hto",
         lag=3,
-        instance=None,
-        **kwargs,
     ):
         self.name = name
-        self.dimension = dimension
         self.coords = coords
 
-        # TODO this is really ugly but I don't know how to efficiently
-        # pass the distances to overwrite the Solomon data otherwise.
-        if distances is None and instance is not None:
-            distances = instance["edge_weight"][:dimension, :dimension]
-
         self.distances = distances
-        self.distances_scv = rng.uniform(
+        self.distances_scv = distances_scv
+
+        self.service = service
+        self.service_scv = service_scv
+
+        # Compute the variances of the combined service and travel times,
+        # which in turn are used to compute the scvs.
+        _service_var = self.service_scv * np.power(self.service, 2)
+        _distances_var = self.distances_scv * np.power(self.distances, 2)
+        _var = _service_var[np.newaxis, :].T + _distances_var
+
+        # The means and scvs are the combined service and travel times, where
+        # entry (i, j) denotes the travel time from i to j and the service
+        # time at location i.
+        self.means = self.service[np.newaxis, :].T + self.distances
+        self.scvs = np.divide(_var, np.power(self.means, 2))
+
+        np.fill_diagonal(self.means, 0)
+        np.fill_diagonal(self.scvs, 0)
+
+        self.alphas, self.transitions = compute_phase_parameters(self.means, self.scvs)
+
+        self.objective = objective
+        self.omega_travel = omega_travel
+        self.omega_idle = omega_idle
+        self.omega_wait = omega_wait
+        self.lag = lag  # TODO this is an algorithm parameter
+
+    @classmethod
+    def make_random(
+        cls,
+        seed,
+        dimension,
+        max_size,
+        max_service_time,
+        distances_scv_min=0.1,
+        distances_scv_max=0.1,
+        service_scv_min=1.1,
+        service_scv_max=1.5,
+        **kwargs,
+    ):
+        """
+        Creates a random instance with ``dimension`` locations, including the
+        depot.
+
+        Customer locations are randomly sampled from a grid of size `max_size`.
+        The Euclidean distances are computed for the distances, and service
+        times are drawn uniformly between one and `max_service_time`.
+        """
+        rng = rnd.default_rng(seed)
+        name = "Random instance."
+        coords = rng.integers(max_size, size=(dimension, dimension))
+
+        distances = pairwise_euclidean(coords)
+        distances_scv = rng.uniform(
             low=distances_scv_min,
             high=distances_scv_max,
             size=distances.shape,
         )
-        self.distances_var = self.distances_scv * np.power(self.distances, 2)
 
-        # Default service time is given as the average travel time to the
-        # 10 closest customers to have the same dimensionality
-        if service is None:
-            avg_dist = np.sort(self.distances, axis=1)[1:, :10].mean(axis=1)
-            service = np.append([0], avg_dist)
-
-        self.service = service
-
-        if service_scv is None:
-            service_scv = rng.uniform(
-                low=service_scv_min,
-                high=service_scv_max,
-                size=self.service.shape,
-            )
-        self.service_scv = service_scv
-        self.service_scv[0] = 0  # no scv for depot
-        self.service_var = self.service_scv * np.power(self.service, 2)
-
-        self.omega_travel = omega_travel
-        self.omega_idle = omega_idle
-        self.omega_wait = omega_wait
-
-        self.objective = objective
-        self.lag = lag
-
-        # Below we instantiate the data that are used to compute appointment
-        # scheduling times. The means and vars are the combined service and
-        # travel times.
-        self.means = self.service[np.newaxis, :].T + self.distances
-        np.fill_diagonal(self.means, 0)
-
-        self.var = self.service_var[np.newaxis, :].T + self.distances_var
-        np.fill_diagonal(self.var, 0)
-
-        self.scvs = np.divide(self.var, np.power(self.means, 2))
-        np.fill_diagonal(self.scvs, 0)
-
-        n = self.scvs.shape[0]
-        self.alphas = np.zeros((n, n), dtype=object)
-        self.transitions = np.zeros((n, n), dtype=object)
-
-        for i in range(n):
-            for j in range(n):
-                if i != j:
-                    alpha, transition = compute_phase_parameters(
-                        self.means[i, j], self.scvs[i, j]
-                    )
-                    self.alphas[i, j] = alpha
-                    self.transitions[i, j] = transition
-
-    @classmethod
-    def from_tsplib(cls, loc, rng, **kwargs):
-        """
-        Reads a TSP instance from TSPLIB.
-        """
-        path = Path(loc)
-        problem = tsplib95.load(path)
-
-        name = path.stem
-        name = problem.name
-        dimension = min(problem.dimension, kwargs.get("max_dim", problem.dimension))
-
-        # We need to explicitly retrieve the dimensions ourselves
-        distances = np.zeros((dimension, dimension))
-        for i, j in combinations(range(dimension), r=2):
-            # The distance indices depends on the edge weight formats.
-            shift = 0 if problem.edge_weight_type == "EXPLICIT" else 1
-            d_ij = problem.get_weight(i + shift, j + shift)
-
-            distances[i, j] = d_ij
-            distances[j, i] = d_ij
-
-        coords = np.array(list(problem.node_coords.values()))[:dimension]
-
-        return cls(name, rng, dimension, distances, coords, **kwargs)
-
-    @classmethod
-    def from_solomon(cls, loc, rng, **kwargs):
-        """
-        Reads a TSP instance from Solomon instances. The Solomon instances
-        are used merely for the coordinates and distances.
-        """
-        instance = vrplib.read_instance(loc, "solomon")
-        dim = instance["node_coord"].size
-        dim = min(dim, kwargs.get("max_dim", dim))
+        service = rng.integers(max_service_time, size=dimension)
+        service_scv = rng.uniform(
+            low=service_scv_min,
+            high=service_scv_max,
+            size=service.shape,
+        )
 
         return cls(
             rng,
-            instance["name"],
-            dim,
-            instance["node_coord"][:dim],
+            name,
+            distances,
+            distances_scv,
+            service,
+            service_scv,
             **kwargs,
-            instance=instance,
         )
 
 
-def compute_phase_parameters(mean, SCV):
+def compute_phase_parameters(means, scvs):
+    """
+    Wrapper for `_compute_phase_parameters` to return a full matrix
+    of alphas and transition matrices for the given means and scvs.
+    """
+    n = means.shape[0]
+    alphas = np.zeros((n, n), dtype=object)
+    transitions = np.zeros((n, n), dtype=object)
+
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+
+            alpha, transition = _compute_phase_parameters(means[i, j], scvs[i, j])
+            alphas[i, j] = alpha
+            transitions[i, j] = transition
+
+    return alphas, transitions
+
+
+def _compute_phase_parameters(mean, SCV):
     """
     Returns the initial distribution alpha and the transition rate
     matrix T of the phase-fitted service times given the mean, SCV,
@@ -176,3 +156,25 @@ def compute_phase_parameters(mean, SCV):
         transition = np.diag([-mu1, -mu2])
 
     return alpha, transition
+
+
+def pairwise_euclidean(coords: np.ndarray) -> np.ndarray:
+    """
+    Computes the pairwise Euclidean distance between the passed-in coordinates.
+
+    Parameters
+    ----------
+    coords
+        An n-by-2 array of location coordinates.
+
+    Returns
+    -------
+    np.ndarray
+        An n-by-n Euclidean distances matrix.
+
+    """
+    # Subtract each coordinate from every other coordinate
+    diff = coords[:, np.newaxis, :] - coords
+    square_diff = diff**2
+    square_dist = np.sum(square_diff, axis=-1)
+    return np.sqrt(square_dist)
