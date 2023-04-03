@@ -18,7 +18,7 @@ class ProblemData:
         objective="hto",
         omega_travel=0.2,
         omega_idle=0.2,
-        omega_wait=0.8,
+        omega_wait=0.6,
         lag=3,
     ):
         self.name = name

@@ -1,13 +1,13 @@
 import argparse
 from functools import partial
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 
 import numpy as np
 import numpy.random as rnd
 from alns import ALNS
 from alns.accept import HillClimbing
-from alns.stop import MaxIterations
+from alns.stop import MaxIterations, MaxRuntime
 from alns.weights import SimpleWeights
 from tqdm.contrib.concurrent import process_map
 
@@ -83,8 +83,7 @@ def solve(
     """
     path = Path(loc)
 
-    data = ProblemData.make_random(0, 5, 50, 50)
-    # data = ProblemData.from_file(loc)
+    data = ProblemData.from_file(loc)
     rng = rnd.default_rng(seed)
 
     alns = ALNS(rng)
@@ -97,7 +96,7 @@ def solve(
     accept = HillClimbing()
 
     if max_runtime is not None:
-        stop = MaxRuntime(kwargs["max_runtime"])
+        stop = MaxRuntime(max_runtime)
     else:
         assert max_iterations is not None
         stop = MaxIterations(kwargs["max_iterations"])
@@ -141,7 +140,7 @@ def benchmark(instances: List[str], **kwargs):
     func = partial(solve, **kwargs)
     func_args = sorted(instances)
 
-    tqdm_kwargs = dict(max_workers=kwargs.get("num_procs", 1), unit="instance")
+    tqdm_kwargs = {"max_workers": kwargs.get("num_procs", 1), "unit": "instance"}
     data = process_map(func, func_args, **tqdm_kwargs)
 
     dtypes = [
