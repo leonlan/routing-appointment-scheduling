@@ -56,8 +56,8 @@ class Solution:
         """
         # Shortcut when there are no weights for the appointment costs
         if data.omega_idle + data.omega_wait == 0:
-            fr, to = [0] + tour, tour + [0]
-            return data.distances[fr, to], 0
+            pred, succ = [0] + tour, tour + [0]
+            return data.distances[pred, succ], 0
 
         if data.objective in ["htp", "hto", "htl"]:
             schedule = ht.compute_schedule(tour, data)
@@ -74,6 +74,7 @@ class Solution:
                 return schedule, lag.compute_objective_given_schedule(
                     tour, schedule, data
                 )
+
         if data.objective == "to":
             schedule, cost = to.compute_optimal_schedule(tour, data)
             return schedule, cost

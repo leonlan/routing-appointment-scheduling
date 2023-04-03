@@ -10,6 +10,7 @@ class ProblemData:
         self,
         name,
         coords,
+        dimension,
         distances,
         distances_scv,
         service,
@@ -22,6 +23,7 @@ class ProblemData:
     ):
         self.name = name
         self.coords = coords
+        self.dimension = dimension
         self.distances = distances
         self.distances_scv = distances_scv
         self.service = service
@@ -38,10 +40,24 @@ class ProblemData:
         self.lag = lag  # TODO this is an algorithm parameter
 
     @classmethod
+    def from_file(cls, loc, **kwargs):
+        path = Path(loc)
+        # TODO
+
+        return cls(
+            path.stem,
+            distances,
+            distances_scv,
+            service,
+            service_scv,
+            **kwargs,
+        )
+
+    @classmethod
     def make_random(
         cls,
         seed,
-        dimension,
+        dim,
         max_size,
         max_service_time,
         distances_scv_min=0.1,
@@ -60,7 +76,7 @@ class ProblemData:
         """
         rng = rnd.default_rng(seed)
         name = "Random instance." if name is None else name
-        coords = rng.integers(max_size, size=(dimension, dimension))
+        coords = rng.integers(max_size, size=(dim, dim))
 
         distances = pairwise_euclidean(coords)
         distances_scv = rng.uniform(
@@ -69,7 +85,7 @@ class ProblemData:
             size=distances.shape,
         )
 
-        service = rng.integers(max_service_time, size=dimension)
+        service = rng.integers(max_service_time, size=dim) + 1  # at least one
         service_scv = rng.uniform(
             low=service_scv_min,
             high=service_scv_max,
@@ -77,8 +93,9 @@ class ProblemData:
         )
 
         return cls(
-            rng,
             name,
+            coords,
+            dim,
             distances,
             distances_scv,
             service,
