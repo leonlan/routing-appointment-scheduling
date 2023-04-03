@@ -6,7 +6,7 @@ from tsp_as.appointment.utils import get_alphas_transitions
 from .utils import get_alphas_transitions
 
 
-def compute_objective_given_schedule(tour, x, params):
+def compute_objective_given_schedule(tour, x, data):
     """
     Compute the objective value of a schedule using the lag-based objective
     function.
@@ -17,15 +17,15 @@ def compute_objective_given_schedule(tour, x, params):
         The client visiting tour.
     x
         The interappointment times.
-    params
-        The problem parameters.
+    data
+        The problem data.
     """
-    L = params.lag
+    L = data.lag
 
-    alpha, T = get_alphas_transitions(tour, params)
+    alpha, T = get_alphas_transitions(tour, data)
 
     n = len(alpha)
-    cost = params.omega_idle * np.sum(x)
+    cost = data.omega_idle * np.sum(x)
 
     # We take a "slice" of the x, alphas to make a new Vn matrix. We pass
     # these as input to the true optimal objective function each time.
@@ -37,14 +37,14 @@ def compute_objective_given_schedule(tour, x, params):
             x[l:u],
             alpha[l:u],
             to.create_Vn(alpha[l:u], T[l:u]),
-            params,
+            data,
             lag=True,
         )
 
     return cost
 
 
-def compute_objective_given_schedule_breakdown(tour, x, params):
+def compute_objective_given_schedule_breakdown(tour, x, data):
     """
     Compute the objective value of a schedule using the lag-based objective
     function. It provides a breakdown of the costs, term by term, which
@@ -56,12 +56,12 @@ def compute_objective_given_schedule_breakdown(tour, x, params):
         The client visiting tour.
     x
         The interappointment times.
-    params
+    data
         The problem parameters.
     """
-    L = params.lag
+    L = data.lag
 
-    alpha, T = get_alphas_transitions(tour, params)
+    alpha, T = get_alphas_transitions(tour, data)
 
     n = len(alpha)
     costs = []
@@ -72,12 +72,12 @@ def compute_objective_given_schedule_breakdown(tour, x, params):
         l = max(0, i - L)  # lower index
         u = i + 1  # upper index
 
-        cost = params.omega_idle * x[i]
+        cost = data.omega_idle * x[i]
         cost += to.compute_objective(
             x[l:u],
             alpha[l:u],
             to.create_Vn(alpha[l:u], T[l:u]),
-            params,
+            data,
             lag=True,
         )
         costs.append(cost)

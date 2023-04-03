@@ -15,7 +15,7 @@ from alns.stop import MaxIterations
 from alns.weights import SimpleWeights
 from tqdm.contrib.concurrent import process_map
 
-from tsp_as.classes import Params, Solution
+from tsp_as.classes import ProblemData, Solution
 from tsp_as.destroy_operators import adjacent_destroy, random_destroy
 from tsp_as.plot import plot_graph
 from tsp_as.repair_operators import greedy_insert
@@ -57,16 +57,16 @@ def solve_alns(loc: str, seed: int, **kwargs):
     rng = rnd.default_rng(seed)
 
     if ".tsp" in loc:
-        params = Params.from_tsplib(path, rng, **kwargs)
+        data = ProblemData.from_tsplib(path, rng, **kwargs)
     else:
-        params = Params.from_solomon(path, rng, **kwargs)
+        data = ProblemData.from_solomon(path, rng, **kwargs)
 
     alns = ALNS(rng)
     alns.add_destroy_operator(random_destroy)
     alns.add_destroy_operator(adjacent_destroy)
     alns.add_repair_operator(greedy_insert)
 
-    init = Solution(params, np.arange(1, params.dimension).tolist())  # ordered
+    init = Solution(data, np.arange(1, data.dimension).tolist())  # ordered
     weights = SimpleWeights([5, 2, 1, 0.5], 2, 2, 0.8)
     accept = HillClimbing()
     stop = MaxIterations(kwargs["max_iterations"])
@@ -79,9 +79,9 @@ def solve_alns(loc: str, seed: int, **kwargs):
     # schedule, cost = res.best_state.compute_optimal_schedule()
     # res.best_state.schedule = schedule
 
-    if np.any(params.coords):
+    if np.any(data.coords):
         fig, ax = plt.subplots(figsize=[16, 12], dpi=150)
-        plot_graph(ax, params, res.best_state)
+        plot_graph(ax, data, res.best_state)
         fig.savefig(f"tmp/{path.stem}-dim{kwargs['max_dim']}.svg")
         plt.close()
 

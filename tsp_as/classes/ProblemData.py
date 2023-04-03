@@ -5,7 +5,7 @@ import numpy.random as rnd
 from scipy.stats import poisson
 
 
-class Params:
+class ProblemData:
     def __init__(
         self,
         name,

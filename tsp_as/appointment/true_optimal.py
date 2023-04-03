@@ -39,22 +39,24 @@ def create_Vn(alphas, T):
     return Vn
 
 
-def compute_objective(x, alphas, Vn, params, lag=False):
+def compute_objective(x, alphas, Vn, data, lag=False):
     """
     Compute the objective value of a schedule. See Theorem (1).
 
+    Parameters
+    ----------
     x
         The interappointment times.
     alphas
         The alpha parameters of the phase-type distribution.
     Vn
         The recursively-defined matrix $V^{(n)}$.
-    params
-        The parameters of the problem.
+    data
+        The problem data.
     """
     n = len(alphas)
-    omega_idle = params.omega_idle
-    omega_travel = params.omega_travel
+    omega_idle = data.omega_idle
+    omega_travel = data.omega_travel
     dims = np.cumsum([alphas[i].size for i in range(n)])
     Vn_inv = inv(Vn)
 
@@ -85,33 +87,33 @@ def compute_objective(x, alphas, Vn, params, lag=False):
     return cost + omega_idle * np.sum(x)
 
 
-def compute_objective_given_schedule(tour, x, params):
+def compute_objective_given_schedule(tour, x, data):
     """
     Compute the objective function assuming that the schedule is given. This
     is used for the mixed heavy traffic and true optimal strategy.
     """
-    alpha, T = get_alphas_transitions(tour, params)
+    alpha, T = get_alphas_transitions(tour, data)
     Vn = create_Vn(alpha, T)
 
-    return compute_objective(x, alpha, Vn, params)
+    return compute_objective(x, alpha, Vn, data)
 
 
-def compute_optimal_schedule(tour, params, warmstart=True, **kwargs):
+def compute_optimal_schedule(tour, data, warmstart=True, **kwargs):
     """
     Computes the optimal schedule of the tour by minimizing the true optimal
     objective function.
     """
-    alpha, T = get_alphas_transitions(tour, params)
+    alpha, T = get_alphas_transitions(tour, data)
     Vn = create_Vn(alpha, T)
 
     def cost_fun(x):
-        return compute_objective(x, alpha, Vn, params)
+        return compute_objective(x, alpha, Vn, data)
 
     if warmstart:
-        x_init = ht_compute_schedule(tour, params)
+        x_init = ht_compute_schedule(tour, data)
     else:
         # Use means of travel time and service as initial value
-        x_init = params.distances[[0] + tour, tour + [0]] + params.service[[0] + tour]
+        x_init = data.distances[[0] + tour, tour + [0]] + data.service[[0] + tour]
 
     optim = minimize(
         cost_fun,
