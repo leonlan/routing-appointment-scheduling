@@ -1,4 +1,5 @@
 import math
+from pathlib import Path
 
 import numpy as np
 import numpy.random as rnd
@@ -60,6 +61,8 @@ class ProblemData:
         dim,
         max_size,
         max_service_time,
+        min_size=0,
+        min_service_time=0,
         distances_scv_min=0.1,
         distances_scv_max=0.1,
         service_scv_min=1.1,
@@ -76,7 +79,7 @@ class ProblemData:
         """
         rng = rnd.default_rng(seed)
         name = "Random instance." if name is None else name
-        coords = rng.integers(max_size, size=(dim, dim))
+        coords = rng.integers(min_size, max_size, size=(dim, dim))
 
         distances = pairwise_euclidean(coords)
         distances_scv = rng.uniform(
@@ -85,7 +88,8 @@ class ProblemData:
             size=distances.shape,
         )
 
-        service = rng.integers(max_service_time, size=dim) + 1  # at least one
+        service = rng.integers(min_service_time, max_service_time, size=dim)
+        service[0] = 0  # depot has no service time
         service_scv = rng.uniform(
             low=service_scv_min,
             high=service_scv_max,
