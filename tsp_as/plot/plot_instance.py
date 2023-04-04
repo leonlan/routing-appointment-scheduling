@@ -13,4 +13,4 @@ def plot_instance(ax, data, solution=None):
 
     ax.set_title(data.name)
     ax.grid(color="grey", linestyle="--", linewidth=0.25)
-    ax.legend(frameon=False, ncol=3)
+    ax.legend(frameon=True, ncol=3)

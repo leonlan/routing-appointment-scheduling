@@ -1,3 +1,4 @@
+import json
 import math
 from pathlib import Path
 
@@ -42,15 +43,20 @@ class ProblemData:
 
     @classmethod
     def from_file(cls, loc, **kwargs):
+        """
+        Loads a ProblemData instances from file. The instance is assumed to
+        be a JSON file, containing an array for the distances, distances SCVs,
+        service times, and service times SCVs.
+        """
         path = Path(loc)
-        # TODO
+
+        with open(path, "r") as fh:
+            data = json.load(fh)
+            data = {key: np.array(arr) for key, arr in data.items()}
 
         return cls(
-            path.stem,
-            distances,
-            distances_scv,
-            service,
-            service_scv,
+            name=path.stem,
+            **data,
             **kwargs,
         )
 
@@ -79,7 +85,8 @@ class ProblemData:
         """
         rng = rnd.default_rng(seed)
         name = "Random instance." if name is None else name
-        coords = rng.integers(min_size, max_size, size=(dim, dim))
+        coords = rng.integers(min_size, max_size, size=(dim, 2))
+        coords[0, :] = [0, 0]  # depot location
 
         distances = pairwise_euclidean(coords)
         distances_scv = rng.uniform(
@@ -87,14 +94,16 @@ class ProblemData:
             high=distances_scv_max,
             size=distances.shape,
         )
+        np.fill_diagonal(distances_scv, 0)  # no scv travel time on loops
 
         service = rng.integers(min_service_time, max_service_time, size=dim)
-        service[0] = 0  # depot has no service time
         service_scv = rng.uniform(
             low=service_scv_min,
             high=service_scv_max,
             size=service.shape,
         )
+        service[0] = 0  # depot has no service time
+        service_scv[0] = 0
 
         return cls(
             name,
@@ -204,6 +213,6 @@ def pairwise_euclidean(coords: np.ndarray) -> np.ndarray:
     """
     # Subtract each coordinate from every other coordinate
     diff = coords[:, np.newaxis, :] - coords
-    square_diff = diff**2
+    square_diff = diff ** 2
     square_dist = np.sum(square_diff, axis=-1)
     return np.sqrt(square_dist)
