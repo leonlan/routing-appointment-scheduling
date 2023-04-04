@@ -2,18 +2,18 @@ import tsp_as.appointment.heavy_traffic as ht
 from tsp_as.appointment.lag import compute_objective_given_schedule_breakdown
 
 
-def cost_breakdown(solution, params):
+def cost_breakdown(solution, data):
     """
     Breakdown the cost of the solution.
     """
     interappointment_times = solution.schedule
 
     fr, to = [0] + solution.tour, solution.tour + [0]
-    dists = params.distances[fr, to]
+    dists = data.distances[fr, to]
 
-    schedule = ht.compute_schedule(solution.tour, params)
+    schedule = ht.compute_schedule(solution.tour, data)
     idle_wait = compute_objective_given_schedule_breakdown(
-        solution.tour, schedule, params
+        solution.tour, schedule, data
     )
 
     headers = ["from", "to", "interappt. time", "dist.", "idle & wait"]

@@ -3,40 +3,39 @@ import numpy as np
 from .utils import get_means_scvs
 
 
-def compute_schedule(tour, params):
+def compute_schedule(tour, data):
     """
     Computes the schedule using heavy traffic approximation.
 
     Eq. (2) in draft.
     """
-    means, scvs = get_means_scvs(tour, params)
+    means, scvs = get_means_scvs(tour, data)
 
     var = scvs * means**2  # Variance of U
     B = _compute_service_times(var)
 
+    # TODO When `coeff` is zero, then this function doesn't work. Check with
+    # group what's going on here.
     # Eq. (2) but without omega from travels
-    coeff = (1 - params.omega_wait - params.omega_idle) / (2 * params.omega_idle)
+    coeff = (1 - data.omega_wait - data.omega_idle) / (2 * data.omega_idle)
     return means + np.sqrt(coeff * B)
 
 
-def compute_objective(tour, params):
+def compute_objective(tour, data):
     """
     Computes the objective value using heavy traffic approximation.
     See (3) in draft.
     """
-    means, scvs = get_means_scvs(tour, params)
+    means, scvs = get_means_scvs(tour, data)
 
     var = scvs * means**2  # Variance of U
     B = _compute_service_times(var)
 
-    weight = np.sqrt(
-        2 * params.omega_idle * (1 - params.omega_wait - params.omega_idle)
-    )
+    weight = np.sqrt(2 * data.omega_idle * (1 - data.omega_wait - data.omega_idle))
     return weight * np.sqrt(B).sum()
 
 
 def _compute_service_times(var):
-    # TODO Cache this function
     BETA = 0.5  # TODO this should be a parameter
     n = len(var)
 

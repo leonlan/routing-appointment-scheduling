@@ -1,2 +1,2 @@
-from .Params import Params
+from .ProblemData import ProblemData
 from .Solution import Solution
