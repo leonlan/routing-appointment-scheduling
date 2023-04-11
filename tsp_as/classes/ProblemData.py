@@ -40,6 +40,7 @@ class ProblemData:
         self.omega_idle = omega_idle
         self.omega_wait = omega_wait
         self.lag = lag  # TODO this is an algorithm parameter
+        # breakpoint()
 
     @classmethod
     def from_file(cls, loc, **kwargs):
