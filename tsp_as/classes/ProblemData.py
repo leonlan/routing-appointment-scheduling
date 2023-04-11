@@ -81,7 +81,7 @@ class ProblemData:
 
         Customer locations are randomly sampled from a grid of size `max_size`.
         The Euclidean distances are computed for the distances, and service
-        times are drawn uniformly between one and `max_service_time`.
+        times are drawn uniformly between zero and `max_service_time`.
         """
         rng = rnd.default_rng(seed)
         name = "Random instance." if name is None else name
@@ -213,6 +213,6 @@ def pairwise_euclidean(coords: np.ndarray) -> np.ndarray:
     """
     # Subtract each coordinate from every other coordinate
     diff = coords[:, np.newaxis, :] - coords
-    square_diff = diff ** 2
+    square_diff = diff**2
     square_dist = np.sum(square_diff, axis=-1)
     return np.sqrt(square_dist)
