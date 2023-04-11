@@ -30,8 +30,6 @@ def parse_args():
     parser.add_argument("--omega_idle", type=float, default=4 / 9)
     parser.add_argument("--omega_wait", type=float, default=1 / 9)
 
-    parser.add_argument("--max_dim", type=int, default=5)
-
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
     group.add_argument("--max_iterations", type=int)
