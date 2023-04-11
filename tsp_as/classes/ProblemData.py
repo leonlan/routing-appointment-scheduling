@@ -3,7 +3,6 @@ import math
 from pathlib import Path
 
 import numpy as np
-import numpy.random as rnd
 from scipy.stats import poisson
 
 
@@ -58,62 +57,6 @@ class ProblemData:
         return cls(
             name=path.stem,
             **data,
-            **kwargs,
-        )
-
-    @classmethod
-    def make_random(
-        cls,
-        seed,
-        dim,
-        max_size,
-        max_service_time,
-        min_size=0,
-        min_service_time=0,
-        distances_scv_min=0.1,
-        distances_scv_max=0.1,
-        service_scv_min=1.1,
-        service_scv_max=1.5,
-        name=None,
-        **kwargs,
-    ):
-        """
-        Creates a random instance with ``dimension`` locations.
-
-        Customer locations are randomly sampled from a grid of size `max_size`.
-        The Euclidean distances are computed for the distances, and service
-        times are drawn uniformly between zero and `max_service_time`.
-        """
-        rng = rnd.default_rng(seed)
-        name = "Random instance." if name is None else name
-        coords = rng.integers(min_size, max_size, size=(dim, 2))
-        coords[0, :] = [0, 0]  # depot location
-
-        distances = pairwise_euclidean(coords)
-        distances_scv = rng.uniform(
-            low=distances_scv_min,
-            high=distances_scv_max,
-            size=distances.shape,
-        )
-        np.fill_diagonal(distances_scv, 0)  # no scv travel time on loops
-
-        service = rng.integers(min_service_time, max_service_time, size=dim)
-        service_scv = rng.uniform(
-            low=service_scv_min,
-            high=service_scv_max,
-            size=service.shape,
-        )
-        service[0] = 0  # depot has no service time
-        service_scv[0] = 0
-
-        return cls(
-            name,
-            coords,
-            dim,
-            distances,
-            distances_scv,
-            service,
-            service_scv,
             **kwargs,
         )
 
@@ -195,25 +138,3 @@ def _compute_phase_parameters(mean, SCV):
         transition = np.diag([-mu1, -mu2])
 
     return alpha, transition
-
-
-def pairwise_euclidean(coords: np.ndarray) -> np.ndarray:
-    """
-    Computes the pairwise Euclidean distance between the passed-in coordinates.
-
-    Parameters
-    ----------
-    coords
-        An n-by-2 array of location coordinates.
-
-    Returns
-    -------
-    np.ndarray
-        An n-by-n Euclidean distances matrix.
-
-    """
-    # Subtract each coordinate from every other coordinate
-    diff = coords[:, np.newaxis, :] - coords
-    square_diff = diff**2
-    square_dist = np.sum(square_diff, axis=-1)
-    return np.sqrt(square_dist)
