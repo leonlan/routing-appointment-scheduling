@@ -22,6 +22,7 @@ class ProblemData:
         omega_idle=0.2,
         omega_wait=0.6,
         lag=3,
+        **kwargs,
     ):
         self.name = name
         self.coords = coords

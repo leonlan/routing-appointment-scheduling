@@ -31,10 +31,6 @@ def parse_args():
     parser.add_argument("--omega_wait", type=float, default=1 / 9)
 
     parser.add_argument("--max_dim", type=int, default=5)
-    parser.add_argument("--distances_scv_min", type=float, default=1.1)
-    parser.add_argument("--distances_scv_max", type=float, default=1.5)
-    parser.add_argument("--service_scv_min", type=float, default=1.1)
-    parser.add_argument("--service_scv_max", type=float, default=1.5)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
@@ -83,7 +79,7 @@ def solve(
     """
     path = Path(loc)
 
-    data = ProblemData.from_file(loc)
+    data = ProblemData.from_file(loc, **kwargs)
     rng = rnd.default_rng(seed)
 
     alns = ALNS(rng)
@@ -99,7 +95,7 @@ def solve(
         stop = MaxRuntime(max_runtime)
     else:
         assert max_iterations is not None
-        stop = MaxIterations(kwargs["max_iterations"])
+        stop = MaxIterations(max_iterations)
 
     res = alns.iterate(init, weights, accept, stop, **kwargs)
     stats = res.statistics
