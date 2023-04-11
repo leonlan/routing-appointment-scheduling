@@ -1,8 +1,8 @@
+import json
 import math
 from pathlib import Path
 
 import numpy as np
-import numpy.random as rnd
 from scipy.stats import poisson
 
 
@@ -21,6 +21,7 @@ class ProblemData:
         omega_idle=0.2,
         omega_wait=0.6,
         lag=3,
+        **kwargs,
     ):
         self.name = name
         self.coords = coords
@@ -39,71 +40,24 @@ class ProblemData:
         self.omega_idle = omega_idle
         self.omega_wait = omega_wait
         self.lag = lag  # TODO this is an algorithm parameter
+        # breakpoint()
 
     @classmethod
     def from_file(cls, loc, **kwargs):
+        """
+        Loads a ProblemData instances from file. The instance is assumed to
+        be a JSON file, containing an array for the distances, distances SCVs,
+        service times, and service times SCVs.
+        """
         path = Path(loc)
-        # TODO
+
+        with open(path, "r") as fh:
+            data = json.load(fh)
+            data = {key: np.array(arr) for key, arr in data.items()}
 
         return cls(
-            path.stem,
-            distances,
-            distances_scv,
-            service,
-            service_scv,
-            **kwargs,
-        )
-
-    @classmethod
-    def make_random(
-        cls,
-        seed,
-        dim,
-        max_size,
-        max_service_time,
-        min_size=0,
-        min_service_time=0,
-        distances_scv_min=0.1,
-        distances_scv_max=0.1,
-        service_scv_min=1.1,
-        service_scv_max=1.5,
-        name=None,
-        **kwargs,
-    ):
-        """
-        Creates a random instance with ``dimension`` locations.
-
-        Customer locations are randomly sampled from a grid of size `max_size`.
-        The Euclidean distances are computed for the distances, and service
-        times are drawn uniformly between one and `max_service_time`.
-        """
-        rng = rnd.default_rng(seed)
-        name = "Random instance." if name is None else name
-        coords = rng.integers(min_size, max_size, size=(dim, dim))
-
-        distances = pairwise_euclidean(coords)
-        distances_scv = rng.uniform(
-            low=distances_scv_min,
-            high=distances_scv_max,
-            size=distances.shape,
-        )
-
-        service = rng.integers(min_service_time, max_service_time, size=dim)
-        service[0] = 0  # depot has no service time
-        service_scv = rng.uniform(
-            low=service_scv_min,
-            high=service_scv_max,
-            size=service.shape,
-        )
-
-        return cls(
-            name,
-            coords,
-            dim,
-            distances,
-            distances_scv,
-            service,
-            service_scv,
+            name=path.stem,
+            **data,
             **kwargs,
         )
 
@@ -185,25 +139,3 @@ def _compute_phase_parameters(mean, SCV):
         transition = np.diag([-mu1, -mu2])
 
     return alpha, transition
-
-
-def pairwise_euclidean(coords: np.ndarray) -> np.ndarray:
-    """
-    Computes the pairwise Euclidean distance between the passed-in coordinates.
-
-    Parameters
-    ----------
-    coords
-        An n-by-2 array of location coordinates.
-
-    Returns
-    -------
-    np.ndarray
-        An n-by-n Euclidean distances matrix.
-
-    """
-    # Subtract each coordinate from every other coordinate
-    diff = coords[:, np.newaxis, :] - coords
-    square_diff = diff**2
-    square_dist = np.sum(square_diff, axis=-1)
-    return np.sqrt(square_dist)
