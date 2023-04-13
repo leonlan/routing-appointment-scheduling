@@ -8,4 +8,6 @@ def increasing_scv(data, seed, **kwargs):
     """
     tour = data.scvs.argsort().tolist()
     tour.remove(0)  # ignore the depot
-    return Solution(data, tour)
+    solution = Solution(data, tour)
+
+    return solution

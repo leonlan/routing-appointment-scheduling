@@ -4,16 +4,10 @@ from pathlib import Path
 from typing import List, Optional
 
 import numpy as np
-import numpy.random as rnd
-from alns import ALNS
-from alns.accept import HillClimbing
-from alns.stop import MaxIterations, MaxRuntime
-from alns.weights import SimpleWeights
 from tqdm.contrib.concurrent import process_map
 
-from tsp_as.classes import ProblemData, Solution
-from tsp_as.destroy_operators import adjacent_destroy, random_destroy
-from tsp_as.repair_operators import greedy_insert
+from tsp_as import increasing_scv, solve_alns, solve_modified_tsp, solve_tsp
+from tsp_as.classes import ProblemData
 
 
 def parse_args():
@@ -22,10 +16,11 @@ def parse_args():
     parser.add_argument("instances", nargs="+", help="Instance paths.")
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--num_procs", type=int, default=8)
+    parser.add_argument(
+        "--algorithm", type=str, default="alns", choices=["alns", "tsp", "mtsp", "scv"]
+    )
 
     parser.add_argument("--objective", type=str, default="hto")
-    parser.add_argument("--n_destroy", type=int, default=3)
-
     parser.add_argument("--omega_travel", type=float, default=4 / 9)
     parser.add_argument("--omega_idle", type=float, default=4 / 9)
     parser.add_argument("--omega_wait", type=float, default=1 / 9)
@@ -67,8 +62,7 @@ def tabulate(headers, rows) -> str:
 def solve(
     loc: str,
     seed: int,
-    max_runtime: Optional[float],
-    max_iterations: Optional[int],
+    algorithm: str,
     sol_dir: Optional[str],
     **kwargs,
 ):
@@ -78,25 +72,17 @@ def solve(
     path = Path(loc)
 
     data = ProblemData.from_file(loc, **kwargs)
-    rng = rnd.default_rng(seed)
 
-    alns = ALNS(rng)
-    alns.add_destroy_operator(random_destroy)
-    alns.add_destroy_operator(adjacent_destroy)
-    alns.add_repair_operator(greedy_insert)
+    if algorithm == "alns":
+        res = solve_alns(seed, data=data, **kwargs)
+    elif algorithm == "tsp":
+        res = solve_tsp(seed, data=data, **kwargs)
+    elif algorithm == "mtsp":
+        res = solve_modified_tsp(seed, data=data, **kwargs)
+    elif algorithm == "scv":
+        res = increasing_scv(seed, data)
 
-    init = Solution(data, np.arange(1, data.dimension).tolist())  # ordered
-    weights = SimpleWeights([5, 2, 1, 0.5], 2, 2, 0.8)
-    accept = HillClimbing()
-
-    if max_runtime is not None:
-        stop = MaxRuntime(max_runtime)
-    else:
-        assert max_iterations is not None
-        stop = MaxIterations(max_iterations)
-
-    res = alns.iterate(init, weights, accept, stop, **kwargs)
-    stats = res.statistics
+    # Final evaluation
 
     if sol_dir:
         instance_name = Path(loc).stem
@@ -108,8 +94,8 @@ def solve(
     return (
         path.stem,
         res.best_state.objective(),
-        len(stats.objectives),
-        round(stats.total_runtime, 3),
+        len(res.statistics.objectives),
+        round(res.statistics.total_runtime, 3),
     )
 
 
