@@ -17,7 +17,7 @@ def compute_schedule(tour, data):
     # TODO When `coeff` is zero, then this function doesn't work. Check with
     # group what's going on here.
     # Eq. (2) but without omega from travels
-    coeff = (1 - data.omega_wait - data.omega_idle) / (2 * data.omega_idle)
+    coeff = (1 - data.omega_travel - data.omega_idle) / (2 * data.omega_idle)
     return means + np.sqrt(coeff * B)
 
 
@@ -31,7 +31,7 @@ def compute_objective(tour, data):
     var = scvs * means**2  # Variance of U
     B = _compute_service_times(var)
 
-    weight = np.sqrt(2 * data.omega_idle * (1 - data.omega_wait - data.omega_idle))
+    weight = np.sqrt(2 * data.omega_idle * (1 - data.omega_travel - data.omega_idle))
     return weight * np.sqrt(B).sum()
 
 
