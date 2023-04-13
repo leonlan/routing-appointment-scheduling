@@ -1,13 +1,16 @@
 import argparse
+from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from typing import List, Optional
 
+import matplotlib.pyplot as plt
 import numpy as np
 from tqdm.contrib.concurrent import process_map
 
 from tsp_as import increasing_scv, solve_alns, solve_modified_tsp, solve_tsp
-from tsp_as.classes import ProblemData
+from tsp_as.classes import ProblemData, Solution
+from tsp_as.plot import plot_graph
 
 
 def parse_args():
@@ -21,15 +24,16 @@ def parse_args():
     )
 
     parser.add_argument("--objective", type=str, default="hto")
-    parser.add_argument("--omega_travel", type=float, default=4 / 9)
-    parser.add_argument("--omega_idle", type=float, default=4 / 9)
-    parser.add_argument("--omega_wait", type=float, default=1 / 9)
+    parser.add_argument("--omega_travel", type=float, default=2 / 10)
+    parser.add_argument("--omega_idle", type=float, default=2 / 10)
+    parser.add_argument("--omega_wait", type=float, default=6 / 10)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
     group.add_argument("--max_iterations", type=int)
 
     parser.add_argument("--sol_dir", default="tmp/sols")
+    parser.add_argument("--plot_dir", default="tmp/plots")
     return parser.parse_args()
 
 
@@ -64,6 +68,7 @@ def solve(
     seed: int,
     algorithm: str,
     sol_dir: Optional[str],
+    plot_dir: Optional[str],
     **kwargs,
 ):
     """
@@ -82,18 +87,33 @@ def solve(
     elif algorithm == "scv":
         res = increasing_scv(seed, data)
 
-    # Final evaluation
+    # Final evaluation of the solution based on the HTO objective
+    final_data = deepcopy(data)
+    final_data.objective = "to"
+    best = Solution(final_data, res.best_state.tour)
+    print(best.tour)
+
+    # all_sols = [Solution(final_data, list(tour)) for tour in permutations(range(1, 6))]
+    # optimal = min(all_sols, key=lambda sol: sol.cost)
+    # print("Optimal tour: ", optimal.tour, optimal.cost)
 
     if sol_dir:
         instance_name = Path(loc).stem
-        where = Path(sol_dir) / (instance_name + ".sol")
+        where = Path(sol_dir) / (f"{instance_name}-{algorithm}" + ".sol")
 
         with open(where, "w") as fh:
             fh.write(str(res.best_state))
 
+    if plot_dir:
+        fig, ax = plt.subplots(1, 1, figsize=[8, 8])
+        plot_graph(ax, data, solution=best)
+        instance_name = Path(loc).stem
+        where = Path(plot_dir) / (f"{instance_name}-{algorithm}" + ".pdf")
+        plt.savefig(where)
+
     return (
         path.stem,
-        res.best_state.objective(),
+        best.cost,
         len(res.statistics.objectives),
         round(res.statistics.total_runtime, 3),
     )
@@ -109,8 +129,8 @@ def benchmark(instances: List[str], **kwargs):
     instances
         Paths to the instances to solve.
     """
-    maybe_mkdir(kwargs.get("stats_dir", ""))
     maybe_mkdir(kwargs.get("sol_dir", ""))
+    maybe_mkdir(kwargs.get("plot_dir", ""))
 
     if len(instances) == 1:
         res = solve(instances[0], **kwargs)
