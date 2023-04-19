@@ -9,10 +9,10 @@ def compute_schedule(tour, data):
 
     Eq. (2) in draft.
     """
-    means, scvs = get_means_scvs(tour, data)
+    means, _ = get_means_scvs(tour, data)
+    vars = get_vars(tour, data)
 
-    var = scvs * means**2  # Variance of U
-    B = _compute_service_times(var)
+    B = _compute_service_times(vars)
 
     # TODO When `coeff` is zero, then this function doesn't work. Check with
     # group what's going on here.
@@ -26,10 +26,9 @@ def compute_objective(tour, data):
     Computes the objective value using heavy traffic approximation.
     See (3) in draft.
     """
-    means, scvs = get_means_scvs(tour, data)
+    vars = get_vars(tour, data)
 
-    var = scvs * means**2  # Variance of U
-    B = _compute_service_times(var)
+    B = _compute_service_times(vars)
 
     weight = np.sqrt(2 * data.omega_idle * (1 - data.omega_travel - data.omega_idle))
     return weight * np.sqrt(B).sum()
@@ -45,3 +44,10 @@ def _compute_service_times(var):
 
     # Eq (?) for S_i on page 3.
     return np.cumsum(beta_var) / np.cumsum(betas)
+
+
+def get_vars(tour, data):
+    fr = [0] + tour
+    to = tour + [0]
+
+    return data.vars[fr, to]

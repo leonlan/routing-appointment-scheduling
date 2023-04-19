@@ -21,9 +21,9 @@ def plot_graph(ax, data, solution=None):
 
         interarrival_time = int(solution.schedule[idx])
         dist = data.distances[edge]
-        dist_scv = data.distances_scv[edge]
+        data.distances_scv[edge]
 
-        label = f"x={interarrival_time}\n T=({dist:.0f}, {dist_scv:.2f})"
+        label = f"x={interarrival_time},\n E[T]={dist:.0f})"
         labels[edge] = label
 
     nx.draw_networkx(
@@ -37,11 +37,12 @@ def plot_graph(ax, data, solution=None):
 
     _ = nx.draw_networkx_labels(
         G,
-        pos={k: v * [1, 1.01] for k, v in pos.items()},
+        pos={k: v * [1, 1.05] for k, v in pos.items()},
         ax=ax,
-        font_size=8,
+        font_size=10,
         labels={
-            k: f"B=({data.service[k]:.0f}, {data.service_scv[k]:.2f})"
+            # k: f"B=({data.service[k]:.0f}, {data.service_scv[k]:.2f})"
+            k: f"E[B]={data.service[k]:.0f},\n c_B={data.service_scv[k]:.2f}"
             for k in pos.keys()
         },
     )
@@ -57,4 +58,4 @@ def plot_graph(ax, data, solution=None):
 
     title = f"Instance: {data.name}\n Cost: {solution.cost:.2f}"
     ax.set_title(title)
-    ax.grid(color="grey", linestyle="--", linewidth=0.25)
+    ax.grid(color="grey", linestyle="--", linewidth=0.15)

@@ -8,7 +8,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm.contrib.concurrent import process_map
 
-from tsp_as import increasing_scv, solve_alns, solve_modified_tsp, solve_tsp
+from diagnostics import cost_breakdown
+from tsp_as import (
+    increasing_scv,
+    increasing_variance,
+    solve_alns,
+    solve_modified_tsp,
+    solve_tsp,
+)
 from tsp_as.classes import ProblemData, Solution
 from tsp_as.plot import plot_graph
 
@@ -20,7 +27,10 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--num_procs", type=int, default=8)
     parser.add_argument(
-        "--algorithm", type=str, default="alns", choices=["alns", "tsp", "mtsp", "scv"]
+        "--algorithm",
+        type=str,
+        default="alns",
+        choices=["alns", "tsp", "mtsp", "scv", "var"],
     )
 
     parser.add_argument("--objective", type=str, default="hto")
@@ -86,12 +96,14 @@ def solve(
         res = solve_modified_tsp(seed, data=data, **kwargs)
     elif algorithm == "scv":
         res = increasing_scv(seed, data)
+    elif algorithm == "var":
+        res = increasing_variance(seed, data)
 
     # Final evaluation of the solution based on the HTO objective
     final_data = deepcopy(data)
-    final_data.objective = "to"
+    final_data.objective = "hto"
     best = Solution(final_data, res.best_state.tour)
-    print(best.tour)
+    print(tabulate(*cost_breakdown(best, final_data)))
 
     # all_sols = [Solution(final_data, list(tour)) for tour in permutations(range(1, 6))]
     # optimal = min(all_sols, key=lambda sol: sol.cost)
@@ -105,10 +117,12 @@ def solve(
             fh.write(str(res.best_state))
 
     if plot_dir:
-        fig, ax = plt.subplots(1, 1, figsize=[8, 8])
+        fig, ax = plt.subplots(1, 1, figsize=[12, 12])
         plot_graph(ax, data, solution=best)
         instance_name = Path(loc).stem
-        where = Path(plot_dir) / (f"{instance_name}-{algorithm}" + ".pdf")
+        where = Path(plot_dir) / (
+            f"{instance_name}-{algorithm}-{kwargs['objective']}" + ".pdf"
+        )
         plt.savefig(where)
 
     return (

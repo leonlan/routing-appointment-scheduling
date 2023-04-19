@@ -9,8 +9,9 @@ def solve_tsp(seed, data, **kwargs):
     """
     tsp_data = deepcopy(data)
 
-    # Set omegas to zero, meaning that we purely focus on routing
+    # Set omegas to focus purely on routing
     tsp_data.omega_idle = 0
     tsp_data.omega_wait = 0
+    tsp_data.omega_travel = 1
 
     return solve_alns(seed, data=tsp_data, **kwargs)
