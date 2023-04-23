@@ -104,8 +104,6 @@ def solve(
     elif algorithm == "enum":
         res = full_enumeration(seed, data)
 
-    print(res.best_state.cost)
-    print(0)
     # Final evaluation of the solution based on the HTO objective
     final_data = deepcopy(data)
     final_data.objective = final_objective
