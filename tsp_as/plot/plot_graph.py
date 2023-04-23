@@ -26,7 +26,6 @@ def plot_graph(ax, data, solution=None):
         # label = f"x={interarrival_time},\n E[T]={dist:.0f})"
         label = f"x={interarrival_time}"
         labels[edge] = label
-        breakpoint()
 
     nx.draw_networkx(
         G,

@@ -36,16 +36,16 @@ def parse_args():
 
     parser.add_argument("--objective", type=str, default="hto")
     parser.add_argument("--final_objective", type=str, default="hto")
-    parser.add_argument("--omega_travel", type=float, default=1 / 3)
-    parser.add_argument("--omega_idle", type=float, default=1 / 3)
-    parser.add_argument("--omega_wait", type=float, default=1 / 3)
+    parser.add_argument("--omega_travel", type=float, default=0.5)
+    parser.add_argument("--omega_idle", type=float, default=0.5)
+    parser.add_argument("--omega_wait", type=float, default=0)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
     group.add_argument("--max_iterations", type=int)
 
-    parser.add_argument("--sol_dir", default="tmp/sols")
-    parser.add_argument("--plot_dir", default="tmp/plots")
+    parser.add_argument("--sol_dir", type=str, default=None)
+    parser.add_argument("--plot_dir", type=str, default=None)
     return parser.parse_args()
 
 
@@ -104,6 +104,8 @@ def solve(
     elif algorithm == "enum":
         res = full_enumeration(seed, data)
 
+    print(res.best_state.cost)
+    print(0)
     # Final evaluation of the solution based on the HTO objective
     final_data = deepcopy(data)
     final_data.objective = final_objective
@@ -114,15 +116,15 @@ def solve(
     # optimal = min(all_sols, key=lambda sol: sol.cost)
     # print("Optimal tour: ", optimal.tour, optimal.cost)
 
-    if sol_dir:
+    if sol_dir is not None:
         instance_name = Path(loc).stem
         where = Path(sol_dir) / (f"{instance_name}-{algorithm}" + ".sol")
 
         with open(where, "w") as fh:
             fh.write(str(res.best_state))
 
-    if plot_dir:
-        fig, ax = plt.subplots(1, 1, figsize=[12, 12])
+    if plot_dir is not None:
+        _, ax = plt.subplots(1, 1, figsize=[12, 12])
         plot_graph(ax, data, solution=best)
         instance_name = Path(loc).stem
         where = Path(plot_dir) / (

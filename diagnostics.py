@@ -22,14 +22,17 @@ def cost_breakdown(solution, data):
     total = 0
     n_locs = len(locs) - 1
     last = n_locs - 1
+
     for idx in range(n_locs):
         fr, to = locs[idx], locs[idx + 1]
 
-        x = round(interappointment_times[idx], 2)
+        x = (
+            round(interappointment_times[idx], 2) if idx < last else 0
+        )  # do not count last
         var = round(data.vars[fr, to], 2)
         mean = round(data.means[fr, to], 2)
         dist = round(dists[idx], 2)
-        iw = round(idle_wait[idx], 2)
+        iw = round(idle_wait[idx], 2) if idx < last else 0  # do not count last
         iw_ = iw if idx < last else 0  # do not count last
 
         row = (

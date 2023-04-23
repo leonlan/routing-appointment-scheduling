@@ -7,13 +7,13 @@ import tsp_as.appointment.true_optimal as to
 
 
 class Solution:
-    tour: list[int]
+    tour: list[int]  # TODO rename to clients
     unassigned: list[int]
 
     def __init__(self, data, tour: list[int], unassigned: Optional[list[int]] = None):
         self.data = data
         self.tour = tour
-        self.schedule = None
+        self.schedule = None  # inter-appointment times
         self.unassigned = unassigned if unassigned is not None else []
 
         self._cost = None
@@ -54,9 +54,9 @@ class Solution:
         """
         Computes the idle and waiting time cost.
         """
-        # Shortcut when there are no weights for the appointment costs
         if data.omega_idle + data.omega_wait == 0:
-            pred, succ = [0] + tour, tour + [0]
+            # Shortcut when there are no weights for the appointment costs
+            pred, succ = [0] + tour[:-1], tour
             return data.distances[pred, succ], 0
 
         if data.objective in ["htp", "hto", "htl"]:
@@ -154,6 +154,8 @@ class Solution:
         """
         distance = self.compute_distance(self.tour, self.data)
         schedule, idle_wait = self.compute_idle_wait(self.tour, self.data)
+
+        assert len(schedule) == len(self.tour)
 
         self.schedule = schedule
         self._cost = distance + idle_wait
