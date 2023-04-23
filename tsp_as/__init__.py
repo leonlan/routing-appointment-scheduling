@@ -1,3 +1,4 @@
+from .full_enumeration import full_enumeration
 from .increasing_scv import increasing_scv
 from .increasing_variance import increasing_variance
 from .solve_alns import solve_alns

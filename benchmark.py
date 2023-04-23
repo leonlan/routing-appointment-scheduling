@@ -10,6 +10,7 @@ from tqdm.contrib.concurrent import process_map
 
 from diagnostics import cost_breakdown
 from tsp_as import (
+    full_enumeration,
     increasing_scv,
     increasing_variance,
     solve_alns,
@@ -30,13 +31,14 @@ def parse_args():
         "--algorithm",
         type=str,
         default="alns",
-        choices=["alns", "tsp", "mtsp", "scv", "var"],
+        choices=["alns", "tsp", "mtsp", "scv", "var", "enum"],
     )
 
     parser.add_argument("--objective", type=str, default="hto")
-    parser.add_argument("--omega_travel", type=float, default=2 / 10)
-    parser.add_argument("--omega_idle", type=float, default=2 / 10)
-    parser.add_argument("--omega_wait", type=float, default=6 / 10)
+    parser.add_argument("--final_objective", type=str, default="hto")
+    parser.add_argument("--omega_travel", type=float, default=1 / 3)
+    parser.add_argument("--omega_idle", type=float, default=1 / 3)
+    parser.add_argument("--omega_wait", type=float, default=1 / 3)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
@@ -77,6 +79,7 @@ def solve(
     loc: str,
     seed: int,
     algorithm: str,
+    final_objective: str,
     sol_dir: Optional[str],
     plot_dir: Optional[str],
     **kwargs,
@@ -98,10 +101,12 @@ def solve(
         res = increasing_scv(seed, data)
     elif algorithm == "var":
         res = increasing_variance(seed, data)
+    elif algorithm == "enum":
+        res = full_enumeration(seed, data)
 
     # Final evaluation of the solution based on the HTO objective
     final_data = deepcopy(data)
-    final_data.objective = "hto"
+    final_data.objective = final_objective
     best = Solution(final_data, res.best_state.tour)
     print(tabulate(*cost_breakdown(best, final_data)))
 
@@ -121,7 +126,7 @@ def solve(
         plot_graph(ax, data, solution=best)
         instance_name = Path(loc).stem
         where = Path(plot_dir) / (
-            f"{instance_name}-{algorithm}-{kwargs['objective']}" + ".pdf"
+            f"{instance_name}-{algorithm}-{final_objective}" + ".pdf"
         )
         plt.savefig(where)
 
