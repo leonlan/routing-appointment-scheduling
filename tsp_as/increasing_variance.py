@@ -6,13 +6,13 @@ from alns.Statistics import Statistics
 from tsp_as.classes import Solution
 
 
-def increasing_scv(seed, data, **kwargs):
+def increasing_variance(seed, data, **kwargs):
     """
-    Creates a tour in increasing order of service time SCVs.
+    Creates a tour in increasing order of variances.
     """
     start = perf_counter()
 
-    tour = data.service_scv.argsort().tolist()
+    tour = data.service_var.argsort().tolist()
     tour.remove(0)  # ignore the depot
     solution = Solution(data, tour)
 

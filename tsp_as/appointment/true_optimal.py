@@ -61,7 +61,7 @@ def compute_objective(x, alphas, Vn, data, lag=False):
     Vn_inv = inv(Vn)
 
     beta = alphas[0]
-    cost = 0
+    cost = data.omega_idle * np.sum(x[:-1])
 
     for i in range(n):
         d = dims[i]
@@ -76,15 +76,14 @@ def compute_objective(x, alphas, Vn, data, lag=False):
 
         if i == n - 1:  # stop
             if lag:  # If used as subprocedure in the lag-based obj function
-                return np.dot(term1, term2)[0]
+                return np.dot(term1, term2)[0]  # no term3
             break
 
         P = dgemm(1, beta, expVx)
         Fi = 1 - np.sum(P)
         beta = np.hstack((P, alphas[i + 1] * Fi))
 
-    # Final term for all interappointment times
-    return cost + omega_idle * np.sum(x)
+    return cost
 
 
 def compute_objective_given_schedule(tour, x, data):
@@ -96,6 +95,42 @@ def compute_objective_given_schedule(tour, x, data):
     Vn = create_Vn(alpha, T)
 
     return compute_objective(x, alpha, Vn, data)
+
+
+def compute_objective_given_schedule_breakdown(tour, x, data, lag=False):
+    alphas, T = get_alphas_transitions(tour, data)
+    Vn = create_Vn(alphas, T)
+
+    n = len(alphas)
+    omega_idle = data.omega_idle
+    omega_travel = data.omega_travel
+    dims = np.cumsum([alphas[i].size for i in range(n)])
+    Vn_inv = inv(Vn)
+
+    beta = alphas[0]
+    costs = []
+
+    for i in range(n):
+        d = dims[i]
+        expVx = expm(Vn[:d, :d] * x[i])
+
+        # The idle and waiting terms in the objective function can be decomposed
+        # in the following two terms, reducing several matrix computations.
+        term1 = dgemm(1, beta, Vn_inv[:d, :d])
+        term2 = (omega_idle * np.eye(d) - (1 - omega_travel) * expVx).sum(axis=1)
+        term3 = omega_idle * np.sum(x[i])
+
+        cost = np.dot(term1, term2)[0] + term3
+        costs.append(cost)
+
+        if i == n - 1:  # stop
+            break
+
+        P = dgemm(1, beta, expVx)
+        Fi = 1 - np.sum(P)
+        beta = np.hstack((P, alphas[i + 1] * Fi))
+
+    return costs
 
 
 def compute_optimal_schedule(tour, data, warmstart=True, **kwargs):

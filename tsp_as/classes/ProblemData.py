@@ -17,12 +17,13 @@ class ProblemData:
         service,
         service_scv,
         objective="hto",
-        omega_travel=0.2,
-        omega_idle=0.2,
-        omega_wait=0.6,
-        lag=3,
+        omega_travel=0.5,
+        omega_idle=0.25,
+        omega_wait=0.25,
+        lag=4,
         **kwargs,
     ):
+        # distances = distances / 10
         self.name = name
         self.coords = coords
         self.dimension = dimension
@@ -30,7 +31,8 @@ class ProblemData:
         self.distances_scv = distances_scv
         self.service = service
         self.service_scv = service_scv
-        self.means, self.scvs = compute_means_scvs(
+        self.service_var = service_scv * np.power(service, 2)
+        self.means, self.scvs, self.vars = compute_means_scvs(
             distances, distances_scv, service, service_scv
         )
         self.alphas, self.transitions = compute_phase_parameters(self.means, self.scvs)
@@ -40,7 +42,6 @@ class ProblemData:
         self.omega_idle = omega_idle
         self.omega_wait = omega_wait
         self.lag = lag  # TODO this is an algorithm parameter
-        # breakpoint()
 
     @classmethod
     def from_file(cls, loc, **kwargs):
@@ -82,7 +83,7 @@ def compute_means_scvs(distances, distances_scv, service, service_scv):
     np.fill_diagonal(means, 0)
     np.fill_diagonal(scvs, 0)
 
-    return means, scvs
+    return means, scvs, _var
 
 
 def compute_phase_parameters(means, scvs):

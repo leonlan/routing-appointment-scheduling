@@ -1,5 +1,5 @@
 import tsp_as.appointment.heavy_traffic as ht
-from tsp_as.appointment.lag import compute_objective_given_schedule_breakdown
+from tsp_as.appointment.true_optimal import compute_objective_given_schedule_breakdown
 
 
 def cost_breakdown(solution, data):
@@ -9,27 +9,44 @@ def cost_breakdown(solution, data):
     interappointment_times = solution.schedule
 
     fr, to = [0] + solution.tour, solution.tour + [0]
-    dists = data.distances[fr, to]
+    dists = data.distances[fr, to] * data.omega_travel
 
     schedule = ht.compute_schedule(solution.tour, data)
     idle_wait = compute_objective_given_schedule_breakdown(
         solution.tour, schedule, data
     )
 
-    headers = ["from", "to", "interappt. time", "dist.", "idle & wait"]
+    headers = ["from", "to", "var", "mean", "IA", "dist", "idle & wait"]
     rows = []
     locs = [0] + solution.tour + [0]
-    for idx in range(len(locs) - 1):
+    total = 0
+    n_locs = len(locs) - 1
+    last = n_locs - 1
+    for idx in range(n_locs):
         fr, to = locs[idx], locs[idx + 1]
+
+        x = round(interappointment_times[idx], 2)
+        var = round(data.vars[fr, to], 2)
+        mean = round(data.means[fr, to], 2)
+        dist = round(dists[idx], 2)
+        iw = round(idle_wait[idx], 2)
+        iw_ = iw if idx < last else 0  # do not count last
+
         row = (
             fr,
             to,
-            round(interappointment_times[idx], 2),
-            round(dists[idx], 2),
-            round(idle_wait[idx], 2),
+            var,
+            mean,
+            x,
+            dist,
+            iw_,
         )
         rows.append(row)
+        total += dist + iw_
 
+        print((dist + iw) / x)
+
+    print(total)
     return headers, rows
 
 

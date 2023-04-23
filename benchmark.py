@@ -1,19 +1,24 @@
 import argparse
+from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from typing import List, Optional
 
+import matplotlib.pyplot as plt
 import numpy as np
-import numpy.random as rnd
-from alns import ALNS
-from alns.accept import HillClimbing
-from alns.stop import MaxIterations, MaxRuntime
-from alns.weights import SimpleWeights
 from tqdm.contrib.concurrent import process_map
 
+from diagnostics import cost_breakdown
+from tsp_as import (
+    full_enumeration,
+    increasing_scv,
+    increasing_variance,
+    solve_alns,
+    solve_modified_tsp,
+    solve_tsp,
+)
 from tsp_as.classes import ProblemData, Solution
-from tsp_as.destroy_operators import adjacent_destroy, random_destroy
-from tsp_as.repair_operators import greedy_insert
+from tsp_as.plot import plot_graph
 
 
 def parse_args():
@@ -22,19 +27,25 @@ def parse_args():
     parser.add_argument("instances", nargs="+", help="Instance paths.")
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--num_procs", type=int, default=8)
+    parser.add_argument(
+        "--algorithm",
+        type=str,
+        default="alns",
+        choices=["alns", "tsp", "mtsp", "scv", "var", "enum"],
+    )
 
     parser.add_argument("--objective", type=str, default="hto")
-    parser.add_argument("--n_destroy", type=int, default=3)
-
-    parser.add_argument("--omega_travel", type=float, default=4 / 9)
-    parser.add_argument("--omega_idle", type=float, default=4 / 9)
-    parser.add_argument("--omega_wait", type=float, default=1 / 9)
+    parser.add_argument("--final_objective", type=str, default="hto")
+    parser.add_argument("--omega_travel", type=float, default=1 / 3)
+    parser.add_argument("--omega_idle", type=float, default=1 / 3)
+    parser.add_argument("--omega_wait", type=float, default=1 / 3)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
     group.add_argument("--max_iterations", type=int)
 
     parser.add_argument("--sol_dir", default="tmp/sols")
+    parser.add_argument("--plot_dir", default="tmp/plots")
     return parser.parse_args()
 
 
@@ -67,9 +78,10 @@ def tabulate(headers, rows) -> str:
 def solve(
     loc: str,
     seed: int,
-    max_runtime: Optional[float],
-    max_iterations: Optional[int],
+    algorithm: str,
+    final_objective: str,
     sol_dir: Optional[str],
+    plot_dir: Optional[str],
     **kwargs,
 ):
     """
@@ -78,38 +90,51 @@ def solve(
     path = Path(loc)
 
     data = ProblemData.from_file(loc, **kwargs)
-    rng = rnd.default_rng(seed)
 
-    alns = ALNS(rng)
-    alns.add_destroy_operator(random_destroy)
-    alns.add_destroy_operator(adjacent_destroy)
-    alns.add_repair_operator(greedy_insert)
+    if algorithm == "alns":
+        res = solve_alns(seed, data=data, **kwargs)
+    elif algorithm == "tsp":
+        res = solve_tsp(seed, data=data, **kwargs)
+    elif algorithm == "mtsp":
+        res = solve_modified_tsp(seed, data=data, **kwargs)
+    elif algorithm == "scv":
+        res = increasing_scv(seed, data)
+    elif algorithm == "var":
+        res = increasing_variance(seed, data)
+    elif algorithm == "enum":
+        res = full_enumeration(seed, data)
 
-    init = Solution(data, np.arange(1, data.dimension).tolist())  # ordered
-    weights = SimpleWeights([5, 2, 1, 0.5], 2, 2, 0.8)
-    accept = HillClimbing()
+    # Final evaluation of the solution based on the HTO objective
+    final_data = deepcopy(data)
+    final_data.objective = final_objective
+    best = Solution(final_data, res.best_state.tour)
+    print(tabulate(*cost_breakdown(best, final_data)))
 
-    if max_runtime is not None:
-        stop = MaxRuntime(max_runtime)
-    else:
-        assert max_iterations is not None
-        stop = MaxIterations(max_iterations)
-
-    res = alns.iterate(init, weights, accept, stop, **kwargs)
-    stats = res.statistics
+    # all_sols = [Solution(final_data, list(tour)) for tour in permutations(range(1, 6))]
+    # optimal = min(all_sols, key=lambda sol: sol.cost)
+    # print("Optimal tour: ", optimal.tour, optimal.cost)
 
     if sol_dir:
         instance_name = Path(loc).stem
-        where = Path(sol_dir) / (instance_name + ".sol")
+        where = Path(sol_dir) / (f"{instance_name}-{algorithm}" + ".sol")
 
         with open(where, "w") as fh:
             fh.write(str(res.best_state))
 
+    if plot_dir:
+        fig, ax = plt.subplots(1, 1, figsize=[12, 12])
+        plot_graph(ax, data, solution=best)
+        instance_name = Path(loc).stem
+        where = Path(plot_dir) / (
+            f"{instance_name}-{algorithm}-{final_objective}" + ".pdf"
+        )
+        plt.savefig(where)
+
     return (
         path.stem,
-        res.best_state.objective(),
-        len(stats.objectives),
-        round(stats.total_runtime, 3),
+        best.cost,
+        len(res.statistics.objectives),
+        round(res.statistics.total_runtime, 3),
     )
 
 
@@ -123,8 +148,8 @@ def benchmark(instances: List[str], **kwargs):
     instances
         Paths to the instances to solve.
     """
-    maybe_mkdir(kwargs.get("stats_dir", ""))
     maybe_mkdir(kwargs.get("sol_dir", ""))
+    maybe_mkdir(kwargs.get("plot_dir", ""))
 
     if len(instances) == 1:
         res = solve(instances[0], **kwargs)
