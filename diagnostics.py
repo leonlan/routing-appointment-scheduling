@@ -1,5 +1,5 @@
 import tsp_as.appointment.heavy_traffic as ht
-from tsp_as.appointment.true_optimal import compute_idle_wait_per_client_
+from tsp_as.appointment.true_optimal import compute_idle_wait_per_client
 
 
 def cost_breakdown(solution, data):
@@ -12,9 +12,7 @@ def cost_breakdown(solution, data):
     dists = data.distances[fr, to] * data.omega_travel
 
     schedule = ht.compute_schedule(solution.tour, data)
-    idle_times, wait_times = compute_idle_wait_per_client_(
-        solution.tour, schedule, data
-    )
+    idle_times, wait_times = compute_idle_wait_per_client(solution.tour, schedule, data)
 
     headers = ["from", "to", "mean", "scv", "var", "IA", "dist", "idle", "wait"]
     rows = []

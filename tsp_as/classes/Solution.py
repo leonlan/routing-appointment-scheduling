@@ -71,15 +71,14 @@ class Solution:
                 # TODO Separate idle and wait costs in heavy traffic, low prio because not used
                 return schedule, ht.compute_objective(tour, data)
             elif data.objective == "hto":
-                idle, wait = to.compute_objective_given_schedule(tour, schedule, data)
+                idle, wait = to.compute_idle_wait(tour, schedule, data)
                 return schedule, idle, wait
             elif data.objective == "htl":
-                idle, wait = lag.compute_objective_given_schedule(tour, schedule, data)
+                idle, wait = lag.compute_idle_wait(tour, schedule, data)
                 return schedule, idle, wait
 
         if data.objective == "to":
-            schedule, _ = to.compute_optimal_schedule(tour, data)
-            idle, wait = to.compute_objective_given_schedule(tour, schedule, data)
+            schedule, idle, wait = to.compute_schedule_and_idle_wait(tour, data)
             return schedule, idle, wait
 
         raise ValueError(f"{data.objective=} unknown.")
@@ -125,7 +124,7 @@ class Solution:
         """
         # Shortcut when there are no weights for the appointment costs
         if self.data.omega_idle + self.data.omega_wait == 0:
-            return 0
+            return 0, 0
 
         cand = copy(self.tour)
         cand.insert(idx, customer)

@@ -23,7 +23,6 @@ class ProblemData:
         lag=4,
         **kwargs,
     ):
-        # distances = distances / 10
         self.name = name
         self.coords = coords
         self.dimension = dimension
