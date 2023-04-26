@@ -1,8 +1,7 @@
 import numpy as np
-from scipy.linalg import inv
+from scipy.linalg import expm, inv
 from scipy.linalg.blas import dgemm
 from scipy.optimize import minimize
-from scipy.sparse.linalg import expm
 
 from tsp_as.appointment.utils import get_alphas_transitions
 
@@ -39,7 +38,7 @@ def create_Vn(alphas, T):
     return Vn
 
 
-def compute_objective(x, alphas, Vn, data, lag=False):
+def compute_idle_wait_per_client(x, alphas, Vn, data, lag=False):
     """
     Compute the objective value of a schedule. See Theorem (1).
 
@@ -55,35 +54,66 @@ def compute_objective(x, alphas, Vn, data, lag=False):
         The problem data.
     """
     n = len(alphas)
-    omega_idle = data.omega_idle
-    omega_travel = data.omega_travel
     dims = np.cumsum([alphas[i].size for i in range(n)])
-    Vn_inv = inv(Vn)
+    Vn_inv = inv(Vn)  # slicing with j-th dimension gives V^(j)^{-1}
+    beta = alphas[0]  # alpha_(j)'s in the paper
 
-    beta = alphas[0]
-    cost = data.omega_idle * np.sum(x[:-1])
+    idle_times = []
+    wait_times = []
 
     for i in range(n):
-        d = dims[i]
-        expVx = expm(Vn[:d, :d] * x[i])
+        d = dims[i]  # current dimension
+        Vx = Vn[:d, :d] * x[i]
+        expVx = expm(Vx)
+        betaVinv = dgemm(1, beta, Vn_inv[:d, :d])
 
-        # The idle and waiting terms in the objective function can be decomposed
-        # in the following two terms, reducing several matrix computations.
-        term1 = dgemm(1, beta, Vn_inv[:d, :d])
-        term2 = (omega_idle * np.eye(d) - (1 - omega_travel) * expVx).sum(axis=1)
+        idle = -betaVinv @ dgemm(1, expVx, np.ones((d, 1)))
+        wait = x[i] + betaVinv @ np.ones((d, 1)) + idle
 
-        cost += np.dot(term1, term2)[0]
+        idle_times.append(idle.item())
+        wait_times.append(wait.item())
 
         if i == n - 1:  # stop
             if lag:  # If used as subprocedure in the lag-based obj function
-                return np.dot(term1, term2)[0]  # no term3
+                return idle.item(), wait.item()
             break
 
         P = dgemm(1, beta, expVx)
         Fi = 1 - np.sum(P)
         beta = np.hstack((P, alphas[i + 1] * Fi))
 
-    return cost
+    return idle_times, wait_times
+
+
+def compute_idle_wait(x, alphas, Vn, data, lag=False):
+    """
+    Wraps around compute_idle_wait_per_client to compute the total idle and
+    wait times.
+
+    Parameters
+    ----------
+    x
+        The interappointment times.
+    alphas
+        The alpha parameters of the phase-type distribution.
+    Vn
+        The recursively-defined matrix $V^{(n)}$.
+    data
+        The problem data.
+    """
+    idle_times, wait_times = compute_idle_wait_per_client(x, alphas, Vn, data, lag)
+    return sum(idle_times), sum(wait_times)
+
+
+def compute_idle_wait_per_client_(tour, x, data):
+    """
+    TODO
+    """
+    alpha, T = get_alphas_transitions(tour, data)
+    Vn = create_Vn(alpha, T)
+
+    idle_times, wait_times = compute_idle_wait_per_client(x, alpha, Vn, data)
+    return idle_times, wait_times
 
 
 def compute_objective_given_schedule(tour, x, data):
@@ -94,43 +124,7 @@ def compute_objective_given_schedule(tour, x, data):
     alpha, T = get_alphas_transitions(tour, data)
     Vn = create_Vn(alpha, T)
 
-    return compute_objective(x, alpha, Vn, data)
-
-
-def compute_objective_given_schedule_breakdown(tour, x, data, lag=False):
-    alphas, T = get_alphas_transitions(tour, data)
-    Vn = create_Vn(alphas, T)
-
-    n = len(alphas)
-    omega_idle = data.omega_idle
-    omega_travel = data.omega_travel
-    dims = np.cumsum([alphas[i].size for i in range(n)])
-    Vn_inv = inv(Vn)
-
-    beta = alphas[0]
-    costs = []
-
-    for i in range(n):
-        d = dims[i]
-        expVx = expm(Vn[:d, :d] * x[i])
-
-        # The idle and waiting terms in the objective function can be decomposed
-        # in the following two terms, reducing several matrix computations.
-        term1 = dgemm(1, beta, Vn_inv[:d, :d])
-        term2 = (omega_idle * np.eye(d) - (1 - omega_travel) * expVx).sum(axis=1)
-        term3 = omega_idle * np.sum(x[i])
-
-        cost = np.dot(term1, term2)[0] + term3
-        costs.append(cost)
-
-        if i == n - 1:  # stop
-            break
-
-        P = dgemm(1, beta, expVx)
-        Fi = 1 - np.sum(P)
-        beta = np.hstack((P, alphas[i + 1] * Fi))
-
-    return costs
+    return compute_idle_wait(x, alpha, Vn, data)
 
 
 def compute_optimal_schedule(tour, data, warmstart=True, **kwargs):
@@ -142,12 +136,11 @@ def compute_optimal_schedule(tour, data, warmstart=True, **kwargs):
     Vn = create_Vn(alpha, T)
 
     def cost_fun(x):
-        return compute_objective(x, alpha, Vn, data)
+        return sum(compute_idle_wait(x, alpha, Vn, data))
 
     if warmstart:
         x_init = ht_compute_schedule(tour, data)
-    else:
-        # Use means of travel time and service as initial value
+    else:  # Use means of travel time and service as initial value
         x_init = data.distances[[0] + tour, tour + [0]] + data.service[[0] + tour]
 
     optim = minimize(

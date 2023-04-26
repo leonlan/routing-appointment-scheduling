@@ -1,12 +1,10 @@
 import argparse
 from copy import deepcopy
-from functools import partial
 from pathlib import Path
 from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
-from tqdm.contrib.concurrent import process_map
 
 from diagnostics import cost_breakdown
 from tsp_as import (
@@ -36,9 +34,9 @@ def parse_args():
 
     parser.add_argument("--objective", type=str, default="hto")
     parser.add_argument("--final_objective", type=str, default="hto")
-    parser.add_argument("--omega_travel", type=float, default=0.5)
-    parser.add_argument("--omega_idle", type=float, default=0.5)
-    parser.add_argument("--omega_wait", type=float, default=0)
+    parser.add_argument("--omega_travel", type=float, default=1 / 3)
+    parser.add_argument("--omega_idle", type=float, default=1 / 3)
+    parser.add_argument("--omega_wait", type=float, default=1 / 3)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
@@ -156,11 +154,11 @@ def benchmark(instances: List[str], **kwargs):
         print(res)
         return
 
-    func = partial(solve, **kwargs)
-    func_args = sorted(instances)
+    # func = partial(solve, **kwargs)
+    # func_args = sorted(instances)
 
-    tqdm_kwargs = {"max_workers": kwargs.get("num_procs", 1), "unit": "instance"}
-    data = process_map(func, func_args, **tqdm_kwargs)
+    # tqdm_kwargs = {"max_workers": kwargs.get("num_procs", 1), "unit": "instance"}
+    # data = process_map(func, func_args, **tqdm_kwargs)
 
     dtypes = [
         ("inst", "U37"),
