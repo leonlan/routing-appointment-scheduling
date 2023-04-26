@@ -6,8 +6,6 @@ def cost_breakdown(solution, data):
     """
     Breakdown the cost of the solution.
     """
-    interappointment_times = solution.schedule
-
     fr, to = [0] + solution.tour, solution.tour + [0]
     dists = data.distances[fr, to] * data.omega_travel
 
@@ -22,25 +20,24 @@ def cost_breakdown(solution, data):
     last = n_locs - 1
 
     for idx in range(n_locs):
-        fr, to = locs[idx], locs[idx + 1]
-
-        x = (
-            round(interappointment_times[idx], 2) if idx < last else 0
-        )  # do not count last
+        fr = locs[idx]
+        to = locs[idx + 1]
+        appointment = round(schedule[idx], 2) if idx < last else 0  # do not count last
         mean = round(data.means[fr, to], 2)
         scv = round(data.scvs[fr, to], 2)
         var = round(data.vars[fr, to], 2)
         dist = round(dists[idx], 2)
         idle = round(idle_times[idx], 2) if idx < last else 0  # do not count last
         wait = round(wait_times[idx], 2) if idx < last else 0  # do not count last
+        # TODO add omegas?
 
         row = (
             fr,
             to,
+            appointment,
             mean,
             scv,
             var,
-            x,
             dist,
             idle,
             wait,
@@ -51,7 +48,7 @@ def cost_breakdown(solution, data):
     return headers, rows
 
 
-def tabulate(headers, rows) -> str:  # noqa
+def tabulate(headers, rows) -> str:
     # These lengths are used to space each column properly.
     lengths = [len(header) for header in headers]
 
