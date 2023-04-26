@@ -13,7 +13,10 @@ class Solution:
         self.schedule = None  # inter-appointment times
         self.unassigned = unassigned if unassigned is not None else []
 
-        self._cost = None
+        self._idle = None
+        self._wait = None
+        self._distance = None
+
         self.update()
 
     def __deepcopy__(self, memodict):
@@ -34,7 +37,32 @@ class Solution:
         Return the objective value. This is a weighted sum of the travel times,
         the idle times and the waiting times.
         """
-        return self._cost
+        return (
+            self.data.omega_travel * self.distance
+            + self.data.omega_idle * self.idle
+            + self.data.omega_wait * self.wait
+        )
+
+    @property
+    def idle(self):
+        """
+        Return the idle time cost.
+        """
+        return self._idle
+
+    @property
+    def wait(self):
+        """
+        Return the waiting time cost.
+        """
+        return self._wait
+
+    @property
+    def distance(self):
+        """
+        Return the travel distance.
+        """
+        return self._distance
 
     @staticmethod
     def compute_distance(tour, data):
@@ -87,11 +115,13 @@ class Solution:
         """
         Alias for cost, because the ALNS interface requires ``objective()`` method.
         """
-        return self._cost
+        return self.cost
 
     def insert_cost(self, idx: int, customer: int) -> float:
         """
-        Compute the cost for inserting customer at position idx.
+        Compute the cost for inserting customer at position idx. The insertion cost
+        is the difference between the cost of the current solution and the cost of
+        the solution with the inserted customer.
         """
         travel_cost = self.data.omega_travel * self._insert_cost_travel(idx, customer)
 
@@ -120,7 +150,7 @@ class Solution:
 
     def _insert_cost_idle_wait(self, idx: int, customer: int) -> tuple[float, float]:
         """
-        Computes the idle and wait costs for insertion customer at position idx.
+        Computes the idle and wait costs for inserting customer at position idx.
         """
         # Shortcut when there are no weights for the appointment costs
         if self.data.omega_idle + self.data.omega_wait == 0:
@@ -128,9 +158,9 @@ class Solution:
 
         cand = copy(self.tour)
         cand.insert(idx, customer)
-        _, idle, wait = self.compute_idle_wait(cand, self.data)
+        _, new_idle, new_wait = self.compute_idle_wait(cand, self.data)
 
-        return idle, wait
+        return new_idle - self.idle, new_wait - self.wait
 
     def insert(self, idx: int, customer: int):
         """
@@ -154,8 +184,6 @@ class Solution:
         assert len(schedule) == len(self.tour)
 
         self.schedule = schedule
-        self._cost = (
-            self.data.omega_travel * distance
-            + self.data.omega_idle * idle
-            + self.data.omega_wait * wait
-        )
+        self._distance = distance
+        self._idle = idle
+        self._wait = wait

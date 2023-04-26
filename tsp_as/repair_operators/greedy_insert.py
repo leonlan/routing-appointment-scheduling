@@ -8,7 +8,6 @@ def greedy_insert(solution, rng, **kwargs):
         cust = solution.unassigned.pop()
         best_cost, best_idx = None, None
 
-        # Find best insertion idx
         for idx in range(len(solution) + 1):
             cost = solution.insert_cost(idx, cust)
 
