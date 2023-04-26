@@ -48,7 +48,7 @@ def cost_breakdown(solution, data):
     return headers, rows
 
 
-def tabulate(headers, rows) -> str:
+def tabulate(headers, rows) -> str:  # noqa
     # These lengths are used to space each column properly.
     lengths = [len(header) for header in headers]
 
