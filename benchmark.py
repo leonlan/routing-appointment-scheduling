@@ -1,12 +1,10 @@
 import argparse
 from copy import deepcopy
-from functools import partial
 from pathlib import Path
 from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
-from tqdm.contrib.concurrent import process_map
 
 from diagnostics import cost_breakdown
 from tsp_as import (
@@ -44,8 +42,8 @@ def parse_args():
     group.add_argument("--max_runtime", type=float)
     group.add_argument("--max_iterations", type=int)
 
-    parser.add_argument("--sol_dir", default="tmp/sols")
-    parser.add_argument("--plot_dir", default="tmp/plots")
+    parser.add_argument("--sol_dir", type=str)
+    parser.add_argument("--plot_dir", type=str)
     return parser.parse_args()
 
 
@@ -104,15 +102,11 @@ def solve(
     elif algorithm == "enum":
         res = full_enumeration(seed, data)
 
-    # Final evaluation of the solution based on the HTO objective
+    # Final evaluation of the solution based on another objective function
     final_data = deepcopy(data)
     final_data.objective = final_objective
     best = Solution(final_data, res.best_state.tour)
     print(tabulate(*cost_breakdown(best, final_data)))
-
-    # all_sols = [Solution(final_data, list(tour)) for tour in permutations(range(1, 6))]
-    # optimal = min(all_sols, key=lambda sol: sol.cost)
-    # print("Optimal tour: ", optimal.tour, optimal.cost)
 
     if sol_dir:
         instance_name = Path(loc).stem
@@ -122,7 +116,7 @@ def solve(
             fh.write(str(res.best_state))
 
     if plot_dir:
-        fig, ax = plt.subplots(1, 1, figsize=[12, 12])
+        _, ax = plt.subplots(1, 1, figsize=[12, 12])
         plot_graph(ax, data, solution=best)
         instance_name = Path(loc).stem
         where = Path(plot_dir) / (
