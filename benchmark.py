@@ -1,10 +1,13 @@
 import argparse
+import os
 from copy import deepcopy
+from functools import partial
 from pathlib import Path
 from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
+from tqdm.contrib.concurrent import process_map
 
 from diagnostics import cost_breakdown
 from tsp_as import (
@@ -17,6 +20,11 @@ from tsp_as import (
 )
 from tsp_as.classes import ProblemData, Solution
 from tsp_as.plot import plot_graph
+
+# BUG This is to avoid OpenBLAS from using multiple threads, see
+# https://github.com/leonlan/tsp-as/issues/49
+# https://github.com/numpy/numpy/issues/22928
+os.environ["OMP_NUM_THREADS"] = "1"
 
 
 def parse_args():
