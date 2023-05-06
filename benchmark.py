@@ -1,5 +1,14 @@
 import argparse
 import os
+
+# BUG This is to avoid OpenBLAS from using multiple threads, see
+# https://github.com/leonlan/tsp-as/issues/49
+# https://github.com/numpy/numpy/issues/22928
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+
+
 from copy import deepcopy
 from functools import partial
 from pathlib import Path
@@ -20,11 +29,6 @@ from tsp_as import (
 )
 from tsp_as.classes import ProblemData, Solution
 from tsp_as.plot import plot_graph
-
-# BUG This is to avoid OpenBLAS from using multiple threads, see
-# https://github.com/leonlan/tsp-as/issues/49
-# https://github.com/numpy/numpy/issues/22928
-os.environ["OMP_NUM_THREADS"] = "1"
 
 
 def parse_args():
