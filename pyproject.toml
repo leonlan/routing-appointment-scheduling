@@ -9,7 +9,7 @@ authors = ["Leon Lan <leon.lanyidong@gmail.com>"]
 python = ">=3.9,<3.11"
 numpy = "^1.23.3"
 matplotlib = "^3.6.0"
-alns = "^4.1.0"
+alns = "5.0.4"
 tsplib95 = "^0.7.1"
 jupyter = "^1.0.0"
 tqdm = "^4.64.1"
