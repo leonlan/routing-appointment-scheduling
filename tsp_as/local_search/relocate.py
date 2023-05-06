@@ -11,14 +11,11 @@ def relocate(solution: Solution, rng, **kwargs):
 
     while improved:
         improved = False
-
-        solution.update()
         current = solution.objective()
 
         for job in rng.choice(solution.tour, len(solution.tour), replace=False):
             solution.remove(job)
             opt_insert(solution, job)
-            solution.update()
 
             if solution.objective() < current:
                 improved = True
@@ -36,4 +33,6 @@ def opt_insert(solution: Solution, cust: int):
         idcs_costs.append((idx, cost))
 
     idx, _ = min(idcs_costs, key=lambda idx_cost: idx_cost[1])
+
+    # Inserting customers also updates the cost
     solution.insert(idx, cust)

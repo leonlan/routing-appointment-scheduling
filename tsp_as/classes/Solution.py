@@ -167,6 +167,7 @@ class Solution:
         Insert the customer at position idx.
         """
         self.tour.insert(idx, customer)
+        self.update()
 
     def remove(self, customer: int):
         """

@@ -15,8 +15,7 @@ def greedy_insert(solution, rng, **kwargs):
                 best_cost = cost
                 best_idx = idx
 
+        # Inserting customers also updates the solution's cost
         solution.insert(best_idx, cust)
-
-    solution.update()
 
     return solution
