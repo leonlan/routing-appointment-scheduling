@@ -1,50 +1,79 @@
-import tsp_as.appointment.heavy_traffic as ht
+import numpy as np
+
 from tsp_as.appointment.true_optimal import compute_idle_wait_per_client
 
 
-def cost_breakdown(solution, data):
+def cost_breakdown(solution):
     """
     Breakdown the cost of the solution.
     """
     fr, to = [0] + solution.tour, solution.tour + [0]
-    dists = data.distances[fr, to] * data.omega_travel
+    data = solution.data
+    dists = data.distances[fr, to]
+    idle_times, wait_times = compute_idle_wait_per_client(
+        solution.tour, solution.schedule, solution.data
+    )
 
-    schedule = ht.compute_schedule(solution.tour, data)
-    idle_times, wait_times = compute_idle_wait_per_client(solution.tour, schedule, data)
-
-    headers = ["from", "to", "mean", "scv", "var", "IA", "dist", "idle", "wait"]
+    headers = [
+        "from",
+        "to",
+        "IA",
+        "mean",
+        "scv",
+        "var",
+        "dist",
+        "idle",
+        "wait",
+        "norm. dist",
+        "norm. idle",
+        "norm. wait",
+    ]
     rows = []
     locs = [0] + solution.tour + [0]
-    total = 0
     n_locs = len(locs) - 1
     last = n_locs - 1
 
+    total_dist = 0
+    total_idle = 0
+    total_wait = 0
     for idx in range(n_locs):
         fr = locs[idx]
         to = locs[idx + 1]
-        appointment = round(schedule[idx], 2) if idx < last else 0  # do not count last
-        mean = round(data.means[fr, to], 2)
-        scv = round(data.scvs[fr, to], 2)
-        var = round(data.vars[fr, to], 2)
-        dist = round(dists[idx], 2)
-        idle = round(idle_times[idx], 2) if idx < last else 0  # do not count last
-        wait = round(wait_times[idx], 2) if idx < last else 0  # do not count last
-        # TODO add omegas?
+        appointment = solution.schedule[idx] if idx < last else 0  # do not count last
+        mean = data.means[fr, to]
+        scv = data.scvs[fr, to]
+        var = data.vars[fr, to]
+        dist = dists[idx]
+        idle = idle_times[idx] if idx < last else 0  # do not count last
+        wait = wait_times[idx] if idx < last else 0  # do not count last
 
         row = (
             fr,
             to,
-            appointment,
-            mean,
-            scv,
-            var,
-            dist,
-            idle,
-            wait,
+            round(appointment, 2),
+            round(mean, 2),
+            round(scv, 2),
+            round(var, 2),
+            round(dist, 2),
+            round(idle, 2),
+            round(wait, 2),
+            round(data.omega_travel * dist, 2),
+            round(data.omega_idle * idle, 2),
+            round(data.omega_wait * wait, 2),
         )
         rows.append(row)
-        total += dist + idle + wait
+        total_dist += dist
+        total_idle += idle
+        total_wait += wait
 
+    print(f"{total_dist=:.2f}, {total_idle=:.2f}, {total_wait=:.2f}")
+    print(
+        f"{data.omega_travel*total_dist=:.2f}, {data.omega_idle*total_idle=:.2f}, {data.omega_wait*total_wait=:.2f}"
+    )
+
+    np.testing.assert_allclose(solution.idle, total_idle)
+    np.testing.assert_allclose(solution.wait, total_wait)
+    np.testing.assert_allclose(solution.distance, total_dist)
     return headers, rows
 
 

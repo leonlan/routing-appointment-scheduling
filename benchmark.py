@@ -45,10 +45,10 @@ def parse_args():
     )
 
     parser.add_argument("--objective", type=str, default="hto")
-    parser.add_argument("--final_objective", type=str, default="hto")
-    parser.add_argument("--omega_travel", type=float, default=1 / 3)
-    parser.add_argument("--omega_idle", type=float, default=1 / 3)
-    parser.add_argument("--omega_wait", type=float, default=1 / 3)
+    parser.add_argument("--final_objective", type=str, default="to")
+    parser.add_argument("--omega_travel", type=float, default=0.1)
+    parser.add_argument("--omega_idle", type=float, default=0.3)
+    parser.add_argument("--omega_wait", type=float, default=0.6)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
@@ -98,7 +98,6 @@ def solve(
     Solves the instance using the ALNS package.
     """
     path = Path(loc)
-
     data = ProblemData.from_file(loc, **kwargs)
 
     if algorithm == "alns":
@@ -118,7 +117,7 @@ def solve(
     final_data = deepcopy(data)
     final_data.objective = final_objective
     best = Solution(final_data, res.best_state.tour)
-    print(tabulate(*cost_breakdown(best, final_data)))
+    print(tabulate(*cost_breakdown(best)))
 
     if sol_dir:
         instance_name = Path(loc).stem
@@ -141,6 +140,7 @@ def solve(
         best.cost,
         len(res.statistics.objectives),
         round(res.statistics.total_runtime, 3),
+        algorithm,
     )
 
 
@@ -173,10 +173,11 @@ def benchmark(instances: List[str], **kwargs):
         ("obj", int),
         ("iters", int),
         ("time", float),
+        ("alg", "U37"),
     ]
 
     data = np.asarray(data, dtype=dtypes)
-    headers = ["Instance", "Obj.", "Iters. (#)", "Time (s)"]
+    headers = ["Instance", "Obj.", "Iters. (#)", "Time (s)", "Algorithm"]
 
     print("\n", tabulate(headers, data), "\n", sep="")
     print(f"      Avg. objective: {data['obj'].mean():.0f}")
