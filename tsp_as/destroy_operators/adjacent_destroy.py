@@ -7,7 +7,7 @@ from tsp_as.classes import Solution
 
 
 def adjacent_destroy(
-    solution: Solution, rng: Generator, pct_destroy: float = 0.2, **kwargs
+    solution: Solution, rng: Generator, pct_destroy: float = 0.15, **kwargs
 ) -> Solution:
     """
     Randomly removes a number adjacent customers from the solution.
@@ -19,7 +19,7 @@ def adjacent_destroy(
     rng
         The random number generator.
     pct_destroy
-        The percentage of customers to remove, by default 0.2
+        The percentage of customers to remove.
     """
     destroyed = deepcopy(solution)
     num_destroy = ceil(len(solution) * pct_destroy)  # at least one

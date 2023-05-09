@@ -19,7 +19,7 @@ def random_destroy(
     rng
         The random number generator.
     pct_destroy
-        The percentage of clients to remove, by default 0.2.
+        The percentage of clients to remove.
     """
     destroyed = deepcopy(solution)
     num_destroy = ceil(len(solution) * pct_destroy)  # at least one
