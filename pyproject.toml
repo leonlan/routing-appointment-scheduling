@@ -16,6 +16,7 @@ tqdm = "^4.64.1"
 scipy = "^1.9.3"
 vrplib = "^1.0.1"
 jupyterlab = "^3.6.1"
+pandas = "^2.0.1"
 
 
 [tool.poetry.dev-dependencies]
