@@ -17,6 +17,7 @@ scipy = "^1.9.3"
 vrplib = "^1.0.1"
 jupyterlab = "^3.6.1"
 pandas = "^2.0.1"
+elkai = "^0.1.2"
 
 
 [tool.poetry.dev-dependencies]
