@@ -123,7 +123,6 @@ def compute_schedule_and_idle_wait(tour, data, warmstart=True, **kwargs):
         method=kwargs.get("method", "trust-constr"),
         tol=kwargs.get("tol", 0.01),
         bounds=[(0, None) for _ in range(x_init.size)],
-        options={"disp": True},
     )
 
     return optim.x, *compute_idle_wait(tour, optim.x, data)
@@ -152,7 +151,7 @@ def _create_Vn(alphas, T):
     Vn = np.zeros((dims[n], dims[n]))
 
     for i in range(1, n):
-        l = dims[i - 1]
+        l = dims[i - 1]  # noqa
         u = dims[i]
         k = dims[i + 1]
 
