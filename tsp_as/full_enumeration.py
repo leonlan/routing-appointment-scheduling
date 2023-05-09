@@ -1,3 +1,4 @@
+from copy import deepcopy
 from itertools import permutations
 from time import perf_counter
 
@@ -22,8 +23,13 @@ def full_enumeration(seed, data):
     """
     start = perf_counter()
 
-    all_sols = [Solution(data, list(tour)) for tour in permutations(range(1, 6))]
+    enum_data = deepcopy(data)
+    enum_data.objective = "to"
+
+    perms = permutations(range(1, data.dimension))
+    all_sols = [Solution(enum_data, list(tour)) for tour in perms]
     optimal = min(all_sols, key=lambda sol: sol.cost)
+    print(optimal.tour)
 
     # This little hack allows us to use the same interface for ALNS-based
     # heuristics and the SCV heuristic.
