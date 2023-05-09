@@ -162,6 +162,19 @@ class Solution:
 
         return new_idle - self.idle, new_wait - self.wait
 
+    def opt_insert(self, customer: int):
+        """
+        Optimally inserts the customer in the current tour.
+        """
+        idcs_costs = []
+
+        for idx in range(len(self.tour) + 1):
+            cost = self.insert_cost(idx, customer)
+            idcs_costs.append((idx, cost))
+
+        idx, _ = min(idcs_costs, key=lambda idx_cost: idx_cost[1])
+        self.insert(idx, customer)
+
     def insert(self, idx: int, customer: int):
         """
         Insert the customer at position idx.
