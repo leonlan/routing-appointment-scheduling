@@ -33,6 +33,7 @@ def solve_modified_tsp(seed, data, max_iterations=1000, **kwargs):
             # Hyperexponential case
             samples = hyperexponential_rvs([10, 5], [1, 1], rng, NUM_SAMPLES)
             x = find_quantile(samples, quantile)
+
             cost = cost_hyperexponential(
                 x, alpha, mu1, mu2, data.omega_weight, data.omega_idle
             )
