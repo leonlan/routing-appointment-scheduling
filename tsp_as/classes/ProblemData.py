@@ -1,5 +1,6 @@
 import json
 import math
+from itertools import product
 from pathlib import Path
 
 import numpy as np
@@ -30,17 +31,17 @@ class ProblemData:
         self.distances_scv = distances_scv
         self.service = service
         self.service_scv = service_scv
-        self.service_var = service_scv * np.power(service, 2)
-        self.means, self.scvs, self.vars = compute_means_scvs(
-            distances, distances_scv, service, service_scv
-        )
-        self.alphas, self.transitions = compute_phase_parameters(self.means, self.scvs)
-
+        self.service_var = service_scv * np.power(service, 2)  # TODO remove
         self.objective = objective
         self.omega_travel = omega_travel
         self.omega_idle = omega_idle
         self.omega_wait = omega_wait
         self.lag = lag  # TODO this is an algorithm parameter
+
+        self.means, self.scvs, self.vars = compute_means_scvs(
+            distances, distances_scv, service, service_scv
+        )
+        self.alphas, self.transitions = compute_phase_parameters(self.means, self.scvs)
 
     @classmethod
     def from_file(cls, loc, **kwargs):
@@ -94,14 +95,13 @@ def compute_phase_parameters(means, scvs):
     alphas = np.zeros((n, n), dtype=object)
     transitions = np.zeros((n, n), dtype=object)
 
-    for i in range(n):
-        for j in range(n):
-            if i == j:
-                continue
+    for i, j in product(range(n), range(n)):
+        if i == j:
+            continue
 
-            alpha, transition = _compute_phase_parameters(means[i, j], scvs[i, j])
-            alphas[i, j] = alpha
-            transitions[i, j] = transition
+        alpha, transition = _compute_phase_parameters(means[i, j], scvs[i, j])
+        alphas[i, j] = alpha
+        transitions[i, j] = transition
 
     return alphas, transitions
 
@@ -121,7 +121,7 @@ def _compute_phase_parameters(mean, SCV):
         alpha = np.zeros((1, K + 1))
         B_sf = poisson.cdf(K - 1, mu) + (1 - prob) * poisson.pmf(K, mu)
 
-        alpha[0, :] = [poisson.pmf(z, mu) / B_sf for z in range(K + 1)]
+        alpha[0, :] = [poisson.pmf(k, mu) / B_sf for k in range(K + 1)]
         alpha[0, K] *= 1 - prob
 
         transition = -mu * np.eye(K + 1)
