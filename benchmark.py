@@ -21,7 +21,6 @@ from tqdm.contrib.concurrent import process_map
 from diagnostics import cost_breakdown
 from tsp_as import (
     full_enumeration,
-    increasing_scv,
     increasing_variance,
     solve_alns,
     solve_modified_tsp,
@@ -111,8 +110,6 @@ def solve(
         res = solve_tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "mtsp":
         res = solve_modified_tsp(seed, data, cost_evaluator, **kwargs)
-    elif algorithm == "scv":
-        res = increasing_scv(seed, data, cost_evaluator)
     elif algorithm == "var":
         res = increasing_variance(seed, data, cost_evaluator)
     elif algorithm == "enum":
