@@ -17,7 +17,7 @@ class Solution:
         unassigned: Optional[list[int]] = None,
     ):
         self.data = data
-        self.tour = tour
+        self.tour = tour  # TODO rename to visits - tour includes depot
         self.cost_evaluator = cost_evaluator
         self.schedule = None  # inter-appointment times
         self.unassigned = unassigned if unassigned is not None else []
@@ -88,7 +88,7 @@ class Solution:
         new_tour.insert(idx, customer)
         cand = Solution(self.data, new_tour, self.cost_evaluator)
 
-        return self.cost_evaluator(self) - self.cost_evaluator(cand)
+        return self.cost_evaluator(cand) - self.cost_evaluator(self)
 
     def opt_insert(self, customer: int):
         """
