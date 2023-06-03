@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from copy import copy, deepcopy
+from copy import copy
 from typing import Optional
 
 from tsp_as.appointment import compute_idle_wait
@@ -88,8 +88,13 @@ class Solution:
         is the difference between the cost of the current solution and the cost of
         the candidate solution with the inserted customer.
         """
-        cand = deepcopy(self)
-        cand.insert(idx, customer)  # also updates cost
+        # We create a copy of the current tour and insert the customer at the
+        # specified position. Then we create a new solution object with the
+        # candidate tour (which updates the cost) and compute the difference
+        # in cost.
+        new_tour = copy(self.tour)
+        new_tour.insert(idx, customer)
+        cand = Solution(self.data, new_tour, self.cost_evaluator)
 
         return self.cost_evaluator(self) - self.cost_evaluator(cand)
 
