@@ -68,14 +68,6 @@ class Solution:
         """
         return self._distance
 
-    @staticmethod
-    def compute_distance(tour, data):
-        """
-        Computes the total travel distance of the tour.
-        """
-        visits = [0] + tour + [0]
-        return data.distances[visits[1:], visits[:-1]].sum()
-
     def objective(self):
         """
         Alias for cost, because the ALNS interface requires ``objective()`` method.
@@ -128,7 +120,9 @@ class Solution:
         """
         Update the current solution's schedule and cost.
         """
-        distance = self.compute_distance(self.tour, self.data)
+        visits = [0] + self.tour + [0]
+        distance = self.data.distances[visits[1:], visits[:-1]].sum()
+
         schedule, idle, wait = compute_idle_wait(self.tour, self.data)
 
         assert len(schedule) == len(self.tour)
