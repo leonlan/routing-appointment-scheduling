@@ -27,7 +27,7 @@ from tsp_as import (
     solve_modified_tsp,
     solve_tsp,
 )
-from tsp_as.classes import ProblemData, Solution
+from tsp_as.classes import CostEvaluator, ProblemData, Solution
 from tsp_as.plot import plot_graph
 
 
@@ -99,24 +99,29 @@ def solve(
     """
     path = Path(loc)
     data = ProblemData.from_file(loc, **kwargs)
+    cost_evaluator = CostEvaluator(
+        data.omega_travel,
+        data.omega_idle,
+        [data.omega_wait for _ in range(data.dimension)],
+    )
 
     if algorithm == "alns":
-        res = solve_alns(seed, data=data, **kwargs)
+        res = solve_alns(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "tsp":
-        res = solve_tsp(seed, data=data, **kwargs)
+        res = solve_tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "mtsp":
-        res = solve_modified_tsp(seed, data=data, **kwargs)
+        res = solve_modified_tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "scv":
-        res = increasing_scv(seed, data)
+        res = increasing_scv(seed, data, cost_evaluator)
     elif algorithm == "var":
-        res = increasing_variance(seed, data)
+        res = increasing_variance(seed, data, cost_evaluator)
     elif algorithm == "enum":
-        res = full_enumeration(seed, data)
+        res = full_enumeration(seed, data, cost_evaluator)
 
     # Final evaluation of the solution based on another objective function
     final_data = deepcopy(data)
     final_data.objective = final_objective
-    best = Solution(final_data, res.best_state.tour)
+    best = Solution(final_data, res.best_state.tour, cost_evaluator)
     print(tabulate(*cost_breakdown(best)))
 
     if sol_dir:

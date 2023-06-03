@@ -57,9 +57,10 @@ def _compute_idle_wait_per_client(x, alpha, Vn, *, lag=False):
     return idle_times, wait_times
 
 
-def compute_idle_wait(tour, schedule, data):
+def compute_idle_wait(tour, schedule, data) -> tuple[list[float], list[float]]:
     """
     Compute the idle and wait times for a solution (tour and schedule).
+    Wrapper for `_compute_idle_wait_per_client`.
 
     Parameters
     ----------
@@ -69,9 +70,15 @@ def compute_idle_wait(tour, schedule, data):
         The interappointment times.
     data
         The problem data.
+
+    Returns
+    -------
+    idle_times
+        The idle times per client.
+    wait_times
+        The wait times per client.
     """
-    idle_times, wait_times = compute_idle_wait_per_client(tour, schedule, data)
-    return sum(idle_times), sum(wait_times)
+    return compute_idle_wait_per_client(tour, schedule, data)
 
 
 def compute_idle_wait_per_client(tour, schedule, data):
