@@ -111,11 +111,11 @@ def compute_schedule_and_idle_wait(tour, data, cost_evaluator, **kwargs):
     alpha, Vn = _get_alphas_and_Vn(tour, data)
 
     def cost_fun(x):
-        idle, wait = _compute_idle_wait_per_client(x, alpha, Vn)
-        # wait_weights = cost_evaluator.wait_weights[tour]
+        idle_weight = cost_evaluator.idle_weight
+        wait_weights = cost_evaluator.wait_weights[tour]
 
-        # return sum(idle) + np.dot(wait_weights, wait)
-        return sum(idle) + np.sum(wait)
+        idle, wait = _compute_idle_wait_per_client(x, alpha, Vn)
+        return idle_weight * sum(idle) + np.dot(wait_weights, wait)
 
     # Use heavy traffic solution as initial guess
     x_init = ht_compute_schedule(tour, data, cost_evaluator)

@@ -15,7 +15,7 @@ class CostEvaluator:
         idle_weight
             Weight for idle time.
         wait_weights
-            List of wait weights for each client.
+            List of waiting time weights for each client.
         """
         self.travel_weight = travel_weight
         self.idle_weight = idle_weight
@@ -26,7 +26,7 @@ class CostEvaluator:
         Returns the cost of a solution.
         """
         travel_costs = self.travel_weight * solution.distance
-        idle_costs = np.dot(self.idle_weight, solution.idle_times).sum()
+        idle_costs = self.idle_weight * sum(solution.idle_times)
 
         wait_weights = self.wait_weights[solution.tour]
         wait_costs = np.dot(wait_weights, solution.waiting_times)

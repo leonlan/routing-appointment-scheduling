@@ -127,7 +127,6 @@ def solve(
     path = Path(loc)
     data = ProblemData.from_file(loc, **kwargs)
     cost_evaluator = make_cost_evaluator(data, cost_profile, seed)
-    cost_evaluator = CostEvaluator(0.1, 0.3, 0.6 * np.ones(data.dimension))
 
     if algorithm == "alns":
         res = solve_alns(seed, data, cost_evaluator, **kwargs)
