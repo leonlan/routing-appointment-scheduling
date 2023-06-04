@@ -38,7 +38,7 @@ class ProblemData:
             The service times at the locations.
         service_scv : np.ndarray
             The squared coefficient of variation of the service times.
-        objective : str
+        objective : str # TODO move this to the solution
             The objective function to be used.
         """
         self.name = name

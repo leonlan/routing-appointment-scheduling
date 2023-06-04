@@ -25,7 +25,7 @@ def compute_objective(tour, schedule, data) -> tuple[list[float], list[float]]:
     """
     S = _compute_weighted_mean_variance(tour, data)
     frm = [0] + tour[:-1]
-    to = tour
+    to = tour  # TODO visits2tour
     travel_times = data.means[frm, to]
 
     idle_times = schedule - travel_times
@@ -35,12 +35,27 @@ def compute_objective(tour, schedule, data) -> tuple[list[float], list[float]]:
 
 
 def _compute_weighted_mean_variance(tour, data):
-    variances = get_vars(tour, data)
-    n = len(variances)
-    BETA = 0.5  # TODO this should be a parameter
+    """
+    This function mimics the notation in the paper for easy checking.
+    There's a more compact/efficient way to do this, see the this issue:
 
-    beta = BETA * np.ones(n)
-    betas = np.power(beta, np.arange(n))  # b^0, b^1, ..., b^{n-1}
-    beta_var = betas * variances  # b^0 * U_0, b^1 * U_1, ..., b^{n-1} * U_{n-1}
+    https://github.com/leonlan/tsp-as/blob/7bd9008/tsp_as/appointment/
+        heavy_traffic.py#L30
+    """
+    n = len(tour)
+    BETA = 0.5  # TODO I'm not sure what this paramater is.
 
-    return np.cumsum(beta_var) / np.cumsum(betas)
+    # None, Var(U_1), Var(U_2), ..., Var(U_n)
+    variances = [None] + get_vars(tour, data).tolist()
+
+    # b^0, b^1, ..., b^{n}
+    betas = BETA ** np.arange(n + 1)
+
+    # S_i = \sum_{j=1}^i b^{i-j} * Var(U_j) / \sum_{j=1}^i b^{i-j}
+    S = []
+    for i in range(1, n + 1):  # i = 1, ..., n
+        num = sum(betas[i - j] * variances[j] for j in range(1, i + 1))
+        denom = sum(betas[i - j] for j in range(1, i + 1))
+        S.append(num / denom)
+
+    return S
