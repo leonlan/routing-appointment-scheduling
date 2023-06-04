@@ -51,14 +51,6 @@ class Solution:
         return self.visits == other.visits
 
     @property
-    def cost(self):
-        """
-        Return the objective value. This is a weighted sum of the travel times,
-        the idle times and the waiting times.
-        """
-        return self.cost_evaluator(self)
-
-    @property
     def idle_times(self) -> Optional[list[float]]:
         """
         Return the idle times at each client.
@@ -81,9 +73,10 @@ class Solution:
 
     def objective(self):
         """
-        Alias for cost, because the ALNS interface requires ``objective()`` method.
+        Return the objective value. This is a weighted sum of the travel times,
+        the idle times and the waiting times.
         """
-        return self.cost
+        return self.cost_evaluator(self)
 
     def insert_cost(self, idx: int, customer: int) -> float:
         """
@@ -139,7 +132,7 @@ class Solution:
         tour = [0] + self.visits + [0]
         distance = self.data.distances[tour[1:], tour[:-1]].sum()
 
-        idle_times, wait_times = self.cost_evaluator.objective_function(
+        idle_times, wait_times = self.cost_evaluator.idle_wait_function(
             self.visits,
             self.schedule,
             self.data,

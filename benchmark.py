@@ -26,7 +26,7 @@ from tsp_as import (
     solve_modified_tsp,
     solve_tsp,
 )
-from tsp_as.appointment.heavy_traffic import compute_objective as ht_objective_function
+from tsp_as.appointment.heavy_traffic import compute_idle_wait as ht_objective_function
 from tsp_as.appointment.true_optimal import compute_idle_wait as true_objective_function
 from tsp_as.appointment.true_optimal import compute_optimal_schedule
 from tsp_as.classes import CostEvaluator, ProblemData, Solution
@@ -56,6 +56,9 @@ def parse_args():
             "large",  # (0.3, 0.2, 0.5)
         ],
     )
+    # Objective refers to the appointment scheduling objective function, which
+    # is different from the TSP-AS objective function (the latter includes
+    # travel distances, whereas the former does not).
     parser.add_argument("--objective", type=str)
     parser.add_argument("--final_objective", type=str)
 
@@ -184,7 +187,7 @@ def solve(
 
     return (
         path.stem,
-        final_solution.cost,
+        final_solution.objective(),
         len(res.statistics.objectives),
         round(res.statistics.total_runtime, 3),
         algorithm,

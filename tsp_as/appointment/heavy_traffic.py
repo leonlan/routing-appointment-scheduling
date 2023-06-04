@@ -14,7 +14,7 @@ def compute_schedule(visits, data, cost_evaluator) -> list[float]:
     return means + np.sqrt((wait_weights * S) / (2 * idle_weight))
 
 
-def compute_objective(visits, schedule, data) -> tuple[list[float], list[float]]:
+def compute_idle_wait(visits, schedule, data) -> tuple[list[float], list[float]]:
     """
     Computes the objective value using heavy traffic approximation.
     """
