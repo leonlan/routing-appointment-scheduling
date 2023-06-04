@@ -19,7 +19,7 @@ class CostEvaluator:
         """
         self.travel_weight = travel_weight
         self.idle_weight = idle_weight
-        self.wait_weights = np.array(wait_weights)
+        self.wait_weights = wait_weights
 
     def __call__(self, solution: Solution) -> float:  # noqa: F821
         """
