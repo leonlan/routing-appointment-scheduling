@@ -21,6 +21,7 @@ def cost_breakdown(data, solution):
         "dist",
         "idle",
         "wait",
+        "weight_wait",
     ]
     rows = []
     locs = [0] + solution.visits + [0]
@@ -40,6 +41,7 @@ def cost_breakdown(data, solution):
         dist = dists[idx]
         idle = idle_times[idx] if idx < last else 0  # do not count last
         wait = wait_times[idx] if idx < last else 0  # do not count last
+        weight = solution.cost_evaluator.wait_weights[to]
 
         row = (
             fr,
@@ -51,6 +53,7 @@ def cost_breakdown(data, solution):
             round(dist, 2),
             round(idle, 2),
             round(wait, 2),
+            round(weight, 2),
         )
         rows.append(row)
         total_dist += dist

@@ -26,13 +26,13 @@ def full_enumeration(seed, data, cost_evaluator, **kwargs):
 
     perms = permutations(range(1, data.dimension))
     all_sols = [Solution(data, cost_evaluator, list(visits)) for visits in perms]
-    optimal = min(all_sols, key=lambda sol: sol.cost)
+    optimal = min(all_sols, key=lambda sol: sol.objective())
     print(optimal.visits)
 
     # This little hack allows us to use the same interface for ALNS-based
     # heuristics and the SCV heuristic.
     stats = Statistics()
-    stats.collect_objective(optimal.cost)
+    stats.collect_objective(optimal.objective())
     stats.collect_runtime(perf_counter() - start)
 
     return Result(optimal, stats)

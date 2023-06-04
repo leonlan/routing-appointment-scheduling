@@ -20,7 +20,7 @@ def increasing_variance(seed, data, cost_evaluator, **kwargs):
     # This little hack allows us to use the same interface for ALNS-based
     # heuristics and the SCV heuristic.
     stats = Statistics()
-    stats.collect_objective(solution.cost)
+    stats.collect_objective(solution.objective())
     stats.collect_runtime(perf_counter() - start)
 
     return Result(solution, stats)
