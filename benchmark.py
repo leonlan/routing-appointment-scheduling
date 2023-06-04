@@ -15,7 +15,6 @@ from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.testing import assert_equal
 from tqdm.contrib.concurrent import process_map
 
 from diagnostics import cost_breakdown
@@ -60,7 +59,6 @@ def parse_args():
     # is different from the TSP-AS objective function (the latter includes
     # travel distances, whereas the former does not).
     parser.add_argument("--objective", type=str)
-    parser.add_argument("--final_objective", type=str)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
@@ -107,7 +105,7 @@ def make_cost_evaluator(
 
     def generate_weights(mean_weight):
         """Generates random weights around the given mean for each node."""
-        return 2 * mean_weight * rng.random(data.dimension)
+        return np.round(2 * mean_weight * rng.uniform(0.1, 1.0, data.dimension))
 
     if objective == "heavy_traffic":
         obj_func = ht_objective_function
@@ -115,11 +113,11 @@ def make_cost_evaluator(
         obj_func = true_objective_function
 
     if cost_profile == "small":
-        return CostEvaluator(obj_func, 0.1, 0.3, generate_weights(0.6))
+        return CostEvaluator(obj_func, 0.5, 2.5, generate_weights(5))
     elif cost_profile == "medium":
-        return CostEvaluator(obj_func, 0.2, 0.25, generate_weights(0.55))
+        return CostEvaluator(obj_func, 1.0, 2.5, generate_weights(5))
     elif cost_profile == "large":
-        return CostEvaluator(obj_func, 0.3, 0.2, generate_weights(0.5))
+        return CostEvaluator(obj_func, 2.0, 2.5, generate_weights(5))
     else:
         raise ValueError(f"Unknown cost profile {cost_profile}")
 
@@ -129,7 +127,6 @@ def solve(
     seed: int,
     algorithm: str,
     objective: str,
-    final_objective: str,
     cost_profile: str,
     sol_dir: Optional[str],
     plot_dir: Optional[str],
@@ -157,19 +154,17 @@ def solve(
 
     best = res.best_state
 
-    # Final evaluation uses the optimal inter-appointment times.
-    final_cost_evaluator = make_cost_evaluator(
-        data, final_objective, cost_profile, seed
-    )
-
-    # TODO find something to do with the final cost evaluator.
-    assert_equal(final_cost_evaluator.wait_weights, cost_evaluator.wait_weights)
-
-    schedule = compute_optimal_schedule(best.visits, data, final_cost_evaluator)
-    final_solution = Solution(
-        data, final_cost_evaluator, best.visits, schedule=schedule
-    )
+    schedule = compute_optimal_schedule(best.visits, data, cost_evaluator)
+    final_solution = Solution(data, cost_evaluator, best.visits, schedule=schedule)
     print(tabulate(*cost_breakdown(data, final_solution)))
+    print(final_solution.objective())
+
+    schedule = best.schedule
+    final_solution = Solution(data, cost_evaluator, best.visits, schedule=schedule)
+    print(tabulate(*cost_breakdown(data, final_solution)))
+    print(final_solution.objective())
+
+    breakpoint()
 
     if sol_dir:
         instance_name = Path(loc).stem

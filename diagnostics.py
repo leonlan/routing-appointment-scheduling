@@ -28,9 +28,9 @@ def cost_breakdown(data, solution):
     n_locs = len(locs) - 1
     last = n_locs - 1
 
-    total_dist = 0
-    total_idle = 0
-    total_wait = 0
+    cost_dist = 0
+    cost_idle = 0
+    cost_wait = 0
     for idx in range(n_locs):
         fr = locs[idx]
         to = locs[idx + 1]
@@ -56,11 +56,12 @@ def cost_breakdown(data, solution):
             round(weight, 2),
         )
         rows.append(row)
-        total_dist += dist
-        total_idle += idle
-        total_wait += wait
 
-    print(f"{total_dist=:.2f}, {total_idle=:.2f}, {total_wait=:.2f}")
+        cost_dist += dist * solution.cost_evaluator.travel_weight
+        cost_idle += idle * solution.cost_evaluator.idle_weight
+        cost_wait += wait * weight
+
+    print(f"{cost_dist=:.2f}, {cost_idle=:.2f}, {cost_wait=:.2f}")
 
     return headers, rows
 
