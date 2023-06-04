@@ -169,7 +169,7 @@ def solve(
     final_solution = Solution(
         data, final_cost_evaluator, best.visits, schedule=schedule
     )
-    print(tabulate(*cost_breakdown(final_solution)))
+    print(tabulate(*cost_breakdown(data, final_solution)))
 
     if sol_dir:
         instance_name = Path(loc).stem

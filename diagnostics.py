@@ -1,12 +1,11 @@
 from tsp_as.appointment.true_optimal import compute_idle_wait
 
 
-def cost_breakdown(solution):
+def cost_breakdown(data, solution):
     """
     Breakdown the cost of the solution.
     """
     tour_arcs = [0] + solution.visits, solution.visits + [0]
-    data = solution.data
     dists = data.distances[tour_arcs]
     idle_times, wait_times = compute_idle_wait(
         solution.visits, solution.schedule, solution.data
