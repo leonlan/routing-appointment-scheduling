@@ -19,7 +19,7 @@ class Solution:
         unassigned: Optional[list[int]] = None,
     ):
         self.data = data
-        self.tour = tour  # TODO rename to visits - tour includes depot
+        self.tour = tour  # TODO rename to visits - tour includes depot; rename "from to" to tour
         self.cost_evaluator = cost_evaluator
         self.schedule = schedule if schedule is not None else None
         self.unassigned = unassigned if unassigned is not None else []
