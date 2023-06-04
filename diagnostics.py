@@ -5,9 +5,9 @@ def cost_breakdown(solution):
     """
     Breakdown the cost of the solution.
     """
-    fr, to = [0] + solution.visits, solution.visits + [0]
+    tour_arcs = [0] + solution.visits, solution.visits + [0]
     data = solution.data
-    dists = data.distances[fr, to]
+    dists = data.distances[tour_arcs]
     idle_times, wait_times = compute_idle_wait_per_client(
         solution.visits, solution.schedule, solution.data
     )
