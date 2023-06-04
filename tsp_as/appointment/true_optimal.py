@@ -35,8 +35,8 @@ def _compute_idle_wait_per_client(x, alpha, Vn):
         expVx = expm(Vx)
         betaVinv = dgemm(1, beta, Vn_inv[:d, :d])
 
-        idle = -betaVinv @ dgemm(1, expVx, np.ones((d, 1)))
-        wait = x[i] + betaVinv @ np.ones((d, 1)) + idle
+        wait = -betaVinv @ dgemm(1, expVx, np.ones((d, 1)))
+        idle = x[i] + betaVinv @ np.ones((d, 1)) + wait
 
         idle_times.append(idle.item())
         wait_times.append(wait.item())

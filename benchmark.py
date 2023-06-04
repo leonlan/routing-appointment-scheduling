@@ -159,13 +159,6 @@ def solve(
     print(tabulate(*cost_breakdown(data, final_solution)))
     print(final_solution.objective())
 
-    schedule = best.schedule
-    final_solution = Solution(data, cost_evaluator, best.visits, schedule=schedule)
-    print(tabulate(*cost_breakdown(data, final_solution)))
-    print(final_solution.objective())
-
-    breakpoint()
-
     if sol_dir:
         instance_name = Path(loc).stem
         where = Path(sol_dir) / (f"{instance_name}-{algorithm}" + ".sol")
