@@ -45,9 +45,16 @@ def parse_args():
 
     parser.add_argument("--objective", type=str, default="hto")
     parser.add_argument("--final_objective", type=str, default="to")
-    parser.add_argument("--omega_travel", type=float, default=0.1)
-    parser.add_argument("--omega_idle", type=float, default=0.3)
-    parser.add_argument("--omega_wait", type=float, default=0.6)
+    parser.add_argument(
+        "--cost_profile",
+        type=str,
+        default="small",
+        choices=[
+            "small",  # (0.1, 0.3, 0.6)
+            "medium",  # (0.2, 0.25, 0.55)
+            "large",  # (0.3, 0.2, 0.5)
+        ],
+    )
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
@@ -84,11 +91,32 @@ def tabulate(headers, rows) -> str:
     return "\n".join(header + content)
 
 
+def make_cost_evaluator(data: ProblemData, cost_profile: str, seed) -> CostEvaluator:
+    """
+    Returns a cost evaluator based on the given cost profile.
+    """
+    rng = np.random.default_rng(seed)
+
+    def generate_weights(mean_weight):
+        """Generates random weights around the given mean for each node."""
+        return 2 * mean_weight * rng.random(data.dimension)
+
+    if cost_profile == "small":
+        return CostEvaluator(0.1, 0.3, generate_weights(0.6))
+    elif cost_profile == "medium":
+        return CostEvaluator(0.2, 0.25, generate_weights(0.55))
+    elif cost_profile == "large":
+        return CostEvaluator(0.3, 0.2, generate_weights(0.5))
+    else:
+        raise ValueError(f"Unknown cost profile {cost_profile}")
+
+
 def solve(
     loc: str,
     seed: int,
     algorithm: str,
     final_objective: str,
+    cost_profile: str,
     sol_dir: Optional[str],
     plot_dir: Optional[str],
     **kwargs,
@@ -98,11 +126,8 @@ def solve(
     """
     path = Path(loc)
     data = ProblemData.from_file(loc, **kwargs)
-    cost_evaluator = CostEvaluator(
-        data.omega_travel,
-        data.omega_idle,
-        [data.omega_wait for _ in range(data.dimension)],
-    )
+    cost_evaluator = make_cost_evaluator(data, cost_profile, seed)
+    cost_evaluator = CostEvaluator(0.1, 0.3, 0.6 * np.ones(data.dimension))
 
     if algorithm == "alns":
         res = solve_alns(seed, data, cost_evaluator, **kwargs)

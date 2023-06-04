@@ -55,9 +55,6 @@ def cost_breakdown(solution):
             round(dist, 2),
             round(idle, 2),
             round(wait, 2),
-            round(data.omega_travel * dist, 2),
-            round(data.omega_idle * idle, 2),
-            round(data.omega_wait * wait, 2),
         )
         rows.append(row)
         total_dist += dist
@@ -65,9 +62,6 @@ def cost_breakdown(solution):
         total_wait += wait
 
     print(f"{total_dist=:.2f}, {total_idle=:.2f}, {total_wait=:.2f}")
-    print(
-        f"{data.omega_travel*total_dist=:.2f}, {data.omega_idle*total_idle=:.2f}, {data.omega_wait*total_wait=:.2f}"
-    )
 
     return headers, rows
 

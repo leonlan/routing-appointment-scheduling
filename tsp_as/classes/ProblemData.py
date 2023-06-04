@@ -9,19 +9,38 @@ from scipy.stats import poisson
 class ProblemData:
     def __init__(
         self,
-        name,
-        coords,
-        dimension,
-        distances,
-        distances_scv,
-        service,
-        service_scv,
-        objective="hto",
-        omega_travel=0.5,
-        omega_idle=0.25,
-        omega_wait=0.25,
+        name: str,
+        coords: np.ndarray,
+        dimension: int,
+        distances: np.ndarray,
+        distances_scv: np.ndarray,
+        service: np.ndarray,
+        service_scv: np.ndarray,
+        objective: str,
         **kwargs,
     ):
+        """
+        A class to represent the data of a problem instance.
+
+        Parameters
+        ----------
+        name : str
+            The name of the problem instance.
+        coords : np.ndarray
+            The coordinates of the locations.
+        dimension : int
+            The number of locations.
+        distances : np.ndarray
+            The distances between the locations.
+        distances_scv : np.ndarray
+            The squared coefficient of variation of the distances.
+        service : np.ndarray
+            The service times at the locations.
+        service_scv : np.ndarray
+            The squared coefficient of variation of the service times.
+        objective : str
+            The objective function to be used.
+        """
         self.name = name
         self.coords = coords
         self.dimension = dimension
@@ -29,16 +48,13 @@ class ProblemData:
         self.distances_scv = distances_scv
         self.service = service
         self.service_scv = service_scv
+        self.objective = objective
+
         self.service_var = service_scv * np.power(service, 2)
         self.means, self.scvs, self.vars = compute_means_scvs(
             distances, distances_scv, service, service_scv
         )
         self.alphas, self.transitions = compute_phase_parameters(self.means, self.scvs)
-
-        self.objective = objective
-        self.omega_travel = omega_travel
-        self.omega_idle = omega_idle
-        self.omega_wait = omega_wait
 
     @classmethod
     def from_file(cls, loc, **kwargs):

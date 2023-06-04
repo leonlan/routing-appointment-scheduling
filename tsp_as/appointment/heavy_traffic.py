@@ -3,7 +3,7 @@ import numpy as np
 from .utils import get_leg_data
 
 
-def compute_schedule(tour, data):
+def compute_schedule(tour, data, cost_evaluator):
     """
     Computes the schedule using heavy traffic approximation.
 
@@ -11,8 +11,10 @@ def compute_schedule(tour, data):
     """
     means, _, variances = get_leg_data(tour, data)
     B = _compute_service_times(variances)
-    expr = (data.omega_wait * B) / (2 * data.omega_idle)
-    return means + np.sqrt(expr)
+    tour_waiting_weights = cost_evaluator.wait_weights[tour]
+    idle_weight = cost_evaluator.idle_weight
+
+    return means + np.sqrt((tour_waiting_weights * B) / (2 * idle_weight))
 
 
 def compute_objective(tour, data):

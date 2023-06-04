@@ -123,7 +123,9 @@ class Solution:
         visits = [0] + self.tour + [0]
         distance = self.data.distances[visits[1:], visits[:-1]].sum()
 
-        schedule, idle, wait = compute_idle_wait(self.tour, self.data)
+        schedule, idle, wait = compute_idle_wait(
+            self.tour, self.data, self.cost_evaluator
+        )
 
         assert len(schedule) == len(self.tour)
 
