@@ -25,7 +25,7 @@ class Solution:
         self.unassigned = unassigned if unassigned is not None else []
 
         self._idle_times = None
-        self._waiting_times = None
+        self._wait_times = None
         self._distance = None
 
         self.update()
@@ -61,11 +61,11 @@ class Solution:
         return self._idle_times
 
     @property
-    def waiting_times(self) -> Optional[list[float]]:
+    def wait_times(self) -> Optional[list[float]]:
         """
         Return the waiting times at each client.
         """
-        return self._waiting_times
+        return self._wait_times
 
     @property
     def distance(self):
@@ -129,7 +129,7 @@ class Solution:
         visits = [0] + self.tour + [0]
         distance = self.data.distances[visits[1:], visits[:-1]].sum()
 
-        schedule, idle, wait = compute_idle_wait(
+        schedule, idle_times, wait_times = compute_idle_wait(
             self.tour, self.data, self.cost_evaluator
         )
 
@@ -137,5 +137,5 @@ class Solution:
 
         self.schedule = schedule
         self._distance = distance
-        self._idle_times = idle
-        self._waiting_times = wait
+        self._idle_times = idle_times
+        self._wait_times = wait_times

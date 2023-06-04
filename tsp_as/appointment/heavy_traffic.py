@@ -11,10 +11,11 @@ def compute_schedule(tour, data, cost_evaluator):
     """
     means, _, _ = get_leg_data(tour, data)
     S = _compute_weighted_mean_variance(tour, data)
-    tour_wait_weights = cost_evaluator.wait_weights[tour]
+
+    wait_weights = cost_evaluator.wait_weights[tour]
     idle_weight = cost_evaluator.idle_weight
 
-    return means + np.sqrt((tour_wait_weights * S) / (2 * idle_weight))
+    return means + np.sqrt((wait_weights * S) / (2 * idle_weight))
 
 
 def compute_objective(tour, schedule, data) -> tuple[list[float], list[float]]:
@@ -28,9 +29,9 @@ def compute_objective(tour, schedule, data) -> tuple[list[float], list[float]]:
     travel_times = data.means[frm, to]
 
     idle_times = schedule - travel_times
-    waiting_times = S / (2 * idle_times)
+    wait_times = S / (2 * idle_times)
 
-    return idle_times, waiting_times
+    return idle_times, wait_times
 
 
 def _compute_weighted_mean_variance(tour, data):

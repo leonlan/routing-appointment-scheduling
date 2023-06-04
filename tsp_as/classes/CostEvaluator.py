@@ -29,6 +29,6 @@ class CostEvaluator:
         idle_costs = self.idle_weight * sum(solution.idle_times)
 
         wait_weights = self.wait_weights[solution.tour]
-        wait_costs = np.dot(wait_weights, solution.waiting_times)
+        wait_costs = np.dot(wait_weights, solution.wait_times)
 
         return travel_costs + idle_costs + wait_costs
