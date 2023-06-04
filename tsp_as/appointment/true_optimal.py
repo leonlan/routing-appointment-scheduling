@@ -3,7 +3,7 @@ from scipy.linalg import expm, inv
 from scipy.linalg.blas import dgemm
 from scipy.optimize import minimize
 
-from .heavy_traffic import compute_schedule as ht_compute_schedule
+from .heavy_traffic import compute_schedule as compute_ht_schedule
 
 
 def _compute_idle_wait_per_client(x, alpha, Vn):
@@ -72,29 +72,11 @@ def compute_idle_wait(visits, schedule, data) -> tuple[list[float], list[float]]
     wait_times
         The wait times per client.
     """
-    return compute_idle_wait_per_client(visits, schedule, data)
-
-
-def compute_idle_wait_per_client(visits, schedule, data):
-    """
-    Compute the idle and wait times per client for a solution (visits and schedule).
-
-    Parameters
-    ----------
-    visits
-        The visits.
-    schedule
-        The interappointment times.
-    data
-        The problem data.
-    """
     alpha, Vn = _get_alphas_and_Vn(visits, data)
-
-    idle_times, wait_times = _compute_idle_wait_per_client(schedule, alpha, Vn)
-    return idle_times, wait_times
+    return _compute_idle_wait_per_client(schedule, alpha, Vn)
 
 
-def compute_schedule_and_idle_wait(visits, data, cost_evaluator, **kwargs):
+def compute_optimal_schedule(visits, data, cost_evaluator):
     """
     Compute the optimal schedule and the corresponding idle and wait times.
 
@@ -117,17 +99,17 @@ def compute_schedule_and_idle_wait(visits, data, cost_evaluator, **kwargs):
         return idle_weight * sum(idle) + np.dot(wait_weights, wait)
 
     # Use heavy traffic solution as initial guess
-    x_init = ht_compute_schedule(visits, data, cost_evaluator)
+    x_init = compute_ht_schedule(visits, data, cost_evaluator)
 
     optim = minimize(
         cost_fun,
         x_init,
-        method=kwargs.get("method", "trust-constr"),
-        tol=kwargs.get("tol", 0.01),
+        method="trust-constr",
+        tol=0.01,
         bounds=[(0, None) for _ in range(x_init.size)],
     )
 
-    return optim.x, *compute_idle_wait(visits, optim.x, data)
+    return optim.x
 
 
 def _create_Vn(alphas, T):

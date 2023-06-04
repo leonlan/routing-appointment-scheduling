@@ -1,15 +1,23 @@
 from __future__ import annotations
 
+from typing import Callable
+
 import numpy as np
 
 
 class CostEvaluator:
     def __init__(
-        self, travel_weight: float, idle_weight: float, wait_weights: list[float]
+        self,
+        objective_function: Callable,
+        travel_weight: float,
+        idle_weight: float,
+        wait_weights: np.ndarray,
     ):
         """
         Parameters
         ----------
+        objective_function
+            Objective function to be used for evaluation.
         travel_weight
             Weight for travel time.
         idle_weight
@@ -17,6 +25,7 @@ class CostEvaluator:
         wait_weights
             List of waiting time weights for each client.
         """
+        self.objective_function = objective_function
         self.travel_weight = travel_weight
         self.idle_weight = idle_weight
         self.wait_weights = wait_weights

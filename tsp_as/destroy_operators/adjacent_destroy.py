@@ -29,7 +29,7 @@ def adjacent_destroy(
 
     for cust in custs_to_remove:
         destroyed.unassigned.append(cust)
-        destroyed.visits.remove(cust)
+        destroyed.remove(cust)
 
     destroyed.update()  # Update the solution's costs
 

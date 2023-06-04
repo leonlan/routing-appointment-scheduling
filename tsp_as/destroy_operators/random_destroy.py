@@ -26,7 +26,7 @@ def random_destroy(
 
     for cust in rng.choice(destroyed.visits, num_destroy, replace=False):
         destroyed.unassigned.append(cust)
-        destroyed.visits.remove(cust)
+        destroyed.remove(cust)
 
     # After removing customers, we need to update the solution's costs
     # because the costs are cached to minimize computations.

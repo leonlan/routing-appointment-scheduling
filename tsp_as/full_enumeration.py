@@ -1,4 +1,3 @@
-from copy import deepcopy
 from itertools import permutations
 from time import perf_counter
 
@@ -25,11 +24,8 @@ def full_enumeration(seed, data, cost_evaluator, **kwargs):
     """
     start = perf_counter()
 
-    enum_data = deepcopy(data)
-    enum_data.objective = "to"
-
     perms = permutations(range(1, data.dimension))
-    all_sols = [Solution(enum_data, cost_evaluator, list(visits)) for visits in perms]
+    all_sols = [Solution(data, cost_evaluator, list(visits)) for visits in perms]
     optimal = min(all_sols, key=lambda sol: sol.cost)
     print(optimal.visits)
 

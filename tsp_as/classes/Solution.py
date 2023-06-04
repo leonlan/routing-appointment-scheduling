@@ -3,7 +3,7 @@ from __future__ import annotations
 from copy import copy
 from typing import Optional
 
-from tsp_as.appointment import compute_idle_wait
+from tsp_as.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
 
 from .CostEvaluator import CostEvaluator
 from .ProblemData import ProblemData
@@ -26,12 +26,12 @@ class Solution:
         self.data = data
         self.visits = visits
         self.cost_evaluator = cost_evaluator
-        self.schedule = schedule if schedule is not None else None
+        self.schedule = (
+            schedule
+            if schedule is not None
+            else compute_ht_schedule(visits, data, cost_evaluator)
+        )
         self.unassigned = unassigned if unassigned is not None else []
-
-        self._idle_times = None
-        self._wait_times = None
-        self._distance = None
 
         self.update()
 
@@ -97,9 +97,12 @@ class Solution:
         # in cost.
         new_visits = copy(self.visits)
         new_visits.insert(idx, customer)
-        cand = Solution(self.data, self.cost_evaluator, new_visits)
+        new_schedule = compute_ht_schedule(new_visits, self.data, self.cost_evaluator)
+        new_solution = Solution(
+            self.data, self.cost_evaluator, new_visits, new_schedule
+        )
 
-        return self.cost_evaluator(cand) - self.cost_evaluator(self)
+        return self.cost_evaluator(new_solution) - self.cost_evaluator(self)
 
     def opt_insert(self, customer: int):
         """
@@ -119,6 +122,7 @@ class Solution:
         Insert the customer at position idx.
         """
         self.visits.insert(idx, customer)
+        self.schedule = compute_ht_schedule(self.visits, self.data, self.cost_evaluator)
         self.update()
 
     def remove(self, customer: int):
@@ -126,6 +130,7 @@ class Solution:
         Remove the customer from the current schedule.
         """
         self.visits.remove(customer)
+        self.schedule = compute_ht_schedule(self.visits, self.data, self.cost_evaluator)
 
     def update(self):
         """
@@ -134,14 +139,15 @@ class Solution:
         tour = [0] + self.visits + [0]
         distance = self.data.distances[tour[1:], tour[:-1]].sum()
 
-        schedule, idle_times, wait_times = compute_idle_wait(
-            self.visits, self.data, self.cost_evaluator
+        idle_times, wait_times = self.cost_evaluator.objective_function(
+            self.visits,
+            self.schedule,
+            self.data,
         )
 
-        assert len(schedule) == len(self.visits)
-        assert all(x >= 0 for x in schedule)
+        assert len(self.schedule) == len(self.visits)
+        assert all(x >= 0 for x in self.schedule)
 
-        self.schedule = schedule
         self._distance = distance
         self._idle_times = idle_times
         self._wait_times = wait_times

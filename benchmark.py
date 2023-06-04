@@ -9,13 +9,13 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["OMP_NUM_THREADS"] = "1"
 
 
-from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.testing import assert_equal
 from tqdm.contrib.concurrent import process_map
 
 from diagnostics import cost_breakdown
@@ -26,6 +26,9 @@ from tsp_as import (
     solve_modified_tsp,
     solve_tsp,
 )
+from tsp_as.appointment.heavy_traffic import compute_objective as ht_objective_function
+from tsp_as.appointment.true_optimal import compute_idle_wait as true_objective_function
+from tsp_as.appointment.true_optimal import compute_optimal_schedule
 from tsp_as.classes import CostEvaluator, ProblemData, Solution
 from tsp_as.plot import plot_graph
 
@@ -43,8 +46,6 @@ def parse_args():
         choices=["alns", "tsp", "mtsp", "scv", "var", "enum"],
     )
 
-    parser.add_argument("--objective", type=str, default="hto")
-    parser.add_argument("--final_objective", type=str, default="to")
     parser.add_argument(
         "--cost_profile",
         type=str,
@@ -55,6 +56,8 @@ def parse_args():
             "large",  # (0.3, 0.2, 0.5)
         ],
     )
+    parser.add_argument("--objective", type=str)
+    parser.add_argument("--final_objective", type=str)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
@@ -91,9 +94,11 @@ def tabulate(headers, rows) -> str:
     return "\n".join(header + content)
 
 
-def make_cost_evaluator(data: ProblemData, cost_profile: str, seed) -> CostEvaluator:
+def make_cost_evaluator(
+    data: ProblemData, objective: str, cost_profile: str, seed
+) -> CostEvaluator:
     """
-    Returns a cost evaluator based on the given cost profile.
+    Returns a cost evaluator based on the given objective and cost profile.
     """
     rng = np.random.default_rng(seed)
 
@@ -101,12 +106,17 @@ def make_cost_evaluator(data: ProblemData, cost_profile: str, seed) -> CostEvalu
         """Generates random weights around the given mean for each node."""
         return 2 * mean_weight * rng.random(data.dimension)
 
+    if objective == "heavy_traffic":
+        obj_func = ht_objective_function
+    else:
+        obj_func = true_objective_function
+
     if cost_profile == "small":
-        return CostEvaluator(0.1, 0.3, generate_weights(0.6))
+        return CostEvaluator(obj_func, 0.1, 0.3, generate_weights(0.6))
     elif cost_profile == "medium":
-        return CostEvaluator(0.2, 0.25, generate_weights(0.55))
+        return CostEvaluator(obj_func, 0.2, 0.25, generate_weights(0.55))
     elif cost_profile == "large":
-        return CostEvaluator(0.3, 0.2, generate_weights(0.5))
+        return CostEvaluator(obj_func, 0.3, 0.2, generate_weights(0.5))
     else:
         raise ValueError(f"Unknown cost profile {cost_profile}")
 
@@ -115,6 +125,7 @@ def solve(
     loc: str,
     seed: int,
     algorithm: str,
+    objective: str,
     final_objective: str,
     cost_profile: str,
     sol_dir: Optional[str],
@@ -125,8 +136,8 @@ def solve(
     Solves the instance using the ALNS package.
     """
     path = Path(loc)
-    data = ProblemData.from_file(loc, **kwargs)
-    cost_evaluator = make_cost_evaluator(data, cost_profile, seed)
+    data = ProblemData.from_file(loc)
+    cost_evaluator = make_cost_evaluator(data, objective, cost_profile, seed)
 
     if algorithm == "alns":
         res = solve_alns(seed, data, cost_evaluator, **kwargs)
@@ -138,12 +149,24 @@ def solve(
         res = increasing_variance(seed, data, cost_evaluator)
     elif algorithm == "enum":
         res = full_enumeration(seed, data, cost_evaluator)
+    else:
+        raise ValueError(f"Unknown algorithm {algorithm}")
 
-    # Final evaluation of the solution based on another objective function
-    final_data = deepcopy(data)
-    final_data.objective = final_objective
-    best = Solution(final_data, cost_evaluator, res.best_state.visits)
-    print(tabulate(*cost_breakdown(best)))
+    best = res.best_state
+
+    # Final evaluation uses the optimal inter-appointment times.
+    final_cost_evaluator = make_cost_evaluator(
+        data, final_objective, cost_profile, seed
+    )
+
+    # TODO find something to do with the final cost evaluator.
+    assert_equal(final_cost_evaluator.wait_weights, cost_evaluator.wait_weights)
+
+    schedule = compute_optimal_schedule(best.visits, data, final_cost_evaluator)
+    final_solution = Solution(
+        data, final_cost_evaluator, best.visits, schedule=schedule
+    )
+    print(tabulate(*cost_breakdown(final_solution)))
 
     if sol_dir:
         instance_name = Path(loc).stem
@@ -154,16 +177,14 @@ def solve(
 
     if plot_dir:
         _, ax = plt.subplots(1, 1, figsize=[12, 12])
-        plot_graph(ax, data, solution=best)
+        plot_graph(ax, data, solution=final_solution)
         instance_name = Path(loc).stem
-        where = Path(plot_dir) / (
-            f"{instance_name}-{algorithm}-{final_objective}" + ".pdf"
-        )
+        where = Path(plot_dir) / (f"{instance_name}-{algorithm}" + ".pdf")
         plt.savefig(where)
 
     return (
         path.stem,
-        best.cost,
+        final_solution.cost,
         len(res.statistics.objectives),
         round(res.statistics.total_runtime, 3),
         algorithm,

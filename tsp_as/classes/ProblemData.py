@@ -16,8 +16,6 @@ class ProblemData:
         distances_scv: np.ndarray,
         service: np.ndarray,
         service_scv: np.ndarray,
-        objective: str,
-        **kwargs,
     ):
         """
         A class to represent the data of a problem instance.
@@ -38,8 +36,6 @@ class ProblemData:
             The service times at the locations.
         service_scv
             The squared coefficient of variation of the service times.
-        objective
-            The objective function to be used.
         """
         self.name = name
         self.coords = coords
@@ -48,7 +44,6 @@ class ProblemData:
         self.distances_scv = distances_scv
         self.service = service
         self.service_scv = service_scv
-        self.objective = objective
 
         self.arcs_mean, self.arcs_scv, self.arcs_var = compute_arc_data(
             distances, distances_scv, service, service_scv
