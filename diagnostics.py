@@ -22,9 +22,6 @@ def cost_breakdown(solution):
         "dist",
         "idle",
         "wait",
-        "norm. dist",
-        "norm. idle",
-        "norm. wait",
     ]
     rows = []
     locs = [0] + solution.tour + [0]
