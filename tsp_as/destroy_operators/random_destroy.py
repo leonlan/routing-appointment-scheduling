@@ -24,14 +24,14 @@ def random_destroy(
     destroyed = deepcopy(solution)
     num_destroy = ceil(len(solution) * pct_destroy)  # at least one
 
-    for cust in rng.choice(destroyed.tour, num_destroy, replace=False):
+    for cust in rng.choice(destroyed.visits, num_destroy, replace=False):
         destroyed.unassigned.append(cust)
-        destroyed.tour.remove(cust)
+        destroyed.visits.remove(cust)
 
     # After removing customers, we need to update the solution's costs
     # because the costs are cached to minimize computations.
     destroyed.update()
 
-    assert len(solution.tour) == len(destroyed.tour) + num_destroy
+    assert len(solution.visits) == len(destroyed.visits) + num_destroy
 
     return destroyed

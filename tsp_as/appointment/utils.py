@@ -1,8 +1,8 @@
-def get_means_scvs(tour, data):
+def get_means_scvs(visits, data):
     """
-    Returns the means and SCVs for all legs in the tour expect the last one.
+    Returns the means and SCVs for all legs in the visits expect the last one.
     """
-    frm, to = tour2from_to(tour)
+    frm, to = visits2from_to(visits)
 
     means = data.means[frm, to]
     SCVs = data.scvs[frm, to]
@@ -10,17 +10,17 @@ def get_means_scvs(tour, data):
     return means, SCVs
 
 
-def get_vars(tour, data):
-    frm, to = tour2from_to(tour)
+def get_vars(visits, data):
+    frm, to = visits2from_to(visits)
 
     return data.vars[frm, to]
 
 
-def get_leg_data(tour, data):
+def get_leg_data(visits, data):
     """
-    Returns the means and SCVs for all legs in the tour expect the last one.
+    Returns the means and SCVs for all legs in the visits expect the last one.
     """
-    frm, to = tour2from_to(tour)
+    frm, to = visits2from_to(visits)
 
     means = data.means[frm, to]
     SCVs = data.scvs[frm, to]
@@ -29,15 +29,15 @@ def get_leg_data(tour, data):
     return means, SCVs, variances
 
 
-def get_alphas_transitions(tour, data):
-    frm, to = tour2from_to(tour)
+def get_alphas_transitions(visits, data):
+    frm, to = visits2from_to(visits)
 
     alphas = tuple(data.alphas[frm, to])
     transition_matrices = tuple(data.transitions[frm, to])
     return alphas, transition_matrices
 
 
-def tour2from_to(tour):
-    frm = [0] + tour[:-1]
-    to = tour
+def visits2from_to(visits):
+    frm = [0] + visits[:-1]
+    to = visits
     return frm, to

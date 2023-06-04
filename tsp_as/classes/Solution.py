@@ -14,12 +14,17 @@ class Solution:
         self,
         data: ProblemData,
         cost_evaluator: CostEvaluator,
-        tour: list[int],
+        visits: list[int],
         schedule: Optional[list[float]] = None,
         unassigned: Optional[list[int]] = None,
     ):
+        """
+        A Solution object represents a list of client visits. This may
+        optionally include a schedule (i.e., inter-appointment times), but
+        this is not required because it can be computed from the visits.
+        """
         self.data = data
-        self.tour = tour  # TODO rename to visits - tour includes depot; rename "from to" to tour
+        self.visits = visits
         self.cost_evaluator = cost_evaluator
         self.schedule = schedule if schedule is not None else None
         self.unassigned = unassigned if unassigned is not None else []
@@ -34,16 +39,16 @@ class Solution:
         return Solution(
             self.data,
             self.cost_evaluator,
-            copy(self.tour),
+            copy(self.visits),
             copy(self.schedule),
             copy(self.unassigned),
         )
 
     def __len__(self):
-        return len(self.tour)
+        return len(self.visits)
 
     def __eq__(self, other):
-        return self.tour == other.tour
+        return self.visits == other.visits
 
     @property
     def cost(self):
@@ -86,23 +91,23 @@ class Solution:
         is the difference between the cost of the current solution and the cost of
         the candidate solution with the inserted customer.
         """
-        # We create a copy of the current tour and insert the customer at the
+        # We create a copy of the current visits and insert the customer at the
         # specified position. Then we create a new solution object with the
-        # candidate tour (which updates the cost) and compute the difference
+        # candidate visits (which updates the cost) and compute the difference
         # in cost.
-        new_tour = copy(self.tour)
-        new_tour.insert(idx, customer)
-        cand = Solution(self.data, self.cost_evaluator, new_tour)
+        new_visits = copy(self.visits)
+        new_visits.insert(idx, customer)
+        cand = Solution(self.data, self.cost_evaluator, new_visits)
 
         return self.cost_evaluator(cand) - self.cost_evaluator(self)
 
     def opt_insert(self, customer: int):
         """
-        Optimally inserts the customer in the current tour.
+        Optimally inserts the customer in the current visits.
         """
         idcs_costs = []
 
-        for idx in range(len(self.tour) + 1):
+        for idx in range(len(self.visits) + 1):
             cost = self.insert_cost(idx, customer)
             idcs_costs.append((idx, cost))
 
@@ -113,27 +118,27 @@ class Solution:
         """
         Insert the customer at position idx.
         """
-        self.tour.insert(idx, customer)
+        self.visits.insert(idx, customer)
         self.update()
 
     def remove(self, customer: int):
         """
         Remove the customer from the current schedule.
         """
-        self.tour.remove(customer)
+        self.visits.remove(customer)
 
     def update(self):
         """
         Update the current solution's schedule and cost.
         """
-        visits = [0] + self.tour + [0]
-        distance = self.data.distances[visits[1:], visits[:-1]].sum()
+        tour = [0] + self.visits + [0]
+        distance = self.data.distances[tour[1:], tour[:-1]].sum()
 
         schedule, idle_times, wait_times = compute_idle_wait(
-            self.tour, self.data, self.cost_evaluator
+            self.visits, self.data, self.cost_evaluator
         )
 
-        assert len(schedule) == len(self.tour)
+        assert len(schedule) == len(self.visits)
         assert all(x >= 0 for x in schedule)
 
         self.schedule = schedule

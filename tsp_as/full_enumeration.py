@@ -10,7 +10,7 @@ from tsp_as.classes import Solution
 
 def full_enumeration(seed, data, cost_evaluator, **kwargs):
     """
-    Solves using a full enumeration of all possible tours. This is a very
+    Solves using a full enumeration of all possible visitss. This is a very
     naive approach, but it is useful for testing purposes. It is also
     useful for comparing the performance of heuristics.
 
@@ -29,9 +29,9 @@ def full_enumeration(seed, data, cost_evaluator, **kwargs):
     enum_data.objective = "to"
 
     perms = permutations(range(1, data.dimension))
-    all_sols = [Solution(enum_data, cost_evaluator, list(tour)) for tour in perms]
+    all_sols = [Solution(enum_data, cost_evaluator, list(visits)) for visits in perms]
     optimal = min(all_sols, key=lambda sol: sol.cost)
-    print(optimal.tour)
+    print(optimal.visits)
 
     # This little hack allows us to use the same interface for ALNS-based
     # heuristics and the SCV heuristic.

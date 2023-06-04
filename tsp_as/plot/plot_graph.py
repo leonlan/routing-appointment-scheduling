@@ -10,16 +10,16 @@ def plot_graph(ax, data, solution=None):
 
     G = nx.DiGraph()
 
-    visits = [0] + solution.tour + [0]
+    tour = [0] + solution.visits + [0]
     pos = dict(enumerate(coords))
 
     labels = {}
-    for idx in range(len(visits) - 1):
-        to, fr = visits[idx], visits[idx + 1]
+    for idx in range(len(tour) - 1):
+        to, fr = tour[idx], tour[idx + 1]
         edge = (to, fr)
         G.add_edge(*edge)
 
-        if idx < len(visits) - 2:  # not the last edge
+        if idx < len(tour) - 2:  # not the last edge
             interarrival_time = int(solution.schedule[idx])
             # label = f"x={interarrival_time},\n E[T]={dist:.0f})"
             label = f"x={interarrival_time}"
