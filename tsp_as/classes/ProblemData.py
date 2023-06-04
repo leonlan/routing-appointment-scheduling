@@ -24,21 +24,21 @@ class ProblemData:
 
         Parameters
         ----------
-        name : str
+        name
             The name of the problem instance.
-        coords : np.ndarray
+        coords
             The coordinates of the locations.
-        dimension : int
+        dimension
             The number of locations.
-        distances : np.ndarray
+        distances
             The distances between the locations.
-        distances_scv : np.ndarray
+        distances_scv
             The squared coefficient of variation of the distances.
-        service : np.ndarray
+        service
             The service times at the locations.
-        service_scv : np.ndarray
+        service_scv
             The squared coefficient of variation of the service times.
-        objective : str # TODO move this to the solution
+        objective
             The objective function to be used.
         """
         self.name = name
