@@ -7,7 +7,7 @@ from .heavy_traffic import compute_schedule as ht_compute_schedule
 from .utils import get_alphas_transitions
 
 
-def _compute_idle_wait_per_client(x, alpha, Vn, *, lag=False):
+def _compute_idle_wait_per_client(x, alpha, Vn):
     """
     Computes the objective value of a schedule. See Theorem (1).
 
@@ -21,9 +21,6 @@ def _compute_idle_wait_per_client(x, alpha, Vn, *, lag=False):
         The recursively-defined matrix $V^{(n)}$.
     data
         The problem data.
-    lag
-        Whether to return the idle and wait times for the last client only,
-        which is used for the lag-based objective function.
     """
     n = len(alpha)
     dims = np.cumsum([alpha[i].size for i in range(n)])
@@ -46,8 +43,6 @@ def _compute_idle_wait_per_client(x, alpha, Vn, *, lag=False):
         wait_times.append(wait.item())
 
         if i == n - 1:  # stop
-            if lag:  # If used as subprocedure in the lag-based obj function
-                return idle.item(), wait.item()
             break
 
         P = dgemm(1, beta, expVx)
@@ -57,9 +52,10 @@ def _compute_idle_wait_per_client(x, alpha, Vn, *, lag=False):
     return idle_times, wait_times
 
 
-def compute_idle_wait(tour, schedule, data):
+def compute_idle_wait(tour, schedule, data) -> tuple[list[float], list[float]]:
     """
     Compute the idle and wait times for a solution (tour and schedule).
+    Wrapper for `_compute_idle_wait_per_client`.
 
     Parameters
     ----------
@@ -69,9 +65,15 @@ def compute_idle_wait(tour, schedule, data):
         The interappointment times.
     data
         The problem data.
+
+    Returns
+    -------
+    idle_times
+        The idle times per client.
+    wait_times
+        The wait times per client.
     """
-    idle_times, wait_times = compute_idle_wait_per_client(tour, schedule, data)
-    return sum(idle_times), sum(wait_times)
+    return compute_idle_wait_per_client(tour, schedule, data)
 
 
 def compute_idle_wait_per_client(tour, schedule, data):
@@ -93,7 +95,7 @@ def compute_idle_wait_per_client(tour, schedule, data):
     return idle_times, wait_times
 
 
-def compute_schedule_and_idle_wait(tour, data, warmstart=True, **kwargs):
+def compute_schedule_and_idle_wait(tour, data, cost_evaluator, **kwargs):
     """
     Compute the optimal schedule and the corresponding idle and wait times.
 
@@ -103,19 +105,20 @@ def compute_schedule_and_idle_wait(tour, data, warmstart=True, **kwargs):
         The tour.
     data
         The problem data.
-    warmstart
-        Whether to use the heavy traffic schedule as initial value.
+    cost_evaluator
+        The cost evaluator.
     """
     alpha, Vn = _get_alphas_and_Vn(tour, data)
 
     def cost_fun(x):
-        idle, wait = _compute_idle_wait_per_client(x, alpha, Vn)
-        return sum(idle) + sum(wait)
+        idle_weight = cost_evaluator.idle_weight
+        wait_weights = cost_evaluator.wait_weights[tour]
 
-    if warmstart:
-        x_init = ht_compute_schedule(tour, data)
-    else:  # Use means of travel time and service as initial value
-        x_init = data.distances[[0] + tour, tour + [0]] + data.service[[0] + tour]
+        idle, wait = _compute_idle_wait_per_client(x, alpha, Vn)
+        return idle_weight * sum(idle) + np.dot(wait_weights, wait)
+
+    # Use heavy traffic solution as initial guess
+    x_init = ht_compute_schedule(tour, data, cost_evaluator)
 
     optim = minimize(
         cost_fun,

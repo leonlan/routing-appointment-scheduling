@@ -21,13 +21,12 @@ from tqdm.contrib.concurrent import process_map
 from diagnostics import cost_breakdown
 from tsp_as import (
     full_enumeration,
-    increasing_scv,
     increasing_variance,
     solve_alns,
     solve_modified_tsp,
     solve_tsp,
 )
-from tsp_as.classes import ProblemData, Solution
+from tsp_as.classes import CostEvaluator, ProblemData, Solution
 from tsp_as.plot import plot_graph
 
 
@@ -46,9 +45,16 @@ def parse_args():
 
     parser.add_argument("--objective", type=str, default="hto")
     parser.add_argument("--final_objective", type=str, default="to")
-    parser.add_argument("--omega_travel", type=float, default=0.1)
-    parser.add_argument("--omega_idle", type=float, default=0.3)
-    parser.add_argument("--omega_wait", type=float, default=0.6)
+    parser.add_argument(
+        "--cost_profile",
+        type=str,
+        default="small",
+        choices=[
+            "small",  # (0.1, 0.3, 0.6)
+            "medium",  # (0.2, 0.25, 0.55)
+            "large",  # (0.3, 0.2, 0.5)
+        ],
+    )
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
@@ -85,11 +91,32 @@ def tabulate(headers, rows) -> str:
     return "\n".join(header + content)
 
 
+def make_cost_evaluator(data: ProblemData, cost_profile: str, seed) -> CostEvaluator:
+    """
+    Returns a cost evaluator based on the given cost profile.
+    """
+    rng = np.random.default_rng(seed)
+
+    def generate_weights(mean_weight):
+        """Generates random weights around the given mean for each node."""
+        return 2 * mean_weight * rng.random(data.dimension)
+
+    if cost_profile == "small":
+        return CostEvaluator(0.1, 0.3, generate_weights(0.6))
+    elif cost_profile == "medium":
+        return CostEvaluator(0.2, 0.25, generate_weights(0.55))
+    elif cost_profile == "large":
+        return CostEvaluator(0.3, 0.2, generate_weights(0.5))
+    else:
+        raise ValueError(f"Unknown cost profile {cost_profile}")
+
+
 def solve(
     loc: str,
     seed: int,
     algorithm: str,
     final_objective: str,
+    cost_profile: str,
     sol_dir: Optional[str],
     plot_dir: Optional[str],
     **kwargs,
@@ -99,24 +126,23 @@ def solve(
     """
     path = Path(loc)
     data = ProblemData.from_file(loc, **kwargs)
+    cost_evaluator = make_cost_evaluator(data, cost_profile, seed)
 
     if algorithm == "alns":
-        res = solve_alns(seed, data=data, **kwargs)
+        res = solve_alns(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "tsp":
-        res = solve_tsp(seed, data=data, **kwargs)
+        res = solve_tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "mtsp":
-        res = solve_modified_tsp(seed, data=data, **kwargs)
-    elif algorithm == "scv":
-        res = increasing_scv(seed, data)
+        res = solve_modified_tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "var":
-        res = increasing_variance(seed, data)
+        res = increasing_variance(seed, data, cost_evaluator)
     elif algorithm == "enum":
-        res = full_enumeration(seed, data)
+        res = full_enumeration(seed, data, cost_evaluator)
 
     # Final evaluation of the solution based on another objective function
     final_data = deepcopy(data)
     final_data.objective = final_objective
-    best = Solution(final_data, res.best_state.tour)
+    best = Solution(final_data, cost_evaluator, res.best_state.tour)
     print(tabulate(*cost_breakdown(best)))
 
     if sol_dir:

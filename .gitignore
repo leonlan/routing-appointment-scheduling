@@ -339,3 +339,5 @@ tags
 *.sqlite3
 *.prof
 docs/
+
+.ipynb_checkpoints/

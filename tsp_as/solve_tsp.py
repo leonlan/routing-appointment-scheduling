@@ -7,7 +7,7 @@ from alns.Statistics import Statistics
 from tsp_as.classes import Solution
 
 
-def solve_tsp(seed, data, max_iterations=1000, **kwargs):
+def solve_tsp(seed, data, cost_evaluator, max_iterations=1000, **kwargs):
     """
     Solves the TSP without appointment scheduling.
     """
@@ -19,4 +19,4 @@ def solve_tsp(seed, data, max_iterations=1000, **kwargs):
     stats.collect_objective(0)
     stats.collect_runtime(perf_counter() - start)
 
-    return Result(Solution(data, tour), stats)
+    return Result(Solution(data, cost_evaluator, tour), stats)

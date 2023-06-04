@@ -1,5 +1,3 @@
-import numpy as np
-
 from tsp_as.appointment.true_optimal import compute_idle_wait_per_client
 
 
@@ -24,9 +22,6 @@ def cost_breakdown(solution):
         "dist",
         "idle",
         "wait",
-        "norm. dist",
-        "norm. idle",
-        "norm. wait",
     ]
     rows = []
     locs = [0] + solution.tour + [0]
@@ -57,9 +52,6 @@ def cost_breakdown(solution):
             round(dist, 2),
             round(idle, 2),
             round(wait, 2),
-            round(data.omega_travel * dist, 2),
-            round(data.omega_idle * idle, 2),
-            round(data.omega_wait * wait, 2),
         )
         rows.append(row)
         total_dist += dist
@@ -67,13 +59,7 @@ def cost_breakdown(solution):
         total_wait += wait
 
     print(f"{total_dist=:.2f}, {total_idle=:.2f}, {total_wait=:.2f}")
-    print(
-        f"{data.omega_travel*total_dist=:.2f}, {data.omega_idle*total_idle=:.2f}, {data.omega_wait*total_wait=:.2f}"
-    )
 
-    np.testing.assert_allclose(solution.idle, total_idle)
-    np.testing.assert_allclose(solution.wait, total_wait)
-    np.testing.assert_allclose(solution.distance, total_dist)
     return headers, rows
 
 

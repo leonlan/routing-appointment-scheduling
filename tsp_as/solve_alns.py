@@ -13,7 +13,13 @@ from tsp_as.repair_operators import greedy_insert
 
 
 def solve_alns(
-    seed, init=None, data=None, max_runtime=None, max_iterations=None, **kwargs
+    seed,
+    data,
+    cost_evaluator,
+    init=None,
+    max_runtime=None,
+    max_iterations=None,
+    **kwargs,
 ):
     rng = rnd.default_rng(seed)
 
@@ -32,7 +38,7 @@ def solve_alns(
 
     if init is None:
         ordered = np.arange(1, data.dimension).tolist()
-        init = Solution(data, ordered)
+        init = Solution(data, cost_evaluator, ordered)
 
     select = RouletteWheel([5, 2, 1, 0.5], 0.5, len(D_OPS), len(R_OPS))
 
