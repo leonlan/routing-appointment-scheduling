@@ -21,16 +21,14 @@ def compute_idle_wait(
         schedule = ht.compute_schedule(tour, data, cost_evaluator)
 
         if data.objective == "htp":
-            # FIXME Separate idle and wait costs in heavy traffic, low prio because not used
-            return schedule, ht.compute_objective(tour, data)
+            idle, wait = ht.compute_objective(tour, schedule, data)
         elif data.objective == "hto":
             idle, wait = to.compute_idle_wait(tour, schedule, data)
-            return schedule, idle, wait
 
-    if data.objective == "to":
+        return schedule, idle, wait
+
+    elif data.objective == "to":
         schedule, idle, wait = to.compute_schedule_and_idle_wait(
             tour, data, cost_evaluator
         )
         return schedule, idle, wait
-
-    raise ValueError(f"{data.objective=} unknown.")
