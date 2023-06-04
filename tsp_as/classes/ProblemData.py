@@ -20,7 +20,6 @@ class ProblemData:
         omega_travel=0.5,
         omega_idle=0.25,
         omega_wait=0.25,
-        lag=4,
         **kwargs,
     ):
         self.name = name
@@ -40,7 +39,6 @@ class ProblemData:
         self.omega_travel = omega_travel
         self.omega_idle = omega_idle
         self.omega_wait = omega_wait
-        self.lag = lag  # TODO this is an algorithm parameter
 
     @classmethod
     def from_file(cls, loc, **kwargs):

@@ -1,5 +1,4 @@
 import tsp_as.appointment.heavy_traffic as ht
-import tsp_as.appointment.lag as lag
 import tsp_as.appointment.true_optimal as to
 
 
@@ -16,7 +15,7 @@ def compute_idle_wait(tour, data) -> tuple[list[float], list[float], list[float]
     list[float]
         The waiting times at each client visit.
     """
-    if data.objective in ["htp", "hto", "htl"]:
+    if data.objective in ["htp", "hto"]:
         schedule = ht.compute_schedule(tour, data)
 
         if data.objective == "htp":
@@ -24,9 +23,6 @@ def compute_idle_wait(tour, data) -> tuple[list[float], list[float], list[float]
             return schedule, ht.compute_objective(tour, data)
         elif data.objective == "hto":
             idle, wait = to.compute_idle_wait(tour, schedule, data)
-            return schedule, idle, wait
-        elif data.objective == "htl":
-            idle, wait = lag.compute_idle_wait(tour, schedule, data)
             return schedule, idle, wait
 
     if data.objective == "to":

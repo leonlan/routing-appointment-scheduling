@@ -7,7 +7,7 @@ from .heavy_traffic import compute_schedule as ht_compute_schedule
 from .utils import get_alphas_transitions
 
 
-def _compute_idle_wait_per_client(x, alpha, Vn, *, lag=False):
+def _compute_idle_wait_per_client(x, alpha, Vn):
     """
     Computes the objective value of a schedule. See Theorem (1).
 
@@ -21,9 +21,6 @@ def _compute_idle_wait_per_client(x, alpha, Vn, *, lag=False):
         The recursively-defined matrix $V^{(n)}$.
     data
         The problem data.
-    lag
-        Whether to return the idle and wait times for the last client only,
-        which is used for the lag-based objective function.
     """
     n = len(alpha)
     dims = np.cumsum([alpha[i].size for i in range(n)])
@@ -46,8 +43,6 @@ def _compute_idle_wait_per_client(x, alpha, Vn, *, lag=False):
         wait_times.append(wait.item())
 
         if i == n - 1:  # stop
-            if lag:  # If used as subprocedure in the lag-based obj function
-                return idle.item(), wait.item()
             break
 
         P = dgemm(1, beta, expVx)
