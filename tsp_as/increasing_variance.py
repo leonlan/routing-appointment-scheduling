@@ -8,13 +8,13 @@ from tsp_as.classes import Solution
 
 def increasing_variance(seed, data, cost_evaluator, **kwargs):
     """
-    Creates a tour in increasing order of variances.
+    Creates a visits in increasing order of variances.
     """
     start = perf_counter()
 
-    tour = data.service_var.argsort().tolist()
-    tour.remove(0)  # ignore the depot
-    solution = Solution(data, cost_evaluator, tour)
+    visits = data.service_var.argsort().tolist()
+    visits.remove(0)  # ignore the depot
+    solution = Solution(data, cost_evaluator, visits)
 
     # This little hack allows us to use the same interface for ALNS-based
     # heuristics and the SCV heuristic.

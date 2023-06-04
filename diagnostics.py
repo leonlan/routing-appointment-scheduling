@@ -5,11 +5,11 @@ def cost_breakdown(solution):
     """
     Breakdown the cost of the solution.
     """
-    fr, to = [0] + solution.tour, solution.tour + [0]
+    tour_arcs = [0] + solution.visits, solution.visits + [0]
     data = solution.data
-    dists = data.distances[fr, to]
+    dists = data.distances[tour_arcs]
     idle_times, wait_times = compute_idle_wait_per_client(
-        solution.tour, solution.schedule, solution.data
+        solution.visits, solution.schedule, solution.data
     )
 
     headers = [
@@ -24,7 +24,7 @@ def cost_breakdown(solution):
         "wait",
     ]
     rows = []
-    locs = [0] + solution.tour + [0]
+    locs = [0] + solution.visits + [0]
     n_locs = len(locs) - 1
     last = n_locs - 1
 
@@ -35,9 +35,9 @@ def cost_breakdown(solution):
         fr = locs[idx]
         to = locs[idx + 1]
         appointment = solution.schedule[idx] if idx < last else 0  # do not count last
-        mean = data.means[fr, to]
-        scv = data.scvs[fr, to]
-        var = data.vars[fr, to]
+        mean = data.arcs_mean[fr, to]
+        scv = data.arcs_scv[fr, to]
+        var = data.arcs_var[fr, to]
         dist = dists[idx]
         idle = idle_times[idx] if idx < last else 0  # do not count last
         wait = wait_times[idx] if idx < last else 0  # do not count last

@@ -4,7 +4,6 @@ from scipy.linalg.blas import dgemm
 from scipy.optimize import minimize
 
 from .heavy_traffic import compute_schedule as ht_compute_schedule
-from .utils import get_alphas_transitions
 
 
 def _compute_idle_wait_per_client(x, alpha, Vn):
@@ -52,15 +51,15 @@ def _compute_idle_wait_per_client(x, alpha, Vn):
     return idle_times, wait_times
 
 
-def compute_idle_wait(tour, schedule, data) -> tuple[list[float], list[float]]:
+def compute_idle_wait(visits, schedule, data) -> tuple[list[float], list[float]]:
     """
-    Compute the idle and wait times for a solution (tour and schedule).
+    Compute the idle and wait times for a solution (visits and schedule).
     Wrapper for `_compute_idle_wait_per_client`.
 
     Parameters
     ----------
-    tour
-        The tour.
+    visits
+        The visits.
     schedule
         The interappointment times.
     data
@@ -73,52 +72,52 @@ def compute_idle_wait(tour, schedule, data) -> tuple[list[float], list[float]]:
     wait_times
         The wait times per client.
     """
-    return compute_idle_wait_per_client(tour, schedule, data)
+    return compute_idle_wait_per_client(visits, schedule, data)
 
 
-def compute_idle_wait_per_client(tour, schedule, data):
+def compute_idle_wait_per_client(visits, schedule, data):
     """
-    Compute the idle and wait times per client for a solution (tour and schedule).
+    Compute the idle and wait times per client for a solution (visits and schedule).
 
     Parameters
     ----------
-    tour
-        The tour.
+    visits
+        The visits.
     schedule
         The interappointment times.
     data
         The problem data.
     """
-    alpha, Vn = _get_alphas_and_Vn(tour, data)
+    alpha, Vn = _get_alphas_and_Vn(visits, data)
 
     idle_times, wait_times = _compute_idle_wait_per_client(schedule, alpha, Vn)
     return idle_times, wait_times
 
 
-def compute_schedule_and_idle_wait(tour, data, cost_evaluator, **kwargs):
+def compute_schedule_and_idle_wait(visits, data, cost_evaluator, **kwargs):
     """
     Compute the optimal schedule and the corresponding idle and wait times.
 
     Parameters
     ----------
-    tour
-        The tour.
+    visits
+        The visits.
     data
         The problem data.
     cost_evaluator
         The cost evaluator.
     """
-    alpha, Vn = _get_alphas_and_Vn(tour, data)
+    alpha, Vn = _get_alphas_and_Vn(visits, data)
 
     def cost_fun(x):
         idle_weight = cost_evaluator.idle_weight
-        wait_weights = cost_evaluator.wait_weights[tour]
+        wait_weights = cost_evaluator.wait_weights[visits]
 
         idle, wait = _compute_idle_wait_per_client(x, alpha, Vn)
         return idle_weight * sum(idle) + np.dot(wait_weights, wait)
 
     # Use heavy traffic solution as initial guess
-    x_init = ht_compute_schedule(tour, data, cost_evaluator)
+    x_init = ht_compute_schedule(visits, data, cost_evaluator)
 
     optim = minimize(
         cost_fun,
@@ -128,13 +127,7 @@ def compute_schedule_and_idle_wait(tour, data, cost_evaluator, **kwargs):
         bounds=[(0, None) for _ in range(x_init.size)],
     )
 
-    return optim.x, *compute_idle_wait(tour, optim.x, data)
-
-
-def _get_alphas_and_Vn(tour, data):
-    alpha, T = get_alphas_transitions(tour, data)
-    Vn = _create_Vn(alpha, T)
-    return alpha, Vn
+    return optim.x, *compute_idle_wait(visits, optim.x, data)
 
 
 def _create_Vn(alphas, T):
@@ -142,6 +135,8 @@ def _create_Vn(alphas, T):
     Creates the Vn matrix given the initial distributions `alphas` and the
     corresponding transition matrices `T`.
 
+    Parameters
+    ----------
     alphas
         List of initial distribution arrays
     T
@@ -164,3 +159,14 @@ def _create_Vn(alphas, T):
     Vn[dims[n - 1] : dims[n], dims[n - 1] : dims[n]] = T[n - 1]
 
     return Vn
+
+
+def _get_alphas_and_Vn(visits, data):
+    alpha, T = _get_alphas_transitions(visits, data)
+    Vn = _create_Vn(alpha, T)
+    return alpha, Vn
+
+
+def _get_alphas_transitions(visits, data):
+    arcs = [0] + visits[:-1], visits
+    return tuple(data.alphas[arcs]), tuple(data.transitions[arcs])
