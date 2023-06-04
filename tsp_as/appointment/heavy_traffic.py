@@ -37,10 +37,9 @@ def compute_objective(tour, schedule, data) -> tuple[list[float], list[float]]:
 def _compute_weighted_mean_variance(tour, data):
     """
     This function mimics the notation in the paper for easy checking.
-    There's a more compact/efficient way to do this, see the this issue:
+    There's a much more compact way to do this, see the this commit:
 
-    https://github.com/leonlan/tsp-as/blob/7bd9008/tsp_as/appointment/
-        heavy_traffic.py#L30
+    https://github.com/leonlan/tsp-as/blob/7bd9008/tsp_as/appointment/ heavy_traffic.py#L30
     """
     n = len(tour)
     BETA = 0.5  # TODO I'm not sure what this paramater is.
