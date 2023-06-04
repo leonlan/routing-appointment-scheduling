@@ -3,7 +3,7 @@ import numpy as np
 from .utils import get_leg_data, get_vars
 
 
-def compute_schedule(tour, data, cost_evaluator):
+def compute_schedule(tour, data, cost_evaluator) -> list[float]:
     """
     Computes the schedule using heavy traffic approximation.
     """

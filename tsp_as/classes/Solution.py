@@ -134,6 +134,7 @@ class Solution:
         )
 
         assert len(schedule) == len(self.tour)
+        assert all(x >= 0 for x in schedule)
 
         self.schedule = schedule
         self._distance = distance
