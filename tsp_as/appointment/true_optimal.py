@@ -4,7 +4,6 @@ from scipy.linalg.blas import dgemm
 from scipy.optimize import minimize
 
 from .heavy_traffic import compute_schedule as ht_compute_schedule
-from .utils import get_alphas_transitions
 
 
 def _compute_idle_wait_per_client(x, alpha, Vn):
@@ -131,17 +130,13 @@ def compute_schedule_and_idle_wait(visits, data, cost_evaluator, **kwargs):
     return optim.x, *compute_idle_wait(visits, optim.x, data)
 
 
-def _get_alphas_and_Vn(visits, data):
-    alpha, T = get_alphas_transitions(visits, data)
-    Vn = _create_Vn(alpha, T)
-    return alpha, Vn
-
-
 def _create_Vn(alphas, T):
     """
     Creates the Vn matrix given the initial distributions `alphas` and the
     corresponding transition matrices `T`.
 
+    Parameters
+    ----------
     alphas
         List of initial distribution arrays
     T
@@ -164,3 +159,14 @@ def _create_Vn(alphas, T):
     Vn[dims[n - 1] : dims[n], dims[n - 1] : dims[n]] = T[n - 1]
 
     return Vn
+
+
+def _get_alphas_and_Vn(visits, data):
+    alpha, T = _get_alphas_transitions(visits, data)
+    Vn = _create_Vn(alpha, T)
+    return alpha, Vn
+
+
+def _get_alphas_transitions(visits, data):
+    arcs = [0] + visits[:-1], visits
+    return tuple(data.alphas[arcs]), tuple(data.transitions[arcs])
