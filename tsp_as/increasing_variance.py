@@ -12,7 +12,8 @@ def increasing_variance(seed, data, cost_evaluator, **kwargs):
     """
     start = perf_counter()
 
-    visits = data.service_var.argsort().tolist()
+    service_var = data.service_scv * data.service**2
+    visits = service_var.argsort().tolist()
     visits.remove(0)  # ignore the depot
     solution = Solution(data, cost_evaluator, visits)
 

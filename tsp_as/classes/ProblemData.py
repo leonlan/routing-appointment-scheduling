@@ -50,7 +50,6 @@ class ProblemData:
         self.service_scv = service_scv
         self.objective = objective
 
-        self.service_var = service_scv * np.power(service, 2)
         self.arcs_mean, self.arcs_scv, self.arcs_var = compute_arc_data(
             distances, distances_scv, service, service_scv
         )
