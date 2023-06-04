@@ -142,7 +142,7 @@ def solve(
     # Final evaluation of the solution based on another objective function
     final_data = deepcopy(data)
     final_data.objective = final_objective
-    best = Solution(final_data, res.best_state.tour, cost_evaluator)
+    best = Solution(final_data, cost_evaluator, res.best_state.tour)
     print(tabulate(*cost_breakdown(best)))
 
     if sol_dir:

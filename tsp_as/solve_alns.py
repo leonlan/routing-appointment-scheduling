@@ -38,7 +38,7 @@ def solve_alns(
 
     if init is None:
         ordered = np.arange(1, data.dimension).tolist()
-        init = Solution(data, ordered, cost_evaluator)
+        init = Solution(data, cost_evaluator, ordered)
 
     select = RouletteWheel([5, 2, 1, 0.5], 0.5, len(D_OPS), len(R_OPS))
 

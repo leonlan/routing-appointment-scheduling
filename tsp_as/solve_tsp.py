@@ -19,4 +19,4 @@ def solve_tsp(seed, data, cost_evaluator, max_iterations=1000, **kwargs):
     stats.collect_objective(0)
     stats.collect_runtime(perf_counter() - start)
 
-    return Result(Solution(data, tour, cost_evaluator), stats)
+    return Result(Solution(data, cost_evaluator, tour), stats)

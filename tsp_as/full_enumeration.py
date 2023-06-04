@@ -29,7 +29,7 @@ def full_enumeration(seed, data, cost_evaluator, **kwargs):
     enum_data.objective = "to"
 
     perms = permutations(range(1, data.dimension))
-    all_sols = [Solution(enum_data, list(tour), cost_evaluator) for tour in perms]
+    all_sols = [Solution(enum_data, cost_evaluator, list(tour)) for tour in perms]
     optimal = min(all_sols, key=lambda sol: sol.cost)
     print(optimal.tour)
 

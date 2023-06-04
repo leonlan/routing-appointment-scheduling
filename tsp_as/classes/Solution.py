@@ -6,20 +6,22 @@ from typing import Optional
 from tsp_as.appointment import compute_idle_wait
 
 from .CostEvaluator import CostEvaluator
+from .ProblemData import ProblemData
 
 
 class Solution:
     def __init__(
         self,
-        data,
-        tour: list[int],
+        data: ProblemData,
         cost_evaluator: CostEvaluator,
+        tour: list[int],
+        schedule: Optional[list[float]] = None,
         unassigned: Optional[list[int]] = None,
     ):
         self.data = data
         self.tour = tour  # TODO rename to visits - tour includes depot
         self.cost_evaluator = cost_evaluator
-        self.schedule = None  # inter-appointment times
+        self.schedule = schedule if schedule is not None else None
         self.unassigned = unassigned if unassigned is not None else []
 
         self._idle_times = None
@@ -30,7 +32,11 @@ class Solution:
 
     def __deepcopy__(self, memodict):
         return Solution(
-            self.data, copy(self.tour), self.cost_evaluator, copy(self.unassigned)
+            self.data,
+            self.cost_evaluator,
+            copy(self.tour),
+            copy(self.schedule),
+            copy(self.unassigned),
         )
 
     def __len__(self):
@@ -86,7 +92,7 @@ class Solution:
         # in cost.
         new_tour = copy(self.tour)
         new_tour.insert(idx, customer)
-        cand = Solution(self.data, new_tour, self.cost_evaluator)
+        cand = Solution(self.data, self.cost_evaluator, new_tour)
 
         return self.cost_evaluator(cand) - self.cost_evaluator(self)
 

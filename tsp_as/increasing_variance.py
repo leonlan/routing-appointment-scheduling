@@ -14,7 +14,7 @@ def increasing_variance(seed, data, cost_evaluator, **kwargs):
 
     tour = data.service_var.argsort().tolist()
     tour.remove(0)  # ignore the depot
-    solution = Solution(data, tour, cost_evaluator)
+    solution = Solution(data, cost_evaluator, tour)
 
     # This little hack allows us to use the same interface for ALNS-based
     # heuristics and the SCV heuristic.
