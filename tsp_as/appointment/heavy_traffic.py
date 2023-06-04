@@ -11,8 +11,8 @@ def compute_schedule(tour, data):
     """
     means, _, variances = get_leg_data(tour, data)
     B = _compute_service_times(variances)
-    coeff = (1 - data.omega_travel - data.omega_idle) / (2 * data.omega_idle)
-    return means + np.sqrt(coeff * B)
+    expr = (data.omega_wait * B) / (2 * data.omega_idle)
+    return means + np.sqrt(expr)
 
 
 def compute_objective(tour, data):
