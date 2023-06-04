@@ -54,11 +54,11 @@ def _compute_weighted_mean_variance(visits, data):
 
 
 def _get_arc_means(visits, data):
-    return data.means[_visits2arcs(visits)]
+    return data.arcs_mean[_visits2arcs(visits)]
 
 
 def _get_arc_vars(visits, data):
-    return data.vars[_visits2arcs(visits)]
+    return data.arcs_var[_visits2arcs(visits)]
 
 
 def _visits2arcs(visits):

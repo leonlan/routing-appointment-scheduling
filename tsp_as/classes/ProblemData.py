@@ -51,10 +51,12 @@ class ProblemData:
         self.objective = objective
 
         self.service_var = service_scv * np.power(service, 2)
-        self.means, self.scvs, self.vars = compute_means_scvs(
+        self.arcs_mean, self.arcs_scv, self.arcs_var = compute_arc_data(
             distances, distances_scv, service, service_scv
         )
-        self.alphas, self.transitions = compute_phase_parameters(self.means, self.scvs)
+        self.alphas, self.transitions = compute_phase_parameters(
+            self.arcs_mean, self.arcs_scv
+        )
 
     @classmethod
     def from_file(cls, loc, **kwargs):
@@ -76,10 +78,10 @@ class ProblemData:
         )
 
 
-def compute_means_scvs(distances, distances_scv, service, service_scv):
+def compute_arc_data(distances, distances_scv, service, service_scv):
     """
-    Computes the means and SCVs of the random variable that is the sum of
-    the travel time and the service time.
+    Computes the means, SCVs and variances of the arc random variable, i.e.,
+    the sum of the travel time and the service time.
     """
     # Compute the variances of the combined service and travel times,
     # which in turn are used to compute the scvs.

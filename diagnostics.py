@@ -35,9 +35,9 @@ def cost_breakdown(solution):
         fr = locs[idx]
         to = locs[idx + 1]
         appointment = solution.schedule[idx] if idx < last else 0  # do not count last
-        mean = data.means[fr, to]
-        scv = data.scvs[fr, to]
-        var = data.vars[fr, to]
+        mean = data.arcs_mean[fr, to]
+        scv = data.arcs_scv[fr, to]
+        var = data.arcs_var[fr, to]
         dist = dists[idx]
         idle = idle_times[idx] if idx < last else 0  # do not count last
         wait = wait_times[idx] if idx < last else 0  # do not count last
