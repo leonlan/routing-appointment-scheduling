@@ -78,25 +78,6 @@ class Solution:
         """
         return self.cost_evaluator(self)
 
-    def insert_cost(self, idx: int, customer: int) -> float:
-        """
-        Compute the cost for inserting customer at position idx. The insertion cost
-        is the difference between the cost of the current solution and the cost of
-        the candidate solution with the inserted customer.
-        """
-        # We create a copy of the current visits and insert the customer at the
-        # specified position. Then we create a new solution object with the
-        # candidate visits (which updates the cost) and compute the difference
-        # in cost.
-        new_visits = copy(self.visits)
-        new_visits.insert(idx, customer)
-        new_schedule = compute_ht_schedule(new_visits, self.data, self.cost_evaluator)
-        new_solution = Solution(
-            self.data, self.cost_evaluator, new_visits, new_schedule
-        )
-
-        return self.cost_evaluator(new_solution) - self.cost_evaluator(self)
-
     def insert(self, idx: int, customer: int):
         """
         Insert the customer at position idx.
