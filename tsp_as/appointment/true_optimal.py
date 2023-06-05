@@ -144,11 +144,10 @@ def _create_Vn(alphas, T):
 
 
 def _get_alphas_and_Vn(visits, data):
-    alpha, T = _get_alphas_transitions(visits, data)
+    arcs = [0] + visits[:-1], visits
+
+    alpha = tuple(data.alphas[arcs])
+    T = tuple(data.transitions[arcs])
+
     Vn = _create_Vn(alpha, T)
     return alpha, Vn
-
-
-def _get_alphas_transitions(visits, data):
-    arcs = [0] + visits[:-1], visits
-    return tuple(data.alphas[arcs]), tuple(data.transitions[arcs])
