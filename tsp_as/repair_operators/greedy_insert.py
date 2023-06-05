@@ -21,14 +21,40 @@ def _opt_insert(solution: Solution, customer: int):
     """
     Optimally inserts the customer in the current visits.
     """
-    idcs_costs = []
+    best_idx = None
+    best_cost = float("inf")
 
     for idx in range(len(solution.visits) + 1):
-        cost = _insert_cost(solution, idx, customer)
-        idcs_costs.append((idx, cost))
+        if _insert_cost_travel(solution, idx, customer) > best_cost:
+            # If the travel cost is already higher than the best overall cost,
+            # we can stop searching.
+            continue
 
-    idx, _ = min(idcs_costs, key=lambda idx_cost: idx_cost[1])
-    solution.insert(idx, customer)
+        cost = _insert_cost(solution, idx, customer)
+
+        if best_cost is None or cost < best_cost:
+            best_cost = cost
+            best_idx = idx
+
+    assert best_idx is not None  # Sanity check that we always find a best_idx
+
+    solution.insert(best_idx, customer)
+
+
+def _insert_cost_travel(solution, idx, cust):
+    if len(solution.visits) == 0:
+        pred, succ = 0, 0
+    elif idx == 0:
+        pred, succ = 0, solution.visits[idx]
+    elif idx == len(solution.visits):
+        pred, succ = solution.visits[idx - 1], 0
+    else:
+        pred, succ = solution.visits[idx - 1], solution.visits[idx]
+
+    delta = solution.data.distances[pred, cust] + solution.data.distances[cust, succ]
+    delta -= solution.data.distances[pred, succ]
+
+    return solution.cost_evaluator.travel_weight * delta
 
 
 def _insert_cost(solution, idx: int, customer: int) -> float:
