@@ -11,6 +11,9 @@ def solve_tsp(seed, data, cost_evaluator, max_iterations=1000, **kwargs):
     """
     Solves the TSP without appointment scheduling.
     """
+    if max_iterations is None:
+        max_iterations = 1000
+
     start = perf_counter()
     visits = elkai.solve_float_matrix(data.distances, runs=max_iterations)
     visits.remove(0)  # remove depot

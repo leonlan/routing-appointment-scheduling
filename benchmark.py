@@ -17,7 +17,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm.contrib.concurrent import process_map
 
-from diagnostics import cost_breakdown
 from tsp_as import (
     full_enumeration,
     increasing_variance,
@@ -55,6 +54,8 @@ def parse_args():
             "large",  # (0.3, 0.2, 0.5)
         ],
     )
+    parser.add_argument("--cost_seed", type=int, default=1)
+
     # Objective refers to the appointment scheduling objective function, which
     # is different from the TSP-AS objective function (the latter includes
     # travel distances, whereas the former does not).
@@ -128,6 +129,7 @@ def solve(
     algorithm: str,
     objective: str,
     cost_profile: str,
+    cost_seed: int,
     sol_dir: Optional[str],
     plot_dir: Optional[str],
     **kwargs,
@@ -137,7 +139,7 @@ def solve(
     """
     path = Path(loc)
     data = ProblemData.from_file(loc)
-    cost_evaluator = make_cost_evaluator(data, objective, cost_profile, seed)
+    cost_evaluator = make_cost_evaluator(data, objective, cost_profile, cost_seed)
 
     if algorithm == "alns":
         res = solve_alns(seed, data, cost_evaluator, **kwargs)
@@ -156,8 +158,8 @@ def solve(
 
     schedule = compute_optimal_schedule(best.visits, data, cost_evaluator)
     final_solution = Solution(data, cost_evaluator, best.visits, schedule=schedule)
-    print(tabulate(*cost_breakdown(data, final_solution)))
-    print(final_solution.objective())
+    # print(tabulate(*cost_breakdown(data, final_solution)))
+    # print(final_solution.objective())
 
     if sol_dir:
         instance_name = Path(loc).stem
@@ -179,6 +181,8 @@ def solve(
         len(res.statistics.objectives),
         round(res.statistics.total_runtime, 3),
         algorithm,
+        cost_profile,
+        cost_seed,
     )
 
 
@@ -212,10 +216,20 @@ def benchmark(instances: List[str], **kwargs):
         ("iters", int),
         ("time", float),
         ("alg", "U37"),
+        ("cost-profile", "U37"),
+        ("cost-seed", int),
     ]
 
     data = np.asarray(data, dtype=dtypes)
-    headers = ["Instance", "Obj.", "Iters. (#)", "Time (s)", "Algorithm"]
+    headers = [
+        "Instance",
+        "Obj.",
+        "Iters. (#)",
+        "Time (s)",
+        "Algorithm",
+        "Cost profile",
+        "Cost seed",
+    ]
 
     print("\n", tabulate(headers, data), "\n", sep="")
     print(f"      Avg. objective: {data['obj'].mean():.0f}")

@@ -87,7 +87,10 @@ def compute_arc_data(distances, distances_scv, service, service_scv):
     # entry (i, j) denotes the travel time from i to j and the service
     # time at location i.
     means = service[np.newaxis, :].T + distances
-    scvs = np.divide(_var, np.power(means, 2))
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        # There may be NaNs in the means
+        scvs = np.divide(_var, np.power(means, 2))
 
     np.fill_diagonal(means, 0)
     np.fill_diagonal(scvs, 0)
