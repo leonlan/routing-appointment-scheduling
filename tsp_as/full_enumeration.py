@@ -4,6 +4,7 @@ from itertools import permutations
 from time import perf_counter
 from typing import Optional
 
+from tsp_as.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
 from tsp_as.appointment.true_optimal import compute_optimal_schedule
 from tsp_as.classes import CostEvaluator, ProblemData, Solution
 
@@ -15,6 +16,7 @@ def full_enumeration(
     data: ProblemData,
     cost_evaluator: CostEvaluator,
     initial_solution: Optional[Solution] = None,
+    approx_pool_size: Optional[int] = 100,
     num_procs: int = 8,
     **kwargs,
 ):
@@ -31,7 +33,11 @@ def full_enumeration(
     cost_evaluator
         The cost evaluator.
     initial_solution
-        The initial solution to use for upper bound.
+        The initial to solution use for upper bound.
+    approx_pool_size
+        The size of the pool of permutations to evaluate. The pool is
+        constructed by taking the top `approx_pool_size` solutions using
+        the heavy traffic schedule.
     num_procs
         The number of processes to use. If 1, the search is sequential.
     """
@@ -42,7 +48,10 @@ def full_enumeration(
         schedule = compute_optimal_schedule(ordered_visits, data, cost_evaluator)
         initial_solution = Solution(data, cost_evaluator, ordered_visits, schedule)
 
-    pool = list(permutations(range(1, data.dimension)))
+    pool = [list(visits) for visits in permutations(range(1, data.dimension))]
+
+    if approx_pool_size is not None:
+        pool = _filter_using_heavy_traffic(pool, approx_pool_size, data, cost_evaluator)
 
     solutions = []
     with multiprocessing.Pool(num_procs) as mp_pool:
@@ -62,9 +71,21 @@ def full_enumeration(
     return Result(best, perf_counter() - start, 0)
 
 
-def _make_solution(visits, data, cost_evaluator, upper_bound):
-    visits = list(visits)
+def _filter_using_heavy_traffic(pool, approx_pool_size, data, cost_evaluator):
+    """
+    Evaluates the pool of permutations using the heavy traffic schedule, and
+    return the top `approx_pool_size` solutions.
+    """
 
+    def compute_approx_cost(visits):
+        schedule = compute_ht_schedule(visits, data, cost_evaluator)
+        return cost_evaluator(visits, schedule, data)
+
+    pool.sort(key=lambda visits: compute_approx_cost(visits))
+    return pool[:approx_pool_size]
+
+
+def _make_solution(visits, data, cost_evaluator, upper_bound):
     if _compute_travel_cost(visits, data, cost_evaluator) > upper_bound:
         return None
 
