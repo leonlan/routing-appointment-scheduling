@@ -1,5 +1,8 @@
+import multiprocessing
+from functools import partial
 from itertools import permutations
 from time import perf_counter
+from typing import Optional
 
 from tsp_as.appointment.true_optimal import compute_optimal_schedule
 from tsp_as.classes import CostEvaluator, ProblemData, Solution
@@ -11,9 +14,9 @@ def full_enumeration(
     seed: int,
     data: ProblemData,
     cost_evaluator: CostEvaluator,
-    initial_solution: Solution = None,
-    num_procs: int = 1,
-    **kwargs
+    initial_solution: Optional[Solution] = None,
+    num_procs: int = 8,
+    **kwargs,
 ):
     """
     Obtains the optimal solution by enumerating all possible visits, and for
@@ -41,28 +44,42 @@ def full_enumeration(
 
     best = initial_solution
 
-    pool = permutations(range(1, data.dimension))
+    mgr = multiprocessing.Manager()
+    best_cost = mgr.Value("d", best.cost)
 
-    for visits in pool:
-        visits = list(visits)
+    pool = list(permutations(range(1, data.dimension)))
+    pool_lock = multiprocessing.Lock()
 
-        # If the travel cost is already larger than the best solution, then
-        # we can skip this solution to avoid expensive idle/wait computations.
-        if _compute_travel_cost(visits, data, cost_evaluator) > best.cost:
-            continue
+    with multiprocessing.Pool(num_procs) as mp_pool:
+        func = partial(
+            _make_solution,
+            data=data,
+            cost_evaluator=cost_evaluator,
+            best_cost=best_cost,
+        )
 
-        schedule = compute_optimal_schedule(visits, data, cost_evaluator)
-        solution = Solution(data, cost_evaluator, visits, schedule)
-
-        if solution.cost < best.cost:
-            best = solution
+        for solution in mp_pool.imap_unordered(func, pool):
+            if solution is not None and solution.cost < best_cost.value:
+                with pool_lock:
+                    if solution.cost < best_cost.value:
+                        best = solution
+                        best_cost.value = best.cost
 
     return Result(best, perf_counter() - start, 0)
 
 
+def _make_solution(visits, data, cost_evaluator, best_cost):
+    visits = list(visits)
+
+    if _compute_travel_cost(visits, data, cost_evaluator) > best_cost.value:
+        return None
+
+    schedule = compute_optimal_schedule(visits, data, cost_evaluator)
+    solution = Solution(data, cost_evaluator, visits, schedule)
+
+    return solution
+
+
 def _compute_travel_cost(visits, data, cost_evaluator) -> float:
-    """
-    Compute the travel cost of the given visits order.
-    """
     distance = data.distances[[0] + visits, visits + [0]].sum()
     return cost_evaluator.travel_weight * distance
