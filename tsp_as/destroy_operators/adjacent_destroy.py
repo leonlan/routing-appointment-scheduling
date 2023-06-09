@@ -4,23 +4,19 @@ from math import ceil
 from numpy.random import Generator
 
 from tsp_as.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
-from tsp_as.classes import Solution
+from tsp_as.classes import CostEvaluator, ProblemData, Solution
 
 
 def adjacent_destroy(
-    solution: Solution, rng: Generator, pct_destroy: float = 0.15, **kwargs
+    solution: Solution,
+    rng: Generator,
+    data: ProblemData,
+    cost_evaluator: CostEvaluator,
+    pct_destroy: float = 0.15,
+    **kwargs
 ) -> Solution:
     """
     Randomly removes a number adjacent customers from the solution.
-
-    Parameters
-    ----------
-    solution
-        The solution to destroy.
-    rng
-        The random number generator.
-    pct_destroy
-        The percentage of customers to remove.
     """
     visits = deepcopy(solution.visits)
     unassigned = []
@@ -36,8 +32,6 @@ def adjacent_destroy(
 
     assert len(solution.visits) == len(visits) + num_destroy
 
-    schedule = compute_ht_schedule(visits, solution.data, solution.cost_evaluator)
+    schedule = compute_ht_schedule(visits, data, cost_evaluator)
 
-    return Solution(
-        solution.data, solution.cost_evaluator, visits, schedule, unassigned
-    )
+    return Solution(data, cost_evaluator, visits, schedule, unassigned)

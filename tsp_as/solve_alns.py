@@ -1,4 +1,5 @@
 import time
+from typing import Optional
 
 import numpy as np
 import numpy.random as rnd
@@ -8,16 +9,16 @@ from alns.select import RouletteWheel
 from alns.stop import MaxIterations, MaxRuntime
 
 from tsp_as.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
-from tsp_as.classes import Solution
+from tsp_as.classes import CostEvaluator, ProblemData, Solution
 from tsp_as.destroy_operators import adjacent_destroy, random_destroy
 from tsp_as.repair_operators import greedy_insert
 
 
 def solve_alns(
-    seed,
-    data,
-    cost_evaluator,
-    init=None,
+    seed: int,
+    data: ProblemData,
+    cost_evaluator: CostEvaluator,
+    init: Optional[Solution] = None,
     max_runtime=None,
     max_iterations=None,
     **kwargs,
@@ -59,7 +60,9 @@ def solve_alns(
             init.objective(), start_threshold, end_threshold, max_iterations
         )
 
-    return alns.iterate(init, select, accept, stop, **kwargs)
+    return alns.iterate(
+        init, select, accept, stop, data=data, cost_evaluator=cost_evaluator, **kwargs
+    )
 
 
 def time_based_value(

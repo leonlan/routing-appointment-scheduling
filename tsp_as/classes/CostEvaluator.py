@@ -30,15 +30,18 @@ class CostEvaluator:
         self.idle_weight = idle_weight
         self.wait_weights = wait_weights
 
-    def __call__(self, solution: Solution) -> float:  # noqa: F821
+    def __call__(self, visits, schedule, data) -> float:  # noqa: F821
         """
         Returns the cost of a solution.
         """
-        travel_costs = self.travel_weight * solution.distance
-        idle_costs = self.idle_weight * sum(solution.idle_times)
+        distance = data.distances[[0] + visits, visits + [0]].sum()
+        travel_costs = self.travel_weight * distance
 
-        wait_weights = self.wait_weights[solution.visits]
-        wait_costs = np.dot(wait_weights, solution.wait_times)
+        idle_times, wait_times = self.idle_wait_function(visits, schedule, data)
+        idle_costs = self.idle_weight * sum(idle_times)
+
+        wait_weights = self.wait_weights[visits]
+        wait_costs = np.dot(wait_weights, wait_times)
 
         return travel_costs + idle_costs + wait_costs
 

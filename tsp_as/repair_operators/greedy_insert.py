@@ -1,74 +1,68 @@
 from copy import copy
 
 from tsp_as.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
-from tsp_as.appointment.true_optimal import compute_idle_wait
 from tsp_as.classes import Solution
 
 
-def greedy_insert(solution: Solution, rng, **kwargs):
+def greedy_insert(solution: Solution, rng, data, cost_evaluator, **kwargs):
     """
     Insert the unassigned customers into the best place, one-by-one.
     """
-    rng.shuffle(solution.unassigned)
+    unassigned = copy(solution.unassigned)
+    rng.shuffle(unassigned)
 
-    while solution.unassigned:
-        customer = solution.unassigned.pop()
-        _opt_insert(solution, customer)
+    visits = copy(solution.visits)
 
-    return solution
+    while unassigned:
+        customer = unassigned.pop()
+        best_idx = _best_insert_idx(visits, customer, data, cost_evaluator)
+        visits.insert(best_idx, customer)
+
+    return _create_new_ht_solution(visits, data, cost_evaluator)
 
 
-def _opt_insert(solution: Solution, customer: int):
+def _best_insert_idx(visits: list[int], customer: int, data, cost_evaluator):
     """
-    Optimally inserts the customer in the current visits.
+    Find the best insertion index for the customer in the current visits order.
+
+    We do this by trying all possible insertion points and selecting the one
+    that leads to the lowest total cost.
     """
     best_idx = None
     best_cost = float("inf")
 
-    for idx in range(len(solution.visits) + 1):
-        delta_dist = _delta_dist(solution, idx, customer)
-        insert_cost_dist = solution.cost_evaluator.travel_weight * delta_dist
+    for idx in range(len(visits) + 1):
+        new_visits = copy(visits)
+        new_visits.insert(idx, customer)
 
-        if insert_cost_dist > best_cost:
-            # If the travel cost is already higher than the best overall cost,
-            # we can stop searching.
+        if _compute_new_travel_cost(new_visits, data, cost_evaluator) > best_cost:
+            # If the new travel cost is already higher than the best cost, we
+            # can stop the search to avoid expensive idle/wait computations.
             continue
 
-        # Create the visits and schedule of the new solution
-        new_visits = copy(solution.visits)
-        new_visits.insert(idx, customer)
-        new_schedule = compute_ht_schedule(
-            new_visits, solution.data, solution.cost_evaluator
-        )
+        new = _create_new_ht_solution(new_visits, data, cost_evaluator)
 
-        # Re-compute the travel, idle and waiting time of the new solution
-        travel = solution.distance + delta_dist
-        idle, wait = compute_idle_wait(new_visits, new_schedule, solution.data)
-
-        # Compute the delta cost of the insertion
-        delta_cost = solution.cost_evaluator.cost(new_visits, travel, idle, wait)
-        delta_cost -= solution.cost_evaluator(solution)
-
-        if best_cost is None or delta_cost < best_cost:
-            best_cost = delta_cost
+        if best_cost is None or new.cost < best_cost:
+            best_cost = new.cost
             best_idx = idx
 
     assert best_idx is not None  # Sanity check that we always find a best_idx
 
-    solution.insert(best_idx, customer)
+    return best_idx
 
 
-def _delta_dist(solution, idx, cust):
-    if len(solution.visits) == 0:
-        pred, succ = 0, 0
-    elif idx == 0:
-        pred, succ = 0, solution.visits[idx]
-    elif idx == len(solution.visits):
-        pred, succ = solution.visits[idx - 1], 0
-    else:
-        pred, succ = solution.visits[idx - 1], solution.visits[idx]
+def _create_new_ht_solution(visits, data, cost_evaluator):
+    """
+    Create a new solution from the given list of client visits by computing
+    a heavy traffic schedule.
+    """
+    ht_schedule = compute_ht_schedule(visits, data, cost_evaluator)
+    return Solution(data, cost_evaluator, visits, ht_schedule)
 
-    delta = solution.data.distances[pred, cust] + solution.data.distances[cust, succ]
-    delta -= solution.data.distances[pred, succ]
 
-    return delta
+def _compute_new_travel_cost(visits, data, cost_evaluator) -> float:
+    """
+    Compute the travel cost of the given visits order.
+    """
+    distance = data.distances[[0] + visits, visits + [0]].sum()
+    return cost_evaluator.travel_weight * distance
