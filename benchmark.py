@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 
 # BUG This is to avoid OpenBLAS from using multiple threads, see
 # https://github.com/leonlan/tsp-as/issues/49
@@ -44,6 +45,8 @@ def parse_args():
         choices=["alns", "tsp", "mtsp", "scv", "var", "enum"],
     )
 
+    # TODO change this to travel, idle and waiting weights
+    # in another issue
     parser.add_argument(
         "--cost_profile",
         type=str,
@@ -133,6 +136,8 @@ def solve(
     data = ProblemData.from_file(loc)
     cost_evaluator = make_cost_evaluator(data, cost_profile, cost_seed)
 
+    start_time = time.perf_counter()
+
     if algorithm == "alns":
         res = solve_alns(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "tsp":
@@ -146,33 +151,35 @@ def solve(
     else:
         raise ValueError(f"Unknown algorithm {algorithm}")
 
-    best = res.best_state
+    # Compute the optimal schedule based on the identified visits.
+    best_visits = res.best_state.visits
+    schedule = compute_optimal_schedule(best_visits, data, cost_evaluator)
+    best = Solution(data, cost_evaluator, best_visits, schedule)
 
-    schedule = compute_optimal_schedule(best.visits, data, cost_evaluator)
-    final_solution = Solution(data, cost_evaluator, best.visits, schedule)
+    end_time = time.perf_counter()
 
     if breakdown:
-        print(tabulate(*cost_breakdown(data, cost_evaluator, final_solution)))
+        print(tabulate(*cost_breakdown(data, cost_evaluator, best)))
 
     if sol_dir:
         instance_name = Path(loc).stem
         where = Path(sol_dir) / (f"{instance_name}-{algorithm}" + ".sol")
 
         with open(where, "w") as fh:
-            fh.write(str(res.best_state))
+            fh.write(str(best))
 
     if plot_dir:
         _, ax = plt.subplots(1, 1, figsize=[12, 12])
-        plot_graph(ax, data, solution=final_solution)
+        plot_graph(ax, data, solution=best)
         instance_name = Path(loc).stem
         where = Path(plot_dir) / (f"{instance_name}-{algorithm}" + ".pdf")
         plt.savefig(where)
 
     return (
         path.stem,
-        final_solution.objective(),
+        best.objective(),
         len(res.statistics.objectives),
-        round(res.statistics.total_runtime, 3),
+        end_time - start_time,
         algorithm,
         cost_profile,
         cost_seed,

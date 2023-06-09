@@ -29,6 +29,9 @@ class Solution:
     def __len__(self):
         return len(self.visits)
 
+    def __str__(self):
+        return self.visits
+
     def objective(self):
         """
         Return the objective value. This is a weighted sum of the travel times,
