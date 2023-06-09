@@ -16,7 +16,7 @@ def full_enumeration(
     data: ProblemData,
     cost_evaluator: CostEvaluator,
     initial_solution: Optional[Solution] = None,
-    approx_pool_size: Optional[int] = 100,
+    approx_pool_size: Optional[int] = 1000,
     num_procs: int = 8,
     **kwargs,
 ):
@@ -51,7 +51,9 @@ def full_enumeration(
     pool = [list(visits) for visits in permutations(range(1, data.dimension))]
 
     if approx_pool_size is not None:
-        pool = _filter_using_heavy_traffic(pool, approx_pool_size, data, cost_evaluator)
+        pool = _filter_using_heavy_traffic(
+            pool, approx_pool_size, data, cost_evaluator, num_procs
+        )
 
     solutions = []
     with multiprocessing.Pool(num_procs) as mp_pool:
@@ -59,7 +61,7 @@ def full_enumeration(
             _make_solution,
             data=data,
             cost_evaluator=cost_evaluator,
-            upper_bound=initial_solution.cost,
+            upper_bound=initial_solution.cost,  # TODO is this even useful?
         )
 
         for solution in mp_pool.imap_unordered(func, pool):
@@ -71,18 +73,23 @@ def full_enumeration(
     return Result(best, perf_counter() - start, 0)
 
 
-def _filter_using_heavy_traffic(pool, approx_pool_size, data, cost_evaluator):
+def _filter_using_heavy_traffic(
+    pool, approx_pool_size, data, cost_evaluator, num_procs
+):
     """
     Evaluates the pool of permutations using the heavy traffic schedule, and
     return the top `approx_pool_size` solutions.
     """
+    candidates = []
+    with multiprocessing.Pool(num_procs) as mp_pool:
+        func = partial(_make_ht_solution, data=data, cost_evaluator=cost_evaluator)
 
-    def compute_approx_cost(visits):
-        schedule = compute_ht_schedule(visits, data, cost_evaluator)
-        return cost_evaluator(visits, schedule, data)
+        for solution in mp_pool.imap_unordered(func, pool):
+            if solution is not None:
+                candidates.append(solution)
 
-    pool.sort(key=lambda visits: compute_approx_cost(visits))
-    return pool[:approx_pool_size]
+    candidates.sort(key=lambda solution: solution.cost)
+    return [solution.visits for solution in candidates[:approx_pool_size]]
 
 
 def _make_solution(visits, data, cost_evaluator, upper_bound):
@@ -90,6 +97,13 @@ def _make_solution(visits, data, cost_evaluator, upper_bound):
         return None
 
     schedule = compute_optimal_schedule(visits, data, cost_evaluator)
+    solution = Solution(data, cost_evaluator, visits, schedule)
+
+    return solution
+
+
+def _make_ht_solution(visits, data, cost_evaluator):
+    schedule = compute_ht_schedule(visits, data, cost_evaluator)
     solution = Solution(data, cost_evaluator, visits, schedule)
 
     return solution
