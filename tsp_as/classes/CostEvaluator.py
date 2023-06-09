@@ -44,15 +44,3 @@ class CostEvaluator:
         wait_costs = np.dot(wait_weights, wait_times)
 
         return travel_costs + idle_costs + wait_costs
-
-    def cost(self, visits, travel, idle, wait):
-        """
-        Returns the cost of a solution.
-        """
-        travel_costs = self.travel_weight * travel
-        idle_costs = self.idle_weight * sum(idle)
-
-        wait_weights = self.wait_weights[visits]
-        wait_costs = np.dot(wait_weights, wait)
-
-        return travel_costs + idle_costs + wait_costs

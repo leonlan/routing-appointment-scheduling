@@ -1,11 +1,11 @@
-def cost_breakdown(data, solution):
+def cost_breakdown(data, cost_evaluator, solution):
     """
     Breakdown the cost of the solution.
     """
     tour_arcs = [0] + solution.visits, solution.visits + [0]
     dists = data.distances[tour_arcs]
-    idle_times, wait_times = solution.cost_evaluator.idle_wait_function(
-        solution.visits, solution.schedule, solution.data
+    idle_times, wait_times = cost_evaluator.idle_wait_function(
+        solution.visits, solution.schedule, data
     )
 
     headers = [
@@ -38,7 +38,7 @@ def cost_breakdown(data, solution):
         dist = dists[idx]
         idle = idle_times[idx] if idx < last else 0  # do not count last
         wait = wait_times[idx] if idx < last else 0  # do not count last
-        weight = solution.cost_evaluator.wait_weights[to]
+        weight = cost_evaluator.wait_weights[to]
 
         row = (
             fr,
@@ -54,30 +54,10 @@ def cost_breakdown(data, solution):
         )
         rows.append(row)
 
-        cost_dist += dist * solution.cost_evaluator.travel_weight
-        cost_idle += idle * solution.cost_evaluator.idle_weight
+        cost_dist += dist * cost_evaluator.travel_weight
+        cost_idle += idle * cost_evaluator.idle_weight
         cost_wait += wait * weight
 
     print(f"{cost_dist=:.2f}, {cost_idle=:.2f}, {cost_wait=:.2f}")
 
     return headers, rows
-
-
-def tabulate(headers, rows) -> str:  # noqa
-    # These lengths are used to space each column properly.
-    lengths = [len(header) for header in headers]
-
-    for row in rows:
-        for idx, cell in enumerate(row):
-            lengths[idx] = max(lengths[idx], len(str(cell)))
-
-    header = [
-        "  ".join(f"{h:<{l}s}" for l, h in zip(lengths, headers)),
-        "  ".join("-" * l for l in lengths),
-    ]
-
-    content = [
-        "  ".join(f"{str(c):>{l}s}" for l, c in zip(lengths, row)) for row in rows
-    ]
-
-    return "\n".join(header + content)

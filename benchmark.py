@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm.contrib.concurrent import process_map
 
+from diagnostics import cost_breakdown
 from tsp_as import (
     full_enumeration,
     increasing_variance,
@@ -24,7 +25,6 @@ from tsp_as import (
     solve_modified_tsp,
     solve_tsp,
 )
-from tsp_as.appointment.heavy_traffic import compute_idle_wait as ht_objective_function
 from tsp_as.appointment.true_optimal import compute_idle_wait as true_objective_function
 from tsp_as.appointment.true_optimal import compute_optimal_schedule
 from tsp_as.classes import CostEvaluator, ProblemData, Solution
@@ -56,17 +56,14 @@ def parse_args():
     )
     parser.add_argument("--cost_seed", type=int, default=1)
 
-    # Objective refers to the appointment scheduling objective function, which
-    # is different from the TSP-AS objective function (the latter includes
-    # travel distances, whereas the former does not).
-    parser.add_argument("--objective", type=str)
-
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
     group.add_argument("--max_iterations", type=int)
 
     parser.add_argument("--sol_dir", type=str)
     parser.add_argument("--plot_dir", type=str)
+    parser.add_argument("--breakdown", action="store_true")
+
     return parser.parse_args()
 
 
@@ -96,9 +93,7 @@ def tabulate(headers, rows) -> str:
     return "\n".join(header + content)
 
 
-def make_cost_evaluator(
-    data: ProblemData, objective: str, cost_profile: str, seed
-) -> CostEvaluator:
+def make_cost_evaluator(data: ProblemData, cost_profile: str, seed) -> CostEvaluator:
     """
     Returns a cost evaluator based on the given objective and cost profile.
     """
@@ -108,10 +103,7 @@ def make_cost_evaluator(
         """Generates random weights around the given mean for each node."""
         return np.round(2 * mean_weight * rng.uniform(0.1, 1.0, data.dimension))
 
-    if objective == "heavy_traffic":
-        obj_func = ht_objective_function
-    else:
-        obj_func = true_objective_function
+    obj_func = true_objective_function
 
     if cost_profile == "small":
         return CostEvaluator(obj_func, 0.5, 2.5, generate_weights(5))
@@ -127,11 +119,11 @@ def solve(
     loc: str,
     seed: int,
     algorithm: str,
-    objective: str,
     cost_profile: str,
     cost_seed: int,
     sol_dir: Optional[str],
     plot_dir: Optional[str],
+    breakdown: Optional[bool],
     **kwargs,
 ):
     """
@@ -139,7 +131,7 @@ def solve(
     """
     path = Path(loc)
     data = ProblemData.from_file(loc)
-    cost_evaluator = make_cost_evaluator(data, objective, cost_profile, cost_seed)
+    cost_evaluator = make_cost_evaluator(data, cost_profile, cost_seed)
 
     if algorithm == "alns":
         res = solve_alns(seed, data, cost_evaluator, **kwargs)
@@ -157,9 +149,10 @@ def solve(
     best = res.best_state
 
     schedule = compute_optimal_schedule(best.visits, data, cost_evaluator)
-    final_solution = Solution(data, cost_evaluator, best.visits, schedule=schedule)
-    # print(tabulate(*cost_breakdown(data, final_solution)))
-    # print(final_solution.objective())
+    final_solution = Solution(data, cost_evaluator, best.visits, schedule)
+
+    if breakdown:
+        print(tabulate(*cost_breakdown(data, cost_evaluator, final_solution)))
 
     if sol_dir:
         instance_name = Path(loc).stem
