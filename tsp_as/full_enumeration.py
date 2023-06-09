@@ -1,17 +1,23 @@
 from itertools import permutations
 from time import perf_counter
 
-from alns.Result import Result
-from alns.Statistics import Statistics
+from tsp_as.appointment.true_optimal import compute_optimal_schedule
+from tsp_as.classes import CostEvaluator, ProblemData, Solution
 
-from tsp_as.classes import Solution
+from .Result import Result
 
 
-def full_enumeration(seed, data, cost_evaluator, **kwargs):
+def full_enumeration(
+    seed: int,
+    data: ProblemData,
+    cost_evaluator: CostEvaluator,
+    initial_solution: Solution = None,
+    num_procs: int = 1,
+    **kwargs
+):
     """
-    Solves using a full enumeration of all possible visitss. This is a very
-    naive approach, but it is useful for testing purposes. It is also
-    useful for comparing the performance of heuristics.
+    Obtains the optimal solution by enumerating all possible visits, and for
+    each visit we compute the optimal schedule.
 
     Parameters
     ----------
@@ -21,18 +27,42 @@ def full_enumeration(seed, data, cost_evaluator, **kwargs):
         The data for the problem instance.
     cost_evaluator
         The cost evaluator.
+    initial_solution
+        The initial solution to use for upper bound.
+    num_procs
+        The number of processes to use. If 1, the search is sequential.
     """
-    # TODO rewrite
     start = perf_counter()
 
-    perms = permutations(range(1, data.dimension))
-    all_sols = [Solution(data, cost_evaluator, list(visits)) for visits in perms]
-    optimal = min(all_sols, key=lambda sol: sol.objective())
+    if initial_solution is None:
+        ordered_visits = list(range(1, data.dimension))
+        schedule = compute_optimal_schedule(ordered_visits, data, cost_evaluator)
+        initial_solution = Solution(data, cost_evaluator, ordered_visits, schedule)
 
-    # This little hack allows us to use the same interface for ALNS-based
-    # heuristics and the SCV heuristic.
-    stats = Statistics()
-    stats.collect_objective(optimal.objective())
-    stats.collect_runtime(perf_counter() - start)
+    best = initial_solution
 
-    return Result(optimal, stats)
+    pool = permutations(range(1, data.dimension))
+
+    for visits in pool:
+        visits = list(visits)
+
+        # If the travel cost is already larger than the best solution, then
+        # we can skip this solution to avoid expensive idle/wait computations.
+        if _compute_travel_cost(visits, data, cost_evaluator) > best.cost:
+            continue
+
+        schedule = compute_optimal_schedule(visits, data, cost_evaluator)
+        solution = Solution(data, cost_evaluator, visits, schedule)
+
+        if solution.cost < best.cost:
+            best = solution
+
+    return Result(best, perf_counter() - start, 0)
+
+
+def _compute_travel_cost(visits, data, cost_evaluator) -> float:
+    """
+    Compute the travel cost of the given visits order.
+    """
+    distance = data.distances[[0] + visits, visits + [0]].sum()
+    return cost_evaluator.travel_weight * distance

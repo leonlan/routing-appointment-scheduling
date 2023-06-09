@@ -102,7 +102,7 @@ def make_cost_evaluator(data: ProblemData, cost_profile: str, seed) -> CostEvalu
 
     def generate_weights(max_weight):
         """Generates random weights around the given mean for each node."""
-        return rng.integers(max_weight, size=data.coords.size) + 1
+        return rng.integers(max_weight, size=data.dimension) + 1
 
     obj_func = true_objective_function
 
