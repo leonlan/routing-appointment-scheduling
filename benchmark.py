@@ -98,22 +98,22 @@ def tabulate(headers, rows) -> str:
 
 def make_cost_evaluator(data: ProblemData, cost_profile: str, seed) -> CostEvaluator:
     """
-    Returns a cost evaluator based on the given objective and cost profile.
+    Returns a cost evaluator based on the given cost profile.
     """
     rng = np.random.default_rng(seed)
 
-    def generate_weights(mean_weight):
+    def generate_weights(max_weight):
         """Generates random weights around the given mean for each node."""
-        return np.round(2 * mean_weight * rng.uniform(0.1, 1.0, data.dimension))
+        return rng.integers(max_weight, size=data.coords.size) + 1
 
     obj_func = true_objective_function
 
     if cost_profile == "small":
-        return CostEvaluator(obj_func, 0.5, 2.5, generate_weights(5))
+        return CostEvaluator(obj_func, 0.5, 2.5, generate_weights(10))
     elif cost_profile == "medium":
-        return CostEvaluator(obj_func, 1.0, 2.5, generate_weights(5))
+        return CostEvaluator(obj_func, 1.0, 2.5, generate_weights(10))
     elif cost_profile == "large":
-        return CostEvaluator(obj_func, 2.0, 2.5, generate_weights(5))
+        return CostEvaluator(obj_func, 2.0, 2.5, generate_weights(10))
     else:
         raise ValueError(f"Unknown cost profile {cost_profile}")
 
