@@ -9,7 +9,6 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["OMP_NUM_THREADS"] = "1"
 
 
-from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from typing import List, Optional
@@ -26,7 +25,8 @@ from tsp_as import (
     solve_modified_tsp,
     solve_tsp,
 )
-from tsp_as.classes import CostEvaluator, ProblemData, Solution
+from tsp_as.appointment.true_optimal import compute_idle_wait as true_objective_function
+from tsp_as.classes import CostEvaluator, ProblemData
 from tsp_as.plot import plot_graph
 
 
@@ -43,8 +43,8 @@ def parse_args():
         choices=["alns", "tsp", "mtsp", "scv", "var", "enum"],
     )
 
-    parser.add_argument("--objective", type=str, default="hto")
-    parser.add_argument("--final_objective", type=str, default="to")
+    # TODO change this to travel, idle and waiting weights
+    # in another issue
     parser.add_argument(
         "--cost_profile",
         type=str,
@@ -55,6 +55,7 @@ def parse_args():
             "large",  # (0.3, 0.2, 0.5)
         ],
     )
+    parser.add_argument("--cost_seed", type=int, default=1)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
@@ -62,6 +63,8 @@ def parse_args():
 
     parser.add_argument("--sol_dir", type=str)
     parser.add_argument("--plot_dir", type=str)
+    parser.add_argument("--breakdown", action="store_true")
+
     return parser.parse_args()
 
 
@@ -97,16 +100,18 @@ def make_cost_evaluator(data: ProblemData, cost_profile: str, seed) -> CostEvalu
     """
     rng = np.random.default_rng(seed)
 
-    def generate_weights(mean_weight):
+    def generate_weights(max_weight):
         """Generates random weights around the given mean for each node."""
-        return 2 * mean_weight * rng.random(data.dimension)
+        return rng.integers(max_weight, size=data.coords.size) + 1
+
+    obj_func = true_objective_function
 
     if cost_profile == "small":
-        return CostEvaluator(0.1, 0.3, generate_weights(0.6))
+        return CostEvaluator(obj_func, 0.5, 2.5, generate_weights(10))
     elif cost_profile == "medium":
-        return CostEvaluator(0.2, 0.25, generate_weights(0.55))
+        return CostEvaluator(obj_func, 1.0, 2.5, generate_weights(10))
     elif cost_profile == "large":
-        return CostEvaluator(0.3, 0.2, generate_weights(0.5))
+        return CostEvaluator(obj_func, 2.0, 2.5, generate_weights(10))
     else:
         raise ValueError(f"Unknown cost profile {cost_profile}")
 
@@ -115,58 +120,60 @@ def solve(
     loc: str,
     seed: int,
     algorithm: str,
-    final_objective: str,
     cost_profile: str,
+    cost_seed: int,
     sol_dir: Optional[str],
     plot_dir: Optional[str],
+    breakdown: Optional[bool],
     **kwargs,
 ):
     """
     Solves the instance using the ALNS package.
     """
     path = Path(loc)
-    data = ProblemData.from_file(loc, **kwargs)
-    cost_evaluator = make_cost_evaluator(data, cost_profile, seed)
+    data = ProblemData.from_file(loc)
+    cost_evaluator = make_cost_evaluator(data, cost_profile, cost_seed)
 
     if algorithm == "alns":
-        res = solve_alns(seed, data, cost_evaluator, **kwargs)
+        result = solve_alns(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "tsp":
-        res = solve_tsp(seed, data, cost_evaluator, **kwargs)
+        result = solve_tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "mtsp":
-        res = solve_modified_tsp(seed, data, cost_evaluator, **kwargs)
+        result = solve_modified_tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "var":
-        res = increasing_variance(seed, data, cost_evaluator)
+        result = increasing_variance(seed, data, cost_evaluator)
     elif algorithm == "enum":
-        res = full_enumeration(seed, data, cost_evaluator)
+        result = full_enumeration(seed, data, cost_evaluator)
+    else:
+        raise ValueError(f"Unknown algorithm {algorithm}")
 
-    # Final evaluation of the solution based on another objective function
-    final_data = deepcopy(data)
-    final_data.objective = final_objective
-    best = Solution(final_data, cost_evaluator, res.best_state.visits)
-    print(tabulate(*cost_breakdown(best)))
+    best = result.solution
+
+    if breakdown:
+        print(tabulate(*cost_breakdown(data, cost_evaluator, best)))
 
     if sol_dir:
         instance_name = Path(loc).stem
         where = Path(sol_dir) / (f"{instance_name}-{algorithm}" + ".sol")
 
         with open(where, "w") as fh:
-            fh.write(str(res.best_state))
+            fh.write(str(best))
 
     if plot_dir:
         _, ax = plt.subplots(1, 1, figsize=[12, 12])
         plot_graph(ax, data, solution=best)
         instance_name = Path(loc).stem
-        where = Path(plot_dir) / (
-            f"{instance_name}-{algorithm}-{final_objective}" + ".pdf"
-        )
+        where = Path(plot_dir) / (f"{instance_name}-{algorithm}" + ".pdf")
         plt.savefig(where)
 
     return (
         path.stem,
-        best.cost,
-        len(res.statistics.objectives),
-        round(res.statistics.total_runtime, 3),
+        best.objective(),
+        result.iterations,
+        result.runtime,
         algorithm,
+        cost_profile,
+        cost_seed,
     )
 
 
@@ -200,10 +207,20 @@ def benchmark(instances: List[str], **kwargs):
         ("iters", int),
         ("time", float),
         ("alg", "U37"),
+        ("cost-profile", "U37"),
+        ("cost-seed", int),
     ]
 
     data = np.asarray(data, dtype=dtypes)
-    headers = ["Instance", "Obj.", "Iters. (#)", "Time (s)", "Algorithm"]
+    headers = [
+        "Instance",
+        "Obj.",
+        "Iters. (#)",
+        "Time (s)",
+        "Algorithm",
+        "Cost profile",
+        "Cost seed",
+    ]
 
     print("\n", tabulate(headers, data), "\n", sep="")
     print(f"      Avg. objective: {data['obj'].mean():.0f}")

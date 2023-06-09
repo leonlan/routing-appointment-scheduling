@@ -1,4 +1,3 @@
-from copy import deepcopy
 from itertools import permutations
 from time import perf_counter
 
@@ -23,20 +22,17 @@ def full_enumeration(seed, data, cost_evaluator, **kwargs):
     cost_evaluator
         The cost evaluator.
     """
+    # TODO rewrite
     start = perf_counter()
 
-    enum_data = deepcopy(data)
-    enum_data.objective = "to"
-
     perms = permutations(range(1, data.dimension))
-    all_sols = [Solution(enum_data, cost_evaluator, list(visits)) for visits in perms]
-    optimal = min(all_sols, key=lambda sol: sol.cost)
-    print(optimal.visits)
+    all_sols = [Solution(data, cost_evaluator, list(visits)) for visits in perms]
+    optimal = min(all_sols, key=lambda sol: sol.objective())
 
     # This little hack allows us to use the same interface for ALNS-based
     # heuristics and the SCV heuristic.
     stats = Statistics()
-    stats.collect_objective(optimal.cost)
+    stats.collect_objective(optimal.objective())
     stats.collect_runtime(perf_counter() - start)
 
     return Result(optimal, stats)

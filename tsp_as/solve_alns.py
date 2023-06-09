@@ -1,4 +1,5 @@
 import time
+from typing import Optional
 
 import numpy as np
 import numpy.random as rnd
@@ -7,23 +8,27 @@ from alns.accept import RecordToRecordTravel
 from alns.select import RouletteWheel
 from alns.stop import MaxIterations, MaxRuntime
 
-from tsp_as.classes import Solution
+from tsp_as.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
+from tsp_as.appointment.true_optimal import compute_optimal_schedule
+from tsp_as.classes import CostEvaluator, ProblemData, Solution
 from tsp_as.destroy_operators import adjacent_destroy, random_destroy
 from tsp_as.repair_operators import greedy_insert
 
+from .Result import Result
+
 
 def solve_alns(
-    seed,
-    data,
-    cost_evaluator,
-    init=None,
+    seed: int,
+    data: ProblemData,
+    cost_evaluator: CostEvaluator,
+    init: Optional[Solution] = None,
     max_runtime=None,
     max_iterations=None,
     **kwargs,
 ):
-    rng = rnd.default_rng(seed)
+    start = time.perf_counter()
 
-    alns = ALNS(rng)
+    alns = ALNS(rnd.default_rng(seed))
 
     D_OPS = [
         adjacent_destroy,
@@ -37,8 +42,9 @@ def solve_alns(
         alns.add_repair_operator(r_op)
 
     if init is None:
-        ordered = np.arange(1, data.dimension).tolist()
-        init = Solution(data, cost_evaluator, ordered)
+        ordered_visits = np.arange(1, data.dimension).tolist()
+        ht_schedule = compute_ht_schedule(ordered_visits, data, cost_evaluator)
+        init = Solution(data, cost_evaluator, ordered_visits, ht_schedule)
 
     select = RouletteWheel([5, 2, 1, 0.5], 0.5, len(D_OPS), len(R_OPS))
 
@@ -57,7 +63,17 @@ def solve_alns(
             init.objective(), start_threshold, end_threshold, max_iterations
         )
 
-    return alns.iterate(init, select, accept, stop, **kwargs)
+    alns_result = alns.iterate(
+        init, select, accept, stop, data=data, cost_evaluator=cost_evaluator, **kwargs
+    )
+
+    visits = alns_result.best_state.visits
+    schedule = compute_optimal_schedule(visits, data, cost_evaluator)
+    solution = Solution(data, cost_evaluator, visits, schedule)
+
+    return Result(
+        solution, time.perf_counter() - start, len(alns_result.statistics.runtimes)
+    )
 
 
 def time_based_value(

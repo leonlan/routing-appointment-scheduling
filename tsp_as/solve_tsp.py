@@ -1,22 +1,26 @@
-from time import perf_counter
+import time
 
 import elkai
-from alns.Result import Result
-from alns.Statistics import Statistics
 
+from tsp_as.appointment.true_optimal import compute_optimal_schedule
 from tsp_as.classes import Solution
 
+from .Result import Result
 
-def solve_tsp(seed, data, cost_evaluator, max_iterations=1000, **kwargs):
+
+def solve_tsp(seed, data, cost_evaluator, max_iterations=None, **kwargs):
     """
     Solves the TSP without appointment scheduling.
     """
-    start = perf_counter()
+    start = time.perf_counter()
+
+    if max_iterations is None:
+        max_iterations = 10000
+
     visits = elkai.solve_float_matrix(data.distances, runs=max_iterations)
     visits.remove(0)  # remove depot
 
-    stats = Statistics()
-    stats.collect_objective(0)
-    stats.collect_runtime(perf_counter() - start)
+    schedule = compute_optimal_schedule(visits, data, cost_evaluator)
+    solution = Solution(data, cost_evaluator, visits, schedule)
 
-    return Result(Solution(data, cost_evaluator, visits), stats)
+    return Result(solution, time.perf_counter() - start, max_iterations)
