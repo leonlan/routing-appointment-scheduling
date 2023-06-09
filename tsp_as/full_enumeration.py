@@ -42,36 +42,30 @@ def full_enumeration(
         schedule = compute_optimal_schedule(ordered_visits, data, cost_evaluator)
         initial_solution = Solution(data, cost_evaluator, ordered_visits, schedule)
 
-    best = initial_solution
-
-    mgr = multiprocessing.Manager()
-    best_cost = mgr.Value("d", best.cost)
-
     pool = list(permutations(range(1, data.dimension)))
-    pool_lock = multiprocessing.Lock()
 
+    solutions = []
     with multiprocessing.Pool(num_procs) as mp_pool:
         func = partial(
             _make_solution,
             data=data,
             cost_evaluator=cost_evaluator,
-            best_cost=best_cost,
+            upper_bound=initial_solution.cost,
         )
 
         for solution in mp_pool.imap_unordered(func, pool):
-            if solution is not None and solution.cost < best_cost.value:
-                with pool_lock:
-                    if solution.cost < best_cost.value:
-                        best = solution
-                        best_cost.value = best.cost
+            if solution is not None:
+                solutions.append(solution)
+
+    best = min(solutions, key=lambda s: s.cost)
 
     return Result(best, perf_counter() - start, 0)
 
 
-def _make_solution(visits, data, cost_evaluator, best_cost):
+def _make_solution(visits, data, cost_evaluator, upper_bound):
     visits = list(visits)
 
-    if _compute_travel_cost(visits, data, cost_evaluator) > best_cost.value:
+    if _compute_travel_cost(visits, data, cost_evaluator) > upper_bound:
         return None
 
     schedule = compute_optimal_schedule(visits, data, cost_evaluator)
