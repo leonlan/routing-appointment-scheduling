@@ -17,15 +17,35 @@ from tsp_as.repair_operators import greedy_insert
 from .Result import Result
 
 
-def solve_alns(
+def large_neighborhood_search(
     seed: int,
     data: ProblemData,
     cost_evaluator: CostEvaluator,
     init: Optional[Solution] = None,
-    max_runtime=None,
-    max_iterations=None,
+    max_runtime: Optional[float] = None,
+    max_iterations: Optional[int] = None,
     **kwargs,
 ):
+    """
+    Solve the appointment scheduling problem using the LNS metaheuristic.
+
+    Parameters
+    ----------
+    seed
+        The random seed to use.
+    data
+        The problem data.
+    cost_evaluator
+        The cost evaluator.
+    init
+        The initial solution. If None, a random solution is generated.
+    max_runtime
+        The maximum runtime in seconds. If None, max_iterations must be specified.
+    max_iterations
+        The maximum number of iterations. If None, max_runtime must be specified.
+    **kwargs
+        Additional keyword arguments to pass to the ALNS solver.
+    """
     start = time.perf_counter()
 
     alns = ALNS(rnd.default_rng(seed))

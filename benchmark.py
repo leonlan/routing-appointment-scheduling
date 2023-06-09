@@ -20,8 +20,8 @@ from tqdm.contrib.concurrent import process_map
 from diagnostics import cost_breakdown
 from tsp_as import (
     full_enumeration,
+    large_neighborhood_search,
     smallest_variance_first,
-    solve_alns,
     solve_modified_tsp,
     tsp,
 )
@@ -135,7 +135,7 @@ def solve(
     cost_evaluator = make_cost_evaluator(data, cost_profile, cost_seed)
 
     if algorithm == "lns":
-        result = solve_alns(seed, data, cost_evaluator, **kwargs)
+        result = large_neighborhood_search(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "tsp":
         result = tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "mtsp":
