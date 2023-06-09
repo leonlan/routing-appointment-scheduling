@@ -9,9 +9,12 @@ from alns.select import RouletteWheel
 from alns.stop import MaxIterations, MaxRuntime
 
 from tsp_as.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
+from tsp_as.appointment.true_optimal import compute_optimal_schedule
 from tsp_as.classes import CostEvaluator, ProblemData, Solution
 from tsp_as.destroy_operators import adjacent_destroy, random_destroy
 from tsp_as.repair_operators import greedy_insert
+
+from .Result import Result
 
 
 def solve_alns(
@@ -60,9 +63,17 @@ def solve_alns(
             init.objective(), start_threshold, end_threshold, max_iterations
         )
 
-    return alns.iterate(
+    alns_result = alns.iterate(
         init, select, accept, stop, data=data, cost_evaluator=cost_evaluator, **kwargs
     )
+
+    visits = alns_result.best_state.visits
+    schedule = compute_optimal_schedule(visits, data, cost_evaluator)
+    solution = Solution(data, cost_evaluator, visits, schedule)
+
+    runtime = alns_result.statistics.total_runtime
+    iterations = len(alns_result.statistics.runtimes)
+    return Result(solution, runtime, iterations)
 
 
 def time_based_value(

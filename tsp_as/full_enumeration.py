@@ -22,6 +22,7 @@ def full_enumeration(seed, data, cost_evaluator, **kwargs):
     cost_evaluator
         The cost evaluator.
     """
+    # TODO rewrite
     start = perf_counter()
 
     perms = permutations(range(1, data.dimension))

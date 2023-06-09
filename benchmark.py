@@ -1,6 +1,5 @@
 import argparse
 import os
-import time
 
 # BUG This is to avoid OpenBLAS from using multiple threads, see
 # https://github.com/leonlan/tsp-as/issues/49
@@ -27,8 +26,7 @@ from tsp_as import (
     solve_tsp,
 )
 from tsp_as.appointment.true_optimal import compute_idle_wait as true_objective_function
-from tsp_as.appointment.true_optimal import compute_optimal_schedule
-from tsp_as.classes import CostEvaluator, ProblemData, Solution
+from tsp_as.classes import CostEvaluator, ProblemData
 from tsp_as.plot import plot_graph
 
 
@@ -136,27 +134,20 @@ def solve(
     data = ProblemData.from_file(loc)
     cost_evaluator = make_cost_evaluator(data, cost_profile, cost_seed)
 
-    start_time = time.perf_counter()
-
     if algorithm == "alns":
-        res = solve_alns(seed, data, cost_evaluator, **kwargs)
+        result = solve_alns(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "tsp":
-        res = solve_tsp(seed, data, cost_evaluator, **kwargs)
+        result = solve_tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "mtsp":
-        res = solve_modified_tsp(seed, data, cost_evaluator, **kwargs)
+        result = solve_modified_tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "var":
-        res = increasing_variance(seed, data, cost_evaluator)
+        result = increasing_variance(seed, data, cost_evaluator)
     elif algorithm == "enum":
-        res = full_enumeration(seed, data, cost_evaluator)
+        result = full_enumeration(seed, data, cost_evaluator)
     else:
         raise ValueError(f"Unknown algorithm {algorithm}")
 
-    # Compute the optimal schedule based on the identified visits.
-    best_visits = res.best_state.visits
-    schedule = compute_optimal_schedule(best_visits, data, cost_evaluator)
-    best = Solution(data, cost_evaluator, best_visits, schedule)
-
-    end_time = time.perf_counter()
+    best = result.solution
 
     if breakdown:
         print(tabulate(*cost_breakdown(data, cost_evaluator, best)))
@@ -178,8 +169,8 @@ def solve(
     return (
         path.stem,
         best.objective(),
-        len(res.statistics.objectives),
-        end_time - start_time,
+        result.iterations,
+        result.runtime,
         algorithm,
         cost_profile,
         cost_seed,
