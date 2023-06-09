@@ -144,7 +144,7 @@ def _create_Vn(alphas, T):
 
 
 def _get_alphas_and_Vn(visits, data):
-    arcs = [0] + visits[:-1], visits
+    arcs = [0] + visits[:-1], visits  # only arcs visiting to clients
 
     alpha = tuple(data.alphas[arcs])
     T = tuple(data.transitions[arcs])
