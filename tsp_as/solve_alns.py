@@ -26,9 +26,9 @@ def solve_alns(
     max_iterations=None,
     **kwargs,
 ):
-    rng = rnd.default_rng(seed)
+    start = time.perf_counter()
 
-    alns = ALNS(rng)
+    alns = ALNS(rnd.default_rng(seed))
 
     D_OPS = [
         adjacent_destroy,
@@ -71,9 +71,9 @@ def solve_alns(
     schedule = compute_optimal_schedule(visits, data, cost_evaluator)
     solution = Solution(data, cost_evaluator, visits, schedule)
 
-    runtime = alns_result.statistics.total_runtime
-    iterations = len(alns_result.statistics.runtimes)
-    return Result(solution, runtime, iterations)
+    return Result(
+        solution, time.perf_counter() - start, len(alns_result.statistics.runtimes)
+    )
 
 
 def time_based_value(
