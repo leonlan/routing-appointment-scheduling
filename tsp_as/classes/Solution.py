@@ -15,7 +15,7 @@ class Solution:
         data: ProblemData,
         cost_evaluator: CostEvaluator,
         visits: list[int],
-        schedule: Optional[list[float]] = None,
+        schedule: list[float],
         unassigned: Optional[list[int]] = None,
     ):
         """
@@ -24,13 +24,9 @@ class Solution:
         this is not required because it can be computed from the visits.
         """
         self.data = data
-        self.visits = visits
         self.cost_evaluator = cost_evaluator
-        self.schedule = (
-            schedule
-            if schedule is not None
-            else compute_ht_schedule(visits, data, cost_evaluator)
-        )
+        self.visits = visits
+        self.schedule = schedule
         self.unassigned = unassigned if unassigned is not None else []
 
         self.update()
@@ -85,13 +81,6 @@ class Solution:
         self.visits.insert(idx, customer)
         self.schedule = compute_ht_schedule(self.visits, self.data, self.cost_evaluator)
         self.update()
-
-    def remove(self, customer: int):
-        """
-        Remove the customer from the current schedule.
-        """
-        self.visits.remove(customer)
-        self.schedule = compute_ht_schedule(self.visits, self.data, self.cost_evaluator)
 
     def update(self):
         """

@@ -7,6 +7,7 @@ from alns.accept import RecordToRecordTravel
 from alns.select import RouletteWheel
 from alns.stop import MaxIterations, MaxRuntime
 
+from tsp_as.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
 from tsp_as.classes import Solution
 from tsp_as.destroy_operators import adjacent_destroy, random_destroy
 from tsp_as.repair_operators import greedy_insert
@@ -37,8 +38,9 @@ def solve_alns(
         alns.add_repair_operator(r_op)
 
     if init is None:
-        ordered = np.arange(1, data.dimension).tolist()
-        init = Solution(data, cost_evaluator, ordered)
+        ordered_visits = np.arange(1, data.dimension).tolist()
+        ht_schedule = compute_ht_schedule(ordered_visits, data, cost_evaluator)
+        init = Solution(data, cost_evaluator, ordered_visits, ht_schedule)
 
     select = RouletteWheel([5, 2, 1, 0.5], 0.5, len(D_OPS), len(R_OPS))
 

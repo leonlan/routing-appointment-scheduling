@@ -3,6 +3,7 @@ from math import ceil
 
 from numpy.random import Generator
 
+from tsp_as.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
 from tsp_as.classes import Solution
 
 
@@ -21,17 +22,19 @@ def random_destroy(
     pct_destroy
         The percentage of clients to remove.
     """
-    destroyed = deepcopy(solution)
+    visits = deepcopy(solution.visits)
+    unassigned = []
+
     num_destroy = ceil(len(solution) * pct_destroy)  # at least one
 
-    for cust in rng.choice(destroyed.visits, num_destroy, replace=False):
-        destroyed.unassigned.append(cust)
-        destroyed.remove(cust)
+    for cust in rng.choice(visits, num_destroy, replace=False):
+        unassigned.append(cust)
+        visits.remove(cust)
 
-    # After removing customers, we need to update the solution's costs
-    # because the costs are cached to minimize computations.
-    destroyed.update()
+    assert len(solution.visits) == len(visits) + num_destroy
 
-    assert len(solution.visits) == len(destroyed.visits) + num_destroy
+    schedule = compute_ht_schedule(visits, solution.data, solution.cost_evaluator)
 
-    return destroyed
+    return Solution(
+        solution.data, solution.cost_evaluator, visits, schedule, unassigned
+    )
