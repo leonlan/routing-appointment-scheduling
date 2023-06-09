@@ -23,7 +23,7 @@ from tsp_as import (
     smallest_variance_first,
     solve_alns,
     solve_modified_tsp,
-    solve_tsp,
+    tsp,
 )
 from tsp_as.appointment.true_optimal import compute_idle_wait as true_objective_function
 from tsp_as.classes import CostEvaluator, ProblemData
@@ -137,7 +137,7 @@ def solve(
     if algorithm == "lns":
         result = solve_alns(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "tsp":
-        result = solve_tsp(seed, data, cost_evaluator, **kwargs)
+        result = tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "mtsp":
         result = solve_modified_tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "svf":
