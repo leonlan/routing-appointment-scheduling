@@ -79,8 +79,8 @@ def compute_arc_data(distances, distances_scv, service, service_scv):
     """
     # Compute the variances of the combined service and travel times,
     # which in turn are used to compute the scvs.
-    _service_var = service_scv * np.power(service, 2)
-    _distances_var = distances_scv * np.power(distances, 2)
+    _service_var = service_scv * (service**2)
+    _distances_var = distances_scv * (distances**2)
     _var = _service_var[np.newaxis, :].T + _distances_var
 
     # The means and scvs are the combined service and travel times, where
@@ -89,8 +89,7 @@ def compute_arc_data(distances, distances_scv, service, service_scv):
     means = service[np.newaxis, :].T + distances
 
     with np.errstate(divide="ignore", invalid="ignore"):
-        # There may be NaNs in the means
-        scvs = np.divide(_var, np.power(means, 2))
+        scvs = np.divide(_var, means**2)  # There may be NaNs in the means
 
     np.fill_diagonal(means, 0)
     np.fill_diagonal(scvs, 0)
