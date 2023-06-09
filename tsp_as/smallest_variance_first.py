@@ -6,7 +6,7 @@ from tsp_as.classes import Solution
 from .Result import Result
 
 
-def increasing_variance(seed, data, cost_evaluator, **kwargs):
+def smallest_variance_first(seed, data, cost_evaluator, **kwargs):
     """
     Creates a visits in increasing order of variances.
     """

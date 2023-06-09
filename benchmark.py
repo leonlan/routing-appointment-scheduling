@@ -20,7 +20,7 @@ from tqdm.contrib.concurrent import process_map
 from diagnostics import cost_breakdown
 from tsp_as import (
     full_enumeration,
-    increasing_variance,
+    smallest_variance_first,
     solve_alns,
     solve_modified_tsp,
     solve_tsp,
@@ -39,8 +39,8 @@ def parse_args():
     parser.add_argument(
         "--algorithm",
         type=str,
-        default="alns",
-        choices=["alns", "tsp", "mtsp", "scv", "var", "enum"],
+        default="lns",
+        choices=["lns", "tsp", "mtsp", "svf", "enum"],
     )
 
     # TODO change this to travel, idle and waiting weights
@@ -134,14 +134,14 @@ def solve(
     data = ProblemData.from_file(loc)
     cost_evaluator = make_cost_evaluator(data, cost_profile, cost_seed)
 
-    if algorithm == "alns":
+    if algorithm == "lns":
         result = solve_alns(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "tsp":
         result = solve_tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "mtsp":
         result = solve_modified_tsp(seed, data, cost_evaluator, **kwargs)
-    elif algorithm == "var":
-        result = increasing_variance(seed, data, cost_evaluator)
+    elif algorithm == "svf":
+        result = smallest_variance_first(seed, data, cost_evaluator)
     elif algorithm == "enum":
         result = full_enumeration(seed, data, cost_evaluator)
     else:
