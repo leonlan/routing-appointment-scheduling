@@ -44,18 +44,12 @@ def parse_args():
         choices=["lns", "tsp", "mtsp", "svf", "enum"],
     )
 
-    # TODO change this to travel, idle and waiting weights
-    # in another issue
-    parser.add_argument(
-        "--cost_profile",
-        type=str,
-        default="small",
-        choices=[
-            "small",  # (0.1, 0.3, 0.6)
-            "medium",  # (0.2, 0.25, 0.55)
-            "large",  # (0.3, 0.2, 0.5)
-        ],
-    )
+    # Weight parameters for the cost function. Travel and idle time weightes
+    # are deterministic, while the wait time weight is randomly generated
+    # based on the seed.
+    parser.add_argument("--weight_travel", type=float, default=1)
+    parser.add_argument("--weight_idle", type=float, default=2.5)
+    parser.add_argument("--weight_wait", type=int, default=10)
     parser.add_argument("--cost_seed", type=int, default=1)
 
     group = parser.add_mutually_exclusive_group(required=True)
@@ -95,33 +89,32 @@ def tabulate(headers, rows) -> str:
     return "\n".join(header + content)
 
 
-def make_cost_evaluator(data: ProblemData, cost_profile: str, seed) -> CostEvaluator:
+def make_cost_evaluator(
+    data: ProblemData,
+    weight_travel: float,
+    weight_idle: float,
+    weight_wait: int,
+    seed: int,
+) -> CostEvaluator:
     """
-    Returns a cost evaluator based on the given cost profile.
+    Returns a cost evaluator based on the given weights. The customer-dependent
+    wait time weight is randomly generated based on the given seed.
     """
     rng = np.random.default_rng(seed)
 
-    def generate_weights(max_weight):
-        """Generates random weights around the given mean for each node."""
-        return rng.integers(max_weight, size=data.dimension) + 1
-
     obj_func = true_objective_function
+    weights_wait = rng.integers(weight_wait, size=data.dimension) + 1
 
-    if cost_profile == "small":
-        return CostEvaluator(obj_func, 0.5, 2.5, generate_weights(10))
-    elif cost_profile == "medium":
-        return CostEvaluator(obj_func, 1.0, 2.5, generate_weights(10))
-    elif cost_profile == "large":
-        return CostEvaluator(obj_func, 2.0, 2.5, generate_weights(10))
-    else:
-        raise ValueError(f"Unknown cost profile {cost_profile}")
+    return CostEvaluator(obj_func, weight_travel, weight_idle, weights_wait)
 
 
 def solve(
     loc: str,
     seed: int,
     algorithm: str,
-    cost_profile: str,
+    weight_travel: float,
+    weight_idle: float,
+    weight_wait: int,
     cost_seed: int,
     sol_dir: Optional[str],
     plot_dir: Optional[str],
@@ -133,7 +126,9 @@ def solve(
     """
     path = Path(loc)
     data = ProblemData.from_file(loc)
-    cost_evaluator = make_cost_evaluator(data, cost_profile, cost_seed)
+    cost_evaluator = make_cost_evaluator(
+        data, weight_travel, weight_idle, weight_wait, cost_seed
+    )
 
     if algorithm == "lns":
         result = large_neighborhood_search(seed, data, cost_evaluator, **kwargs)
@@ -167,11 +162,13 @@ def solve(
         where = Path(plot_dir) / (f"{instance_name}-{algorithm}" + ".pdf")
         plt.savefig(where)
 
+    cost_profile = str((weight_travel, weight_idle, weight_wait))
+
     return (
         path.stem,
         best.objective(),
         result.iterations,
-        result.runtime,
+        round(result.runtime, 3),
         algorithm,
         cost_profile,
         cost_seed,
