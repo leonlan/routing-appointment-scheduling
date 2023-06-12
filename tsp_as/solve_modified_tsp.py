@@ -4,20 +4,26 @@ from time import perf_counter
 
 import elkai
 import numpy as np
-from alns.Result import Result
-from alns.Statistics import Statistics
 from numpy.random import Generator
 from scipy.special import gammaincc
 from scipy.stats import erlang
 
-from tsp_as.classes import ProblemData, Solution
+from tsp_as.appointment.true_optimal import compute_optimal_schedule
+from tsp_as.classes import ProblemData, Solution, CostEvaluator
+from .Result import Result
 
 # Number of samples to estimate the CDF
 NUM_SAMPLES = 1_000_000
 NUM_SAMPLES = 1000
 
 
-def solve_modified_tsp(seed, data, cost_evaluator, max_iterations=10000, **kwargs):
+def solve_modified_tsp(
+    seed: int,
+    data: ProblemData,
+    cost_evaluator: CostEvaluator,
+    max_iterations: int = 10000,
+    **kwargs,
+):
     """
     Solves the modified TSP algorithm by [1].
 
@@ -27,6 +33,8 @@ def solve_modified_tsp(seed, data, cost_evaluator, max_iterations=10000, **kwarg
         Random seed.
     data : Data
         Data object.
+    cost_evaluator
+        Cost evaluator object.
     max_iterations : int
         Maximum number of iterations.
 
@@ -51,33 +59,47 @@ def solve_modified_tsp(seed, data, cost_evaluator, max_iterations=10000, **kwarg
         if i == j:  # ignore self-loops
             continue
 
-        dist = data.distances[i, j]
-        appointment_cost = compute_appointment_cost(data, i, j, rng)
+        weight_travel = cost_evaluator.travel_weight
+        weight_idle = cost_evaluator.idle_weight
+        weight_wait_j = cost_evaluator.wait_weights[j]
 
-        modified_distances[i, j] = dist + (1 / data.omega_travel) * appointment_cost
+        dist = data.distances[i, j]
+        appointment_cost = compute_appointment_cost(
+            data, weight_idle, weight_wait_j, i, j, rng
+        )
+        modified_distances[i, j] = dist + (1 / weight_travel) * appointment_cost
 
     # Solve the TSP using the modified distances
-    tour = elkai.solve_float_matrix(modified_distances, runs=max_iterations)
-    tour.remove(0)  # remove depot
+    visits = elkai.solve_float_matrix(modified_distances, runs=max_iterations)
+    visits.remove(0)  # remove depot
 
-    stats = Statistics()
-    stats.collect_objective(0)
-    stats.collect_runtime(perf_counter() - start)
+    # Compute the optimal schedule of the found visits
+    schedule = compute_optimal_schedule(visits, data, cost_evaluator)
+    solution = Solution(data, cost_evaluator, visits, schedule)
 
-    return Result(Solution(data, tour), stats)
+    return Result(solution, perf_counter() - start, 0)
 
 
 def compute_appointment_cost(
-    data: ProblemData, i: int, j: int, rng: Generator
+    data: ProblemData,
+    weight_idle: float,
+    weight_wait: float,
+    i: int,
+    j: int,
+    rng: Generator,
 ) -> float:
     """
     Computes the appointment cost for an edge (i, j) based on solving the
-    newsvendor problem.
+    newsvendor problem. This is denoted by C_j(x_j) in the paper.
 
     Parameters
     ----------
     data : Data
         Data object.
+    weight_idle : float
+        Weight of the idle time.
+    weight_wait : float
+        Weight of the travel time of customer $j$.
     i : int
         Index of the first node.
     j : int
@@ -90,8 +112,7 @@ def compute_appointment_cost(
     float
         Appointment cost.
     """
-    mean, scv = data.means[i, j], data.scvs[i, j]
-    quantile = data.omega_wait / (data.omega_wait + data.omega_idle)
+    mean, scv = data.arcs_mean[i, j], data.arcs_scv[i, j]
 
     if scv >= 1:
         # Hyperexponential case
@@ -100,23 +121,26 @@ def compute_appointment_cost(
         mu2 = 2 * (1 - prob) / mean
 
         samples = hyperexponential_rvs([mu1, mu2], [prob, (1 - prob)], NUM_SAMPLES, rng)
-        appointment_time = find_quantile(samples, quantile)
+        appointment_time = compute_appointment_time(samples, weight_wait, weight_idle)
         appointment_cost = cost_hyperexponential(
-            appointment_time, prob, mu1, mu2, data.omega_wait, data.omega_idle
+            appointment_time, prob, mu1, mu2, weight_wait, weight_idle
         )
+        assert appointment_cost >= 0
     else:
         # Mixed Erlang case
         K = floor(1 / scv)
         prob = ((K + 1) * scv - sqrt((K + 1) * (1 - K * scv))) / (scv + 1)
-        scale = (K + 1 - prob) / mean  # scale
+        mu = (K + 1 - prob) / mean  # scale
 
         samples = mixed_erlang_rvs(
-            [K - 1, K], [scale, scale], [prob, (1 - prob)], NUM_SAMPLES, rng
+            [K - 1, K], [mu, mu], [prob, (1 - prob)], NUM_SAMPLES, rng
         )
-        appointment_time = find_quantile(samples, quantile)
+        appointment_time = compute_appointment_time(samples, weight_wait, weight_idle)
+        print(mean, appointment_time)  # this should be close
         appointment_cost = cost_mixed_erlang(
-            appointment_time, prob, K, scale, data.omega_wait, data.omega_idle
+            appointment_time, prob, K, mu, weight_wait, weight_idle
         )
+        assert appointment_cost >= 0
 
     return appointment_cost
 
@@ -177,6 +201,7 @@ def mixed_erlang_rvs(
     ----------
     phases : list[int]
         List of phase parameters for each Erlang distribution.
+        NOTE this is the same as the shape parameter.
     scales : list[float]
         List of scale parameters for each Erlang distribution.
     weights : list[float]
@@ -199,7 +224,7 @@ def mixed_erlang_rvs(
     weights = weights / weights.sum()
 
     # Select component Erlang distributions based on weights
-    choices = rng.choice(len(weights), size=num_samples, p=weights)
+    choices = rng.choice(len(weights), p=weights, size=num_samples)
 
     # Generate samples from the selected Erlang distributions
     samples = [
@@ -209,28 +234,43 @@ def mixed_erlang_rvs(
     return np.array(samples)
 
 
-def find_quantile(samples: list[float], q: float) -> float:
+def compute_appointment_time(
+    samples: list[float], weight_wait: float, weight_idle: float
+) -> float:
+    """
+    Computes the optimal inter-appointment time. It is the q-quantile of the
+    provided samples, which are either from a hyperexponential or a mixed
+    Erlang distribution. This is denoted by x^*_i in the paper.
+    """
+    q = weight_wait / (weight_wait + weight_idle)
+
     if not (0 <= q <= 1):
         raise ValueError("q must be between 0 and 1.")
 
     samples_sorted = np.sort(samples)
-    return np.percentile(samples_sorted, q * 100)
+    appointment_time = np.percentile(samples_sorted, q * 100)
+
+    assert appointment_time >= 0, "Appointment time must be non-negative."
+
+    return float(appointment_time)
 
 
-def cost_hyperexponential(x, prob, mu1, mu2, omega_wait, omega_idle):
+def cost_hyperexponential(x, prob, mu1, mu2, weight_wait, weight_idle):
     expr1 = prob / mu1 * exp(-mu1 * x) + (1 - prob) / mu2 * exp(-mu2 * x)
     expr2 = prob / mu1 + (1 - prob) / mu2
 
-    return (omega_wait + omega_idle) * expr1 + omega_idle * x - omega_idle * expr2
+    return (weight_wait + weight_idle) * expr1 + weight_idle * x - weight_idle * expr2
 
 
-def cost_mixed_erlang(x, p, k, mu, omega_wait, omega_idle):
-    expr1 = mean_mixed_erlang_nonnegative(x, p, k, mu)
+def cost_mixed_erlang(x, p, k, mu, weight_wait, weight_idle):
+    expr1 = _mean_mixed_erlang_nonnegative(x, p, k, mu)
     expr2 = (k - 1) / mu + (1 - p) / mu
-    return (omega_wait + omega_idle) * expr1 + omega_idle * x - omega_idle * expr2
+    print(expr1, expr2, mu)
+    print(weight_idle * expr2)
+    return (weight_wait + weight_idle) * expr1 + weight_idle * x - weight_idle * expr2
 
 
-def mean_mixed_erlang_nonnegative(x, p, k, mu):
+def _mean_mixed_erlang_nonnegative(x, p, k, mu):
     """
     Computes the mean of a non-negative mixed Erlang distribution, specifically:
 
