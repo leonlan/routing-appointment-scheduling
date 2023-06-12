@@ -150,9 +150,15 @@ def solve(
     if breakdown:
         print(tabulate(*cost_breakdown(data, cost_evaluator, best)))
 
+    name = (
+        path.stem
+        + "-"
+        + algorithm
+        + f"travel{weight_travel}-idle{weight_idle}-wait{weight_wait}"
+    )
+
     if sol_dir:
-        instance_name = Path(loc).stem
-        where = Path(sol_dir) / (f"{instance_name}-{algorithm}" + ".sol")
+        where = Path(sol_dir) / (f"{name}" + ".sol")
 
         with open(where, "w") as fh:
             fh.write(str(best))
@@ -160,12 +166,10 @@ def solve(
     if plot_dir:
         _, ax = plt.subplots(1, 1, figsize=[12, 12])
         plot_graph(ax, data, solution=best)
-        instance_name = Path(loc).stem
-        where = Path(plot_dir) / (f"{instance_name}-{algorithm}" + ".pdf")
+        where = Path(plot_dir) / (f"{name}-{algorithm}" + ".pdf")
         plt.savefig(where)
 
     cost_profile = str((weight_travel, weight_idle, weight_wait))
-
     return (
         path.stem,
         best.objective(),
