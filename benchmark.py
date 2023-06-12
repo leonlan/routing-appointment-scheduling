@@ -50,7 +50,6 @@ def parse_args():
     parser.add_argument("--weight_travel", type=float, default=1)
     parser.add_argument("--weight_idle", type=float, default=2.5)
     parser.add_argument("--weight_wait", type=int, default=10)
-    parser.add_argument("--cost_seed", type=int, default=1)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
@@ -115,7 +114,6 @@ def solve(
     weight_travel: float,
     weight_idle: float,
     weight_wait: int,
-    cost_seed: int,
     sol_dir: Optional[str],
     plot_dir: Optional[str],
     breakdown: Optional[bool],
@@ -126,6 +124,10 @@ def solve(
     """
     path = Path(loc)
     data = ProblemData.from_file(loc)
+
+    # The cost seed is used to generate the customer-dependent wait times.
+    # This seed is derived from the instance name.
+    cost_seed = int(data.name.split("-")[1].strip("idx"))
     cost_evaluator = make_cost_evaluator(
         data, weight_travel, weight_idle, weight_wait, cost_seed
     )
@@ -171,7 +173,6 @@ def solve(
         round(result.runtime, 3),
         algorithm,
         cost_profile,
-        cost_seed,
     )
 
 
@@ -206,7 +207,6 @@ def benchmark(instances: List[str], **kwargs):
         ("time", float),
         ("alg", "U37"),
         ("cost-profile", "U37"),
-        ("cost-seed", int),
     ]
 
     data = np.asarray(data, dtype=dtypes)
@@ -217,7 +217,6 @@ def benchmark(instances: List[str], **kwargs):
         "Time (s)",
         "Algorithm",
         "Cost profile",
-        "Cost seed",
     ]
 
     print("\n", tabulate(headers, data), "\n", sep="")

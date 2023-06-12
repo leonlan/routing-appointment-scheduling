@@ -30,7 +30,7 @@ class Solution:
         return len(self.visits)
 
     def __str__(self):
-        return self.visits
+        return str(self.visits)
 
     def objective(self):
         """
