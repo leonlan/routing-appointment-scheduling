@@ -15,7 +15,7 @@ def full_enumeration(
     data: ProblemData,
     cost_evaluator: CostEvaluator,
     approx_pool_size: int = 50000,  # little more than 8!
-    num_procs: int = 1,
+    num_procs_enum: int = 1,
     **kwargs,
 ):
     """
@@ -38,7 +38,7 @@ def full_enumeration(
         The size of the pool of sequences to evaluate. The pool is
         constructed by taking the top `approx_pool_size` solutions using
         the heavy traffic schedule.
-    num_procs
+    num_procs_enum
         The number of processes to use. If 1, the search is sequential.
     """
     start = perf_counter()
@@ -48,12 +48,12 @@ def full_enumeration(
         # Filter the candidate pool of solutions using the heavy traffic
         # schedule, if the candidate pool is small enough.
         pool = _filter_using_heavy_traffic(
-            pool, approx_pool_size, data, cost_evaluator, num_procs
+            pool, approx_pool_size, data, cost_evaluator, num_procs_enum
         )
 
     solutions = []
 
-    with multiprocessing.Pool(num_procs) as mp_pool:
+    with multiprocessing.Pool(num_procs_enum) as mp_pool:
         func = partial(_make_solution, data=data, cost_evaluator=cost_evaluator)
 
         for solution in mp_pool.imap_unordered(func, pool):
