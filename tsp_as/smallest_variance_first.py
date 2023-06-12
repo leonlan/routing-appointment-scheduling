@@ -12,9 +12,15 @@ def smallest_variance_first(seed, data, cost_evaluator, **kwargs):
     """
     start = time.perf_counter()
 
-    service_var = data.service_scv * data.service**2
-    visits = service_var.argsort().tolist()
-    visits.remove(0)  # ignore the depot
+    visits = []
+
+    for _ in range(1, data.dimension):
+        unvisited = [idx for idx in range(1, data.dimension) if idx not in visits]
+
+        frm = 0 if len(visits) == 0 else visits[-1]
+        to = unvisited[data.arcs_var[frm, unvisited].argmin()]
+
+        visits.append(to)
 
     schedule = compute_optimal_schedule(visits, data, cost_evaluator)
     solution = Solution(data, cost_evaluator, visits, schedule)
