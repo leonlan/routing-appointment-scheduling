@@ -4,6 +4,7 @@ from itertools import product
 from pathlib import Path
 
 import numpy as np
+from numpy.testing import assert_allclose
 from scipy.stats import poisson
 
 
@@ -80,8 +81,8 @@ def compute_arc_data(distances, distances_scv, service, service_scv):
     """
     # Compute the variances of the combined service and travel times,
     # which in turn are used to compute the scvs.
-    _service_var = service_scv * (service ** 2)
-    _distances_var = distances_scv * (distances ** 2)
+    _service_var = service_scv * (service**2)
+    _distances_var = distances_scv * (distances**2)
     _var = _service_var[np.newaxis, :].T + _distances_var
 
     # The means and scvs are the combined service and travel times, where
@@ -90,7 +91,7 @@ def compute_arc_data(distances, distances_scv, service, service_scv):
     means = service[np.newaxis, :].T + distances
 
     with np.errstate(divide="ignore", invalid="ignore"):
-        scvs = np.divide(_var, means ** 2)  # There may be NaNs in the means
+        scvs = np.divide(_var, means**2)  # There may be NaNs in the means
 
     np.fill_diagonal(means, 0)
     np.fill_diagonal(scvs, 0)
@@ -139,9 +140,13 @@ def _compute_phase_parameters(mean, SCV):
         transition = -mu * np.eye(K + 1)
         transition += mu * np.diag(np.ones(K), k=1)  # one above diagonal
         transition[K - 1, K] = (1 - prob) * mu
+
+        # Test that the first moment is matched.
+        # actual_mean = prob * (K - 1) / mu + (1 - prob) * K / mu
+        # assert_allclose(actual_mean, mean)
     else:
         # Hyperexponential case
-        prob = (1 + np.sqrt((SCV - 1) / (SCV + 1))) / 2
+        prob = 1 / 2 * (1 + np.sqrt((SCV - 1) / (SCV + 1)))
         mu1 = 2 * prob / mean
         mu2 = 2 * (1 - prob) / mean
 
@@ -150,5 +155,9 @@ def _compute_phase_parameters(mean, SCV):
 
         alpha = np.array([[term, 1 - term]])
         transition = np.diag([-mu1, -mu2])
+
+        # Test that the first moment is matched.
+        new_mean = (prob / mu1) + ((1 - prob) / mu2)
+        assert_allclose(new_mean, mean)
 
     return alpha, transition
