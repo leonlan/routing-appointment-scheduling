@@ -63,9 +63,10 @@ def large_neighborhood_search(
 
     if init is None:
         # Use smallest variance first to generate an initial solution.
-        svf_visits = smallest_variance_first(seed, data, cost_evaluator, **kwargs)
-        ht_schedule = compute_ht_schedule(svf_visits, data, cost_evaluator)
-        init = Solution(data, cost_evaluator, svf_visits, ht_schedule)
+        svf = smallest_variance_first(seed, data, cost_evaluator, **kwargs).solution
+        visits = svf.visits
+        ht_schedule = compute_ht_schedule(visits, data, cost_evaluator)
+        init = Solution(data, cost_evaluator, visits, ht_schedule)
 
     select = RouletteWheel([5, 2, 1, 0.5], 0.5, len(D_OPS), len(R_OPS))
 
