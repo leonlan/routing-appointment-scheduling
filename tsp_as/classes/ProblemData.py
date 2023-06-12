@@ -125,8 +125,9 @@ def _compute_phase_parameters(mean, SCV):
     matrix T of the phase-fitted service times given the mean, SCV,
     and the elapsed service time u of the client in service.
     """
-    if SCV < 1:
-        # Weighted Erlang case
+    if SCV < 1:  # Weighted Erlang case
+        # In contrast to the paper, we use (K, K + 1) phases here instead of
+        # (K - 1, K) phases. This is purely for convenience.
         K = math.floor(1 / SCV)
         prob = ((K + 1) * SCV - math.sqrt((K + 1) * (1 - K * SCV))) / (SCV + 1)
         mu = (K + 1 - prob) / mean
@@ -142,8 +143,9 @@ def _compute_phase_parameters(mean, SCV):
         transition[K - 1, K] = (1 - prob) * mu
 
         # Test that the first moment is matched.
-        # actual_mean = prob * (K - 1) / mu + (1 - prob) * K / mu
-        # assert_allclose(actual_mean, mean)
+        actual_mean = prob * K / mu + (1 - prob) * (K + 1) / mu
+        assert_allclose(actual_mean, mean)
+
     else:
         # Hyperexponential case
         prob = 1 / 2 * (1 + np.sqrt((SCV - 1) / (SCV + 1)))
