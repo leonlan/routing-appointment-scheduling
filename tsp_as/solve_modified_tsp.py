@@ -5,16 +5,17 @@ from time import perf_counter
 import elkai
 import numpy as np
 from numpy.random import Generator
+from numpy.testing import assert_allclose
 from scipy.special import gammaincc
 from scipy.stats import erlang
 
 from tsp_as.appointment.true_optimal import compute_optimal_schedule
-from tsp_as.classes import ProblemData, Solution, CostEvaluator
+from tsp_as.classes import CostEvaluator, ProblemData, Solution
+
 from .Result import Result
 
 # Number of samples to estimate the CDF
-NUM_SAMPLES = 1_000_000
-NUM_SAMPLES = 1000
+NUM_SAMPLES = 10_000
 
 
 def solve_modified_tsp(
@@ -43,6 +44,8 @@ def solve_modified_tsp(
     Result
         Some results of the run.
 
+    References
+    ----------
     [1]: Zhan, Y., Wang, Z., & Wan, G. (2021). Home service routing and
     appointment scheduling with stochastic service times. European Journal of
     Operational Research, 288(1), 98–110.
@@ -125,21 +128,26 @@ def compute_appointment_cost(
         appointment_cost = cost_hyperexponential(
             appointment_time, prob, mu1, mu2, weight_wait, weight_idle
         )
+
+        assert_allclose(np.mean(samples), mean)
         assert appointment_cost >= 0
     else:
         # Mixed Erlang case
-        K = floor(1 / scv)
+        K = floor(1 / scv)  # Phases are (K, K+1)
         prob = ((K + 1) * scv - sqrt((K + 1) * (1 - K * scv))) / (scv + 1)
-        mu = (K + 1 - prob) / mean  # scale
+        mu = (K + 1 - prob) / mean
 
         samples = mixed_erlang_rvs(
-            [K - 1, K], [mu, mu], [prob, (1 - prob)], NUM_SAMPLES, rng
+            [K, K + 1], [K / mu, (K + 1) / mu], [prob, (1 - prob)], NUM_SAMPLES, rng
         )
         appointment_time = compute_appointment_time(samples, weight_wait, weight_idle)
-        print(mean, appointment_time)  # this should be close
         appointment_cost = cost_mixed_erlang(
-            appointment_time, prob, K, mu, weight_wait, weight_idle
+            appointment_time, prob, K + 1, mu, weight_wait, weight_idle
         )
+
+        new_mean = prob * K / mu + (1 - prob) * (K + 1) / mu
+        assert_allclose(new_mean, mean)
+        assert_allclose(np.mean(samples), mean, rtol=0.1)
         assert appointment_cost >= 0
 
     return appointment_cost
@@ -189,11 +197,11 @@ def hyperexponential_rvs(
 
 def mixed_erlang_rvs(
     phases: list[int],
-    scales: list[float],
+    means: list[float],
     weights: list[float],
     num_samples: int,
     rng: Generator,
-) -> np.ndarray[float]:
+) -> np.ndarray:
     """
     Generates samples from a mixed Erlang distribution with two phases.
 
@@ -202,8 +210,8 @@ def mixed_erlang_rvs(
     phases : list[int]
         List of phase parameters for each Erlang distribution.
         NOTE this is the same as the shape parameter.
-    scales : list[float]
-        List of scale parameters for each Erlang distribution.
+    means : list[float]
+        List of loc parameters for each Erlang distribution.
     weights : list[float]
         List of weights (probabilities) for each Erlang distribution.
     num_samples : int
@@ -217,7 +225,7 @@ def mixed_erlang_rvs(
         Array of samples from the mixed Erlang distribution.
     """
     msg = "Input lists must have the same length."
-    assert len(scales) == len(weights), msg
+    assert len(means) == len(weights), msg
 
     # Normalize weights
     weights = np.array(weights)
@@ -228,7 +236,8 @@ def mixed_erlang_rvs(
 
     # Generate samples from the selected Erlang distributions
     samples = [
-        erlang.rvs(phases[k], scale=scales[k], random_state=rng) for k in choices
+        erlang.rvs(phases[idx], loc=means[idx], scale=0, random_state=rng)
+        for idx in choices
     ]
 
     return np.array(samples)
@@ -265,8 +274,6 @@ def cost_hyperexponential(x, prob, mu1, mu2, weight_wait, weight_idle):
 def cost_mixed_erlang(x, p, k, mu, weight_wait, weight_idle):
     expr1 = _mean_mixed_erlang_nonnegative(x, p, k, mu)
     expr2 = (k - 1) / mu + (1 - p) / mu
-    print(expr1, expr2, mu)
-    print(weight_idle * expr2)
     return (weight_wait + weight_idle) * expr1 + weight_idle * x - weight_idle * expr2
 
 
