@@ -36,6 +36,7 @@ def parse_args():
     parser.add_argument("instances", nargs="+", help="Instance paths.")
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--num_procs", type=int, default=8)
+    parser.add_argument("--num_procs_enum", type=int, default=1)
     parser.add_argument(
         "--algorithm",
         type=str,
@@ -143,7 +144,7 @@ def solve(
     elif algorithm == "svf":
         result = smallest_variance_first(seed, data, cost_evaluator)
     elif algorithm == "enum":
-        result = full_enumeration(seed, data, cost_evaluator)
+        result = full_enumeration(seed, data, cost_evaluator, **kwargs)
     else:
         raise ValueError(f"Unknown algorithm {algorithm}")
 
