@@ -10,20 +10,34 @@ from scipy.stats import poisson
 class ProblemData:
     def __init__(
         self,
-        name,
-        coords,
-        dimension,
-        distances,
-        distances_scv,
-        service,
-        service_scv,
-        objective="hto",
-        omega_travel=0.5,
-        omega_idle=0.25,
-        omega_wait=0.25,
-        lag=4,
-        **kwargs,
+        name: str,
+        coords: np.ndarray,
+        dimension: int,
+        distances: np.ndarray,
+        distances_scv: np.ndarray,
+        service: np.ndarray,
+        service_scv: np.ndarray,
     ):
+        """
+        A class to represent the data of a problem instance.
+
+        Parameters
+        ----------
+        name
+            The name of the problem instance.
+        coords
+            The coordinates of the locations.
+        dimension
+            The number of locations.
+        distances
+            The distances between the locations.
+        distances_scv
+            The squared coefficient of variation of the distances.
+        service
+            The service times at the locations.
+        service_scv
+            The squared coefficient of variation of the service times.
+        """
         self.name = name
         self.coords = coords
         self.dimension = dimension
@@ -31,12 +45,13 @@ class ProblemData:
         self.distances_scv = distances_scv
         self.service = service
         self.service_scv = service_scv
-        self.service_var = service_scv * np.power(service, 2)  # TODO remove
-        self.objective = objective
-        self.omega_travel = omega_travel
-        self.omega_idle = omega_idle
-        self.omega_wait = omega_wait
-        self.lag = lag  # TODO this is an algorithm parameter
+
+        self.arcs_mean, self.arcs_scv, self.arcs_var = compute_arc_data(
+            distances, distances_scv, service, service_scv
+        )
+        self.alphas, self.transitions = compute_phase_parameters(
+            self.arcs_mean, self.arcs_scv
+        )
 
         self.means, self.scvs, self.vars = compute_means_scvs(
             distances, distances_scv, service, service_scv
@@ -63,22 +78,24 @@ class ProblemData:
         )
 
 
-def compute_means_scvs(distances, distances_scv, service, service_scv):
+def compute_arc_data(distances, distances_scv, service, service_scv):
     """
-    Computes the means and SCVs of the random variable that is the sum of
-    the travel time and the service time.
+    Computes the means, SCVs and variances of the arc random variable, i.e.,
+    the sum of the travel time and the service time.
     """
     # Compute the variances of the combined service and travel times,
     # which in turn are used to compute the scvs.
-    _service_var = service_scv * np.power(service, 2)
-    _distances_var = distances_scv * np.power(distances, 2)
+    _service_var = service_scv * (service**2)
+    _distances_var = distances_scv * (distances**2)
     _var = _service_var[np.newaxis, :].T + _distances_var
 
     # The means and scvs are the combined service and travel times, where
     # entry (i, j) denotes the travel time from i to j and the service
     # time at location i.
     means = service[np.newaxis, :].T + distances
-    scvs = np.divide(_var, np.power(means, 2))
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        scvs = np.divide(_var, means**2)  # There may be NaNs in the means
 
     np.fill_diagonal(means, 0)
     np.fill_diagonal(scvs, 0)

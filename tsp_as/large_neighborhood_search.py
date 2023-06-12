@@ -1,23 +1,54 @@
 import time
+from typing import Optional
 
-import numpy as np
 import numpy.random as rnd
 from alns import ALNS
 from alns.accept import RecordToRecordTravel
 from alns.select import RouletteWheel
 from alns.stop import MaxIterations, MaxRuntime
 
-from tsp_as.classes import Solution
+from tsp_as.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
+from tsp_as.appointment.true_optimal import compute_optimal_schedule
+from tsp_as.classes import CostEvaluator, ProblemData, Solution
 from tsp_as.destroy_operators import adjacent_destroy, random_destroy
 from tsp_as.repair_operators import greedy_insert
 
+from .Result import Result
+from .smallest_variance_first import smallest_variance_first
 
-def solve_alns(
-    seed, init=None, data=None, max_runtime=None, max_iterations=None, **kwargs
+
+def large_neighborhood_search(
+    seed: int,
+    data: ProblemData,
+    cost_evaluator: CostEvaluator,
+    init: Optional[Solution] = None,
+    max_runtime: Optional[float] = None,
+    max_iterations: Optional[int] = None,
+    **kwargs,
 ):
-    rng = rnd.default_rng(seed)
+    """
+    Solve the appointment scheduling problem using the LNS metaheuristic.
 
-    alns = ALNS(rng)
+    Parameters
+    ----------
+    seed
+        The random seed to use.
+    data
+        The problem data.
+    cost_evaluator
+        The cost evaluator.
+    init
+        The initial solution. If None, a random solution is generated.
+    max_runtime
+        The maximum runtime in seconds. If None, max_iterations must be specified.
+    max_iterations
+        The maximum number of iterations. If None, max_runtime must be specified.
+    **kwargs
+        Additional keyword arguments to pass to the ALNS solver.
+    """
+    start = time.perf_counter()
+
+    alns = ALNS(rnd.default_rng(seed))
 
     D_OPS = [
         adjacent_destroy,
@@ -31,8 +62,11 @@ def solve_alns(
         alns.add_repair_operator(r_op)
 
     if init is None:
-        ordered = np.arange(1, data.dimension).tolist()
-        init = Solution(data, ordered)
+        # Use smallest variance first to generate an initial solution.
+        svf = smallest_variance_first(seed, data, cost_evaluator, **kwargs).solution
+        visits = svf.visits
+        ht_schedule = compute_ht_schedule(visits, data, cost_evaluator)
+        init = Solution(data, cost_evaluator, visits, ht_schedule)
 
     select = RouletteWheel([5, 2, 1, 0.5], 0.5, len(D_OPS), len(R_OPS))
 
@@ -51,7 +85,17 @@ def solve_alns(
             init.objective(), start_threshold, end_threshold, max_iterations
         )
 
-    return alns.iterate(init, select, accept, stop, **kwargs)
+    alns_result = alns.iterate(
+        init, select, accept, stop, data=data, cost_evaluator=cost_evaluator, **kwargs
+    )
+
+    visits = alns_result.best_state.visits
+    schedule = compute_optimal_schedule(visits, data, cost_evaluator)
+    solution = Solution(data, cost_evaluator, visits, schedule)
+
+    return Result(
+        solution, time.perf_counter() - start, len(alns_result.statistics.runtimes)
+    )
 
 
 def time_based_value(

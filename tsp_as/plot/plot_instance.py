@@ -8,8 +8,8 @@ def plot_instance(ax, data, solution=None):
     ax.scatter(*coords[1:].T, c="tab:red", label="clients", **kwargs)
 
     if solution is not None:
-        visits = [0] + solution.tour + [0]
-        ax.plot(*coords[visits].T, alpha=0.75, c="tab:grey", label="tour")
+        tour = [0] + solution.visits + [0]
+        ax.plot(*coords[tour].T, alpha=0.75, c="tab:grey", label="visits")
 
     ax.set_title(data.name)
     ax.grid(color="grey", linestyle="--", linewidth=0.25)

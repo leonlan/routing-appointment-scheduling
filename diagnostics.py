@@ -1,17 +1,11 @@
-import numpy as np
-
-from tsp_as.appointment.true_optimal import compute_idle_wait_per_client
-
-
-def cost_breakdown(solution):
+def cost_breakdown(data, cost_evaluator, solution):
     """
     Breakdown the cost of the solution.
     """
-    fr, to = [0] + solution.tour, solution.tour + [0]
-    data = solution.data
-    dists = data.distances[fr, to]
-    idle_times, wait_times = compute_idle_wait_per_client(
-        solution.tour, solution.schedule, solution.data
+    tour_arcs = [0] + solution.visits, solution.visits + [0]
+    dists = data.distances[tour_arcs]
+    idle_times, wait_times = cost_evaluator.idle_wait_function(
+        solution.visits, solution.schedule, data
     )
 
     headers = [
@@ -24,28 +18,27 @@ def cost_breakdown(solution):
         "dist",
         "idle",
         "wait",
-        "norm. dist",
-        "norm. idle",
-        "norm. wait",
+        "weight_wait",
     ]
     rows = []
-    locs = [0] + solution.tour + [0]
+    locs = [0] + solution.visits + [0]
     n_locs = len(locs) - 1
     last = n_locs - 1
 
-    total_dist = 0
-    total_idle = 0
-    total_wait = 0
+    cost_dist = 0
+    cost_idle = 0
+    cost_wait = 0
     for idx in range(n_locs):
         fr = locs[idx]
         to = locs[idx + 1]
         appointment = solution.schedule[idx] if idx < last else 0  # do not count last
-        mean = data.means[fr, to]
-        scv = data.scvs[fr, to]
-        var = data.vars[fr, to]
+        mean = data.arcs_mean[fr, to]
+        scv = data.arcs_scv[fr, to]
+        var = data.arcs_var[fr, to]
         dist = dists[idx]
         idle = idle_times[idx] if idx < last else 0  # do not count last
         wait = wait_times[idx] if idx < last else 0  # do not count last
+        weight = cost_evaluator.wait_weights[to]
 
         row = (
             fr,
@@ -57,41 +50,14 @@ def cost_breakdown(solution):
             round(dist, 2),
             round(idle, 2),
             round(wait, 2),
-            round(data.omega_travel * dist, 2),
-            round(data.omega_idle * idle, 2),
-            round(data.omega_wait * wait, 2),
+            round(weight, 2),
         )
         rows.append(row)
-        total_dist += dist
-        total_idle += idle
-        total_wait += wait
 
-    print(f"{total_dist=:.2f}, {total_idle=:.2f}, {total_wait=:.2f}")
-    print(
-        f"{data.omega_travel*total_dist=:.2f}, {data.omega_idle*total_idle=:.2f}, {data.omega_wait*total_wait=:.2f}"
-    )
+        cost_dist += dist * cost_evaluator.travel_weight
+        cost_idle += idle * cost_evaluator.idle_weight
+        cost_wait += wait * weight
 
-    np.testing.assert_allclose(solution.idle, total_idle)
-    np.testing.assert_allclose(solution.wait, total_wait)
-    np.testing.assert_allclose(solution.distance, total_dist)
+    print(f"{cost_dist=:.2f}, {cost_idle=:.2f}, {cost_wait=:.2f}")
+
     return headers, rows
-
-
-def tabulate(headers, rows) -> str:  # noqa
-    # These lengths are used to space each column properly.
-    lengths = [len(header) for header in headers]
-
-    for row in rows:
-        for idx, cell in enumerate(row):
-            lengths[idx] = max(lengths[idx], len(str(cell)))
-
-    header = [
-        "  ".join(f"{h:<{l}s}" for l, h in zip(lengths, headers)),
-        "  ".join("-" * l for l in lengths),
-    ]
-
-    content = [
-        "  ".join(f"{str(c):>{l}s}" for l, c in zip(lengths, row)) for row in rows
-    ]
-
-    return "\n".join(header + content)

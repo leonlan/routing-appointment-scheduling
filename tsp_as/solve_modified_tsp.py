@@ -17,7 +17,7 @@ NUM_SAMPLES = 1_000_000
 NUM_SAMPLES = 1000
 
 
-def solve_modified_tsp(seed, data, max_iterations=1000, **kwargs):
+def solve_modified_tsp(seed, data, cost_evaluator, max_iterations=10000, **kwargs):
     """
     Solves the modified TSP algorithm by [1].
 
