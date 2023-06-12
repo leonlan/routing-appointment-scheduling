@@ -1,7 +1,6 @@
 import time
 from typing import Optional
 
-import numpy as np
 import numpy.random as rnd
 from alns import ALNS
 from alns.accept import RecordToRecordTravel
@@ -15,6 +14,7 @@ from tsp_as.destroy_operators import adjacent_destroy, random_destroy
 from tsp_as.repair_operators import greedy_insert
 
 from .Result import Result
+from .smallest_variance_first import smallest_variance_first
 
 
 def large_neighborhood_search(
@@ -62,9 +62,10 @@ def large_neighborhood_search(
         alns.add_repair_operator(r_op)
 
     if init is None:
-        ordered_visits = np.arange(1, data.dimension).tolist()
-        ht_schedule = compute_ht_schedule(ordered_visits, data, cost_evaluator)
-        init = Solution(data, cost_evaluator, ordered_visits, ht_schedule)
+        # Use smallest variance first to generate an initial solution.
+        svf_visits = smallest_variance_first(seed, data, cost_evaluator, **kwargs)
+        ht_schedule = compute_ht_schedule(svf_visits, data, cost_evaluator)
+        init = Solution(data, cost_evaluator, svf_visits, ht_schedule)
 
     select = RouletteWheel([5, 2, 1, 0.5], 0.5, len(D_OPS), len(R_OPS))
 
