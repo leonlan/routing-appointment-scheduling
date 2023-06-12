@@ -143,9 +143,7 @@ def solve(
     elif algorithm == "svf":
         result = smallest_variance_first(seed, data, cost_evaluator)
     elif algorithm == "enum":
-        # Use the TSP solution as the initial upper bound for the enumeration.
-        init = tsp(seed, data, cost_evaluator, **kwargs).solution
-        result = full_enumeration(seed, data, cost_evaluator, init)
+        result = full_enumeration(seed, data, cost_evaluator, **kwargs)
     else:
         raise ValueError(f"Unknown algorithm {algorithm}")
 
