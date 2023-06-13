@@ -1,6 +1,7 @@
 from itertools import product
 from math import exp, factorial
 from time import perf_counter
+from typing import Optional
 
 import elkai
 import numpy as np
@@ -27,7 +28,7 @@ def solve_modified_tsp(
     seed: int,
     data: ProblemData,
     cost_evaluator: CostEvaluator,
-    max_iterations: int = 10000,
+    max_iterations: Optional[int] = None,
     **kwargs,
 ):
     """
@@ -56,6 +57,9 @@ def solve_modified_tsp(
     Operational Research, 288(1), 98–110.
     """
     start = perf_counter()
+
+    if max_iterations is None:
+        max_iterations = 10000
 
     rng = np.random.default_rng(seed)
 
