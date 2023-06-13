@@ -3,7 +3,6 @@ from itertools import product
 from pathlib import Path
 
 import numpy as np
-from scipy.stats import poisson
 
 from tsp_as.distributions import fit_hyperexponential, fit_mixed_erlang
 
@@ -128,27 +127,21 @@ def _compute_phase_parameters(mean: float, scv: float):
     distribution such that they match the first and second moment of the
     given distribution.
     """
-    if scv < 1:  # Weighted Erlang case
+    if scv < 1:  # Mixed Erlang case
         # In contrast to the paper, we use (K, K + 1) phases here instead of
         # (K - 1, K) phases.
         K, prob, mu = fit_mixed_erlang(mean, scv)
 
         alpha = np.zeros((1, K + 1))
-        B_sf = poisson.cdf(K - 1, mu) + (1 - prob) * poisson.pmf(K, mu)
-
-        alpha[0, :] = [poisson.pmf(k, mu) / B_sf for k in range(K + 1)]
-        alpha[0, K] *= 1 - prob
+        alpha[0, 0] = 1 - prob
+        alpha[0, 1] = prob
 
         transition = -mu * np.eye(K + 1)
         transition += mu * np.diag(np.ones(K), k=1)  # one above diagonal
-        transition[K - 1, K] = (1 - prob) * mu
 
     else:  # Hyperexponential case
         prob, mu1, mu2 = fit_hyperexponential(mean, scv)
-        B_sf = prob * np.exp(-mu1) + (1 - prob) * np.exp(-mu2)
-        term = prob * np.exp(-mu1) / B_sf
-
-        alpha = np.array([[term, 1 - term]])
+        alpha = np.array([[prob, 1 - prob]])
         transition = np.diag([-mu1, -mu2])
 
     return alpha, transition
