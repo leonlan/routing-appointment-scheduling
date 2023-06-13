@@ -23,3 +23,6 @@ def _test_moments(mean: float, scv: float, K: int, prob: float, mu: float):
     assert_allclose(actual_mean, mean)
 
     # TODO test second moment
+
+    # Test that probability is between 0 and 1.
+    assert 0 <= prob <= 1
