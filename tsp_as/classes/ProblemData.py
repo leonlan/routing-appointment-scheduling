@@ -119,17 +119,20 @@ def compute_phase_parameters(means, scvs):
     return alphas, transitions
 
 
-def _compute_phase_parameters(mean, SCV):
+def _compute_phase_parameters(mean: float, scv: float):
     """
     Returns the initial distribution alpha and the transition rate
-    matrix T of the phase-fitted service times given the mean, SCV,
-    and the elapsed service time u of the client in service.
+    matrix T of the phase-fitted service times given the mean and scv.
+
+    Based on the scv, we either fit a mixed Erlang or a hyperexponential
+    distribution such that they match the first and second moment of the
+    given distribution.
     """
-    if SCV < 1:  # Weighted Erlang case
+    if scv < 1:  # Weighted Erlang case
         # In contrast to the paper, we use (K, K + 1) phases here instead of
-        # (K - 1, K) phases. This is purely for convenience.
-        K = math.floor(1 / SCV)
-        prob = ((K + 1) * SCV - math.sqrt((K + 1) * (1 - K * SCV))) / (SCV + 1)
+        # (K - 1, K) phases.
+        K = math.floor(1 / scv)
+        prob = ((K + 1) * scv - math.sqrt((K + 1) * (1 - K * scv))) / (scv + 1)
         mu = (K + 1 - prob) / mean
 
         alpha = np.zeros((1, K + 1))
@@ -146,9 +149,11 @@ def _compute_phase_parameters(mean, SCV):
         actual_mean = prob * K / mu + (1 - prob) * (K + 1) / mu
         assert_allclose(actual_mean, mean)
 
+        # TODO test the second moment?
+
     else:
         # Hyperexponential case
-        prob = 1 / 2 * (1 + np.sqrt((SCV - 1) / (SCV + 1)))
+        prob = 1 / 2 * (1 + np.sqrt((scv - 1) / (scv + 1)))
         mu1 = 2 * prob / mean
         mu2 = 2 * (1 - prob) / mean
 
@@ -158,8 +163,14 @@ def _compute_phase_parameters(mean, SCV):
         alpha = np.array([[term, 1 - term]])
         transition = np.diag([-mu1, -mu2])
 
-        # Test that the first moment is matched.
+        # Test that first moment matched.
         new_mean = (prob / mu1) + ((1 - prob) / mu2)
         assert_allclose(new_mean, mean)
+
+        # That that second moment matched.
+        # Second moment is given by E[X^2] = SCV(X) * E[X]^2 + E[X]^2
+        second_moment = (prob / mu1**2) + ((1 - prob) / mu2**2)
+        second_moment *= 2
+        assert_allclose(second_moment, (scv + 1) * mean**2)
 
     return alpha, transition

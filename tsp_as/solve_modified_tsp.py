@@ -62,15 +62,13 @@ def solve_modified_tsp(
         if i == j:  # ignore self-loops
             continue
 
-        weight_travel = cost_evaluator.travel_weight
-        weight_idle = cost_evaluator.idle_weight
-        weight_wait_j = cost_evaluator.wait_weights[j]
+        w_travel = cost_evaluator.travel_weight
+        w_idle = cost_evaluator.idle_weight
+        w_wait_j = cost_evaluator.wait_weights[j]
 
         dist = data.distances[i, j]
-        appointment_cost = compute_appointment_cost(
-            data, weight_idle, weight_wait_j, i, j, rng
-        )
-        modified_distances[i, j] = dist + (1 / weight_travel) * appointment_cost
+        appointment_cost = compute_appointment_cost(data, w_idle, w_wait_j, i, j, rng)
+        modified_distances[i, j] = dist + (1 / w_travel) * appointment_cost
 
     # Solve the TSP using the modified distances
     visits = elkai.solve_float_matrix(modified_distances, runs=max_iterations)
