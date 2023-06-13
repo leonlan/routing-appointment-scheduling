@@ -128,17 +128,14 @@ def _compute_phase_parameters(mean: float, scv: float):
     given distribution.
     """
     if scv < 1:  # Mixed Erlang case
-        # In contrast to the paper, we use (K, K + 1) phases here instead of
-        # (K - 1, K) phases.
         K, prob, mu = fit_mixed_erlang(mean, scv)
 
-        alpha = np.zeros((1, K + 1))
+        alpha = np.zeros((1, K))
         alpha[0, 0] = 1 - prob
         alpha[0, 1] = prob
 
-        transition = -mu * np.eye(K + 1)
-        transition += mu * np.diag(np.ones(K), k=1)  # one above diagonal
-
+        transition = -mu * np.eye(K)
+        transition += mu * np.diag(np.ones(K - 1), k=1)  # one above diagonal
     else:  # Hyperexponential case
         prob, mu1, mu2 = fit_hyperexponential(mean, scv)
         alpha = np.array([[prob, 1 - prob]])

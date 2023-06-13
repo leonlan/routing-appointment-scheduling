@@ -120,7 +120,15 @@ def compute_appointment_cost(
     """
     mean, scv = data.arcs_mean[i, j], data.arcs_scv[i, j]
 
-    if scv >= 1:  # Hyperexponential case
+    if scv < 1:  # Mixed Erlang case
+        K, prob, mu = fit_mixed_erlang(mean, scv)
+        samples = mixed_erlang_rvs(
+            [K - 1, K], [(K - 1) / mu, K / mu], [prob, (1 - prob)], NUM_SAMPLES, rng
+        )
+
+        appt_time = compute_appointment_time(samples, w_wait, w_idle)
+        appt_cost = cost_mixed_erlang(appt_time, prob, K, mu, w_wait, w_idle)
+    else:  # Hyperexponential case
         prob, mu1, mu2 = fit_hyperexponential(mean, scv)
         samples = hyperexponential_rvs(
             [1 / mu1, 1 / mu2], [prob, (1 - prob)], NUM_SAMPLES, rng
@@ -128,15 +136,6 @@ def compute_appointment_cost(
 
         appt_time = compute_appointment_time(samples, w_wait, w_idle)
         appt_cost = cost_hyperexponential(appt_time, prob, mu1, mu2, w_wait, w_idle)
-
-    else:  # Mixed Erlang case
-        K, prob, mu = fit_mixed_erlang(mean, scv)  # Phases are (K, K+1)
-        samples = mixed_erlang_rvs(
-            [K, K + 1], [K / mu, (K + 1) / mu], [prob, (1 - prob)], NUM_SAMPLES, rng
-        )
-
-        appt_time = compute_appointment_time(samples, w_wait, w_idle)
-        appt_cost = cost_mixed_erlang(appt_time, prob, K + 1, mu, w_wait, w_idle)
 
     # Check that the mean of the samples is equal to the mean of the random varialbe
     # and that the appointment time and cost is non-negative.
