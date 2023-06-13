@@ -15,7 +15,7 @@ from tsp_as.classes import CostEvaluator, ProblemData, Solution
 from .Result import Result
 
 # Number of samples to estimate the CDF
-NUM_SAMPLES = 10_000
+NUM_SAMPLES = 5_000
 
 
 def solve_modified_tsp(
@@ -121,13 +121,18 @@ def compute_appointment_cost(
         mu1 = 2 * prob / mean
         mu2 = 2 * (1 - prob) / mean
 
-        samples = hyperexponential_rvs([mu1, mu2], [prob, (1 - prob)], NUM_SAMPLES, rng)
+        samples = hyperexponential_rvs(
+            [1 / mu1, 1 / mu2], [prob, (1 - prob)], NUM_SAMPLES, rng
+        )
         appointment_time = compute_appointment_time(samples, weight_wait, weight_idle)
         appointment_cost = cost_hyperexponential(
             appointment_time, prob, mu1, mu2, weight_wait, weight_idle
         )
 
-        assert_allclose(np.mean(samples), mean)
+        # Check that the mean of the samples is equal to the mean of the random varialbe
+        new_mean = (prob / mu1) + ((1 - prob) / mu2)
+        assert_allclose(new_mean, mean)
+        assert_allclose(np.mean(samples), mean, rtol=0.1)
         assert appointment_cost >= 0
     else:
         # Mixed Erlang case
@@ -153,20 +158,20 @@ def compute_appointment_cost(
 
 def hyperexponential_rvs(
     scales: list[float], weights: list[float], num_samples: int, rng: Generator
-) -> np.ndarray[float]:
+) -> np.ndarray:
     """
     Generates samples from a hyperexponential distribution consisting of two
     exponential distributions.
 
     Parameters
     ----------
-    scales : list[float]
+    scales
         List of scale (mean) parameters for each exponential distribution.
-    weights : list[float]
+    weights
         List of weights (probabilities) for each exponential distribution.
-    num_samples : int
+    num_samples
         Number of samples to generate.
-    rng : Generator
+    rng
         NumPy random number generator.
 
     Returns
@@ -185,12 +190,12 @@ def hyperexponential_rvs(
     weights = weights / weights.sum()
 
     # Select component exponential distributions based on weights
-    components = rng.choice(len(weights), size=num_samples, p=weights)
+    components = rng.choice(len(weights), p=weights, size=num_samples)
 
     # Generate samples from the selected exponential distributions
     samples = [rng.exponential(scales[k]) for k in components]
 
-    return samples
+    return np.array(samples)
 
 
 def mixed_erlang_rvs(
