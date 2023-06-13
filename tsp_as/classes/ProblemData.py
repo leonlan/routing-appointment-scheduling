@@ -91,6 +91,8 @@ def compute_arc_data(distances, distances_scv, service, service_scv):
 
     with np.errstate(divide="ignore", invalid="ignore"):
         scvs = np.divide(_var, means**2)  # There may be NaNs in the means
+        # Round to 3 decimals to avoid floating point precision issues in fitting mixed erlang
+        scvs = np.round(scvs, 3)
 
     np.fill_diagonal(means, 0)
     np.fill_diagonal(scvs, 0)
