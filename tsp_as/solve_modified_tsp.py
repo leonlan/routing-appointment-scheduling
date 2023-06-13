@@ -5,13 +5,17 @@ from time import perf_counter
 import elkai
 import numpy as np
 from numpy.random import Generator
-from numpy.testing import assert_allclose
+from numpy.testing import assert_, assert_allclose
 from scipy.special import gammaincc
-from scipy.stats import erlang
 
 from tsp_as.appointment.true_optimal import compute_optimal_schedule
 from tsp_as.classes import CostEvaluator, ProblemData, Solution
-from tsp_as.distributions import fit_hyperexponential, fit_mixed_erlang
+from tsp_as.distributions import (
+    fit_hyperexponential,
+    fit_mixed_erlang,
+    hyperexponential_rvs,
+    mixed_erlang_rvs,
+)
 
 from .Result import Result
 
@@ -84,8 +88,8 @@ def solve_modified_tsp(
 
 def compute_appointment_cost(
     data: ProblemData,
-    weight_idle: float,
-    weight_wait: float,
+    w_idle: float,
+    w_wait: float,
     i: int,
     j: int,
     rng: Generator,
@@ -118,127 +122,29 @@ def compute_appointment_cost(
 
     if scv >= 1:  # Hyperexponential case
         prob, mu1, mu2 = fit_hyperexponential(mean, scv)
-
         samples = hyperexponential_rvs(
             [1 / mu1, 1 / mu2], [prob, (1 - prob)], NUM_SAMPLES, rng
         )
-        appointment_time = compute_appointment_time(samples, weight_wait, weight_idle)
-        appointment_cost = cost_hyperexponential(
-            appointment_time, prob, mu1, mu2, weight_wait, weight_idle
-        )
 
-        # Check that the mean of the samples is equal to the mean of the random varialbe
-        new_mean = (prob / mu1) + ((1 - prob) / mu2)
-        assert_allclose(new_mean, mean)
-        assert_allclose(np.mean(samples), mean, rtol=0.1)
-        assert appointment_cost >= 0
+        appt_time = compute_appointment_time(samples, w_wait, w_idle)
+        appt_cost = cost_hyperexponential(appt_time, prob, mu1, mu2, w_wait, w_idle)
+
     else:  # Mixed Erlang case
         K, prob, mu = fit_mixed_erlang(mean, scv)  # Phases are (K, K+1)
-
         samples = mixed_erlang_rvs(
             [K, K + 1], [K / mu, (K + 1) / mu], [prob, (1 - prob)], NUM_SAMPLES, rng
         )
-        appointment_time = compute_appointment_time(samples, weight_wait, weight_idle)
-        appointment_cost = cost_mixed_erlang(
-            appointment_time, prob, K + 1, mu, weight_wait, weight_idle
-        )
 
-        new_mean = prob * K / mu + (1 - prob) * (K + 1) / mu
-        assert_allclose(new_mean, mean)
-        assert_allclose(np.mean(samples), mean, rtol=0.1)
-        assert appointment_cost >= 0
+        appt_time = compute_appointment_time(samples, w_wait, w_idle)
+        appt_cost = cost_mixed_erlang(appt_time, prob, K + 1, mu, w_wait, w_idle)
 
-    return appointment_cost
+    # Check that the mean of the samples is equal to the mean of the random varialbe
+    # and that the appointment time and cost is non-negative.
+    assert_allclose(np.mean(samples), mean, rtol=0.1)
+    assert_(appt_time >= 0)
+    assert_(appt_cost >= 0)
 
-
-def hyperexponential_rvs(
-    scales: list[float], weights: list[float], num_samples: int, rng: Generator
-) -> np.ndarray:
-    """
-    Generates samples from a hyperexponential distribution consisting of two
-    exponential distributions.
-
-    Parameters
-    ----------
-    scales
-        List of scale (mean) parameters for each exponential distribution.
-    weights
-        List of weights (probabilities) for each exponential distribution.
-    num_samples
-        Number of samples to generate.
-    rng
-        NumPy random number generator.
-
-    Returns
-    -------
-    np.ndarray[float]
-        Array of samples from the hyperexponential distribution.
-    """
-    msg = "Input lists must have the same length."
-    assert len(scales) == len(weights), msg
-
-    # Convert input lists into NumPy arrays for easier manipulation
-    scales = np.array(scales)
-    weights = np.array(weights)
-
-    # Normalize weights to probabilities
-    weights = weights / weights.sum()
-
-    # Select component exponential distributions based on weights
-    components = rng.choice(len(weights), p=weights, size=num_samples)
-
-    # Generate samples from the selected exponential distributions
-    samples = [rng.exponential(scales[k]) for k in components]
-
-    return np.array(samples)
-
-
-def mixed_erlang_rvs(
-    phases: list[int],
-    means: list[float],
-    weights: list[float],
-    num_samples: int,
-    rng: Generator,
-) -> np.ndarray:
-    """
-    Generates samples from a mixed Erlang distribution with two phases.
-
-    Parameters
-    ----------
-    phases : list[int]
-        List of phase parameters for each Erlang distribution.
-        NOTE this is the same as the shape parameter.
-    means : list[float]
-        List of loc parameters for each Erlang distribution.
-    weights : list[float]
-        List of weights (probabilities) for each Erlang distribution.
-    num_samples : int
-        Number of samples to generate.
-    rng : Generator
-        NumPy random number generator.
-
-    Returns
-    -------
-    np.ndarray[float]
-        Array of samples from the mixed Erlang distribution.
-    """
-    msg = "Input lists must have the same length."
-    assert len(means) == len(weights), msg
-
-    # Normalize weights
-    weights = np.array(weights)
-    weights = weights / weights.sum()
-
-    # Select component Erlang distributions based on weights
-    choices = rng.choice(len(weights), p=weights, size=num_samples)
-
-    # Generate samples from the selected Erlang distributions
-    samples = [
-        erlang.rvs(phases[idx], loc=means[idx], scale=0, random_state=rng)
-        for idx in choices
-    ]
-
-    return np.array(samples)
+    return appt_cost
 
 
 def compute_appointment_time(

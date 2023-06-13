@@ -3,7 +3,6 @@ from itertools import product
 from pathlib import Path
 
 import numpy as np
-from numpy.testing import assert_allclose
 from scipy.stats import poisson
 
 from tsp_as.distributions import fit_hyperexponential, fit_mixed_erlang
@@ -130,8 +129,8 @@ def _compute_phase_parameters(mean: float, scv: float):
     given distribution.
     """
     if scv < 1:  # Weighted Erlang case
-        # # In contrast to the paper, we use (K, K + 1) phases here instead of
-        # # (K - 1, K) phases.
+        # In contrast to the paper, we use (K, K + 1) phases here instead of
+        # (K - 1, K) phases.
         K, prob, mu = fit_mixed_erlang(mean, scv)
 
         alpha = np.zeros((1, K + 1))
@@ -144,12 +143,6 @@ def _compute_phase_parameters(mean: float, scv: float):
         transition += mu * np.diag(np.ones(K), k=1)  # one above diagonal
         transition[K - 1, K] = (1 - prob) * mu
 
-        # Test that the first moment is matched.
-        actual_mean = prob * K / mu + (1 - prob) * (K + 1) / mu
-        assert_allclose(actual_mean, mean)
-
-        # TODO test the second moment?
-
     else:  # Hyperexponential case
         prob, mu1, mu2 = fit_hyperexponential(mean, scv)
         B_sf = prob * np.exp(-mu1) + (1 - prob) * np.exp(-mu2)
@@ -157,15 +150,5 @@ def _compute_phase_parameters(mean: float, scv: float):
 
         alpha = np.array([[term, 1 - term]])
         transition = np.diag([-mu1, -mu2])
-
-        # Test that first moment matched.
-        new_mean = (prob / mu1) + ((1 - prob) / mu2)
-        assert_allclose(new_mean, mean)
-
-        # That that second moment matched.
-        # Second moment is given by E[X^2] = SCV(X) * E[X]^2 + E[X]^2
-        second_moment = (prob / mu1**2) + ((1 - prob) / mu2**2)
-        second_moment *= 2
-        assert_allclose(second_moment, (scv + 1) * mean**2)
 
     return alpha, transition
