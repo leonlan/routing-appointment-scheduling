@@ -138,6 +138,7 @@ def _compute_phase_parameters(mean: float, scv: float):
 
         transition = -mu * np.eye(K)
         transition += mu * np.diag(np.ones(K - 1), k=1)  # one above diagonal
+        transition[K - 2, K - 1] = (1 - prob) * mu  # last row
     else:  # Hyperexponential case
         prob, mu1, mu2 = fit_hyperexponential(mean, scv)
         alpha = np.array([[prob, 1 - prob]])
