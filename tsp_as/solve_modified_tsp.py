@@ -1,5 +1,5 @@
 from itertools import product
-from math import exp, factorial, floor, sqrt
+from math import exp, factorial
 from time import perf_counter
 
 import elkai
@@ -11,6 +11,7 @@ from scipy.stats import erlang
 
 from tsp_as.appointment.true_optimal import compute_optimal_schedule
 from tsp_as.classes import CostEvaluator, ProblemData, Solution
+from tsp_as.distributions import fit_hyperexponential, fit_mixed_erlang
 
 from .Result import Result
 
@@ -115,11 +116,8 @@ def compute_appointment_cost(
     """
     mean, scv = data.arcs_mean[i, j], data.arcs_scv[i, j]
 
-    if scv >= 1:
-        # Hyperexponential case
-        prob = (1 + np.sqrt((scv - 1) / (scv + 1))) / 2
-        mu1 = 2 * prob / mean
-        mu2 = 2 * (1 - prob) / mean
+    if scv >= 1:  # Hyperexponential case
+        prob, mu1, mu2 = fit_hyperexponential(mean, scv)
 
         samples = hyperexponential_rvs(
             [1 / mu1, 1 / mu2], [prob, (1 - prob)], NUM_SAMPLES, rng
@@ -134,11 +132,8 @@ def compute_appointment_cost(
         assert_allclose(new_mean, mean)
         assert_allclose(np.mean(samples), mean, rtol=0.1)
         assert appointment_cost >= 0
-    else:
-        # Mixed Erlang case
-        K = floor(1 / scv)  # Phases are (K, K+1)
-        prob = ((K + 1) * scv - sqrt((K + 1) * (1 - K * scv))) / (scv + 1)
-        mu = (K + 1 - prob) / mean
+    else:  # Mixed Erlang case
+        K, prob, mu = fit_mixed_erlang(mean, scv)  # Phases are (K, K+1)
 
         samples = mixed_erlang_rvs(
             [K, K + 1], [K / mu, (K + 1) / mu], [prob, (1 - prob)], NUM_SAMPLES, rng

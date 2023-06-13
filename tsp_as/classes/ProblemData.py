@@ -1,11 +1,12 @@
 import json
-import math
 from itertools import product
 from pathlib import Path
 
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy.stats import poisson
+
+from tsp_as.distributions import fit_hyperexponential, fit_mixed_erlang
 
 
 class ProblemData:
@@ -129,11 +130,9 @@ def _compute_phase_parameters(mean: float, scv: float):
     given distribution.
     """
     if scv < 1:  # Weighted Erlang case
-        # In contrast to the paper, we use (K, K + 1) phases here instead of
-        # (K - 1, K) phases.
-        K = math.floor(1 / scv)
-        prob = ((K + 1) * scv - math.sqrt((K + 1) * (1 - K * scv))) / (scv + 1)
-        mu = (K + 1 - prob) / mean
+        # # In contrast to the paper, we use (K, K + 1) phases here instead of
+        # # (K - 1, K) phases.
+        K, prob, mu = fit_mixed_erlang(mean, scv)
 
         alpha = np.zeros((1, K + 1))
         B_sf = poisson.cdf(K - 1, mu) + (1 - prob) * poisson.pmf(K, mu)
@@ -151,12 +150,8 @@ def _compute_phase_parameters(mean: float, scv: float):
 
         # TODO test the second moment?
 
-    else:
-        # Hyperexponential case
-        prob = 1 / 2 * (1 + np.sqrt((scv - 1) / (scv + 1)))
-        mu1 = 2 * prob / mean
-        mu2 = 2 * (1 - prob) / mean
-
+    else:  # Hyperexponential case
+        prob, mu1, mu2 = fit_hyperexponential(mean, scv)
         B_sf = prob * np.exp(-mu1) + (1 - prob) * np.exp(-mu2)
         term = prob * np.exp(-mu1) / B_sf
 
