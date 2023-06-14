@@ -76,7 +76,7 @@ def solve_modified_tsp(
         w_wait_j = cost_evaluator.wait_weights[j]
 
         dist = data.distances[i, j]
-        appointment_cost = compute_appointment_cost(data, w_idle, w_wait_j, i, j, rng)
+        appointment_cost = compute_appointment_cost(data, w_wait_j, w_idle, i, j, rng)
         modified_distances[i, j] = dist + (1 / w_travel) * appointment_cost
 
     # Solve the TSP using the modified distances
@@ -92,8 +92,8 @@ def solve_modified_tsp(
 
 def compute_appointment_cost(
     data: ProblemData,
-    w_idle: float,
     w_wait: float,
+    w_idle: float,
     i: int,
     j: int,
     rng: Generator,
@@ -104,17 +104,17 @@ def compute_appointment_cost(
 
     Parameters
     ----------
-    data : Data
-        Data object.
-    weight_idle : float
+    data
+        ProblemData object.
+    w_idle
         Weight of the idle time.
-    weight_wait : float
+    w_wait
         Weight of the travel time of customer $j$.
-    i : int
+    i
         Index of the first node.
-    j : int
+    j
         Index of the second node.
-    rng : Generator
+    rng
         NumPy random number generator.
 
     Returns
@@ -194,7 +194,6 @@ def _mean_mixed_erlang_nonnegative(x, p, k, mu):
     constant.
     """
     expr1 = (k - p - mu * x) / (mu * factorial(k - 2))
-
     expr2 = gammaincc(k - 1, mu * x)  # Regularized upper incomplete Gamma
 
     expr3 = (k - p) / (mu * factorial(k - 1))
