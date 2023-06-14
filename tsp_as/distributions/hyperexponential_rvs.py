@@ -28,15 +28,11 @@ def hyperexponential_rvs(
     msg = "Input lists must have the same length."
     assert len(scales) == len(weights), msg
 
-    # Convert input lists into NumPy arrays for easier manipulation
-    scales = np.array(scales)
-    weights = np.array(weights)
-
     # Normalize weights to probabilities
-    weights = weights / weights.sum()
+    probs = np.array(weights) / sum(weights)
 
     # Select component exponential distributions based on weights
-    components = rng.choice(len(weights), p=weights, size=num_samples)
+    components = rng.choice(len(probs), p=probs, size=num_samples)
 
     # Generate samples from the selected exponential distributions
     samples = [rng.exponential(scales[k]) for k in components]
