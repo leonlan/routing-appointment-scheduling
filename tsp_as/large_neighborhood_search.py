@@ -14,7 +14,6 @@ from tsp_as.destroy_operators import adjacent_destroy, random_destroy
 from tsp_as.repair_operators import greedy_insert
 
 from .Result import Result
-from .smallest_variance_first import smallest_variance_first
 
 
 def large_neighborhood_search(
@@ -47,8 +46,9 @@ def large_neighborhood_search(
         Additional keyword arguments to pass to the ALNS solver.
     """
     start = time.perf_counter()
+    rng = rnd.default_rng(seed)
 
-    alns = ALNS(rnd.default_rng(seed))
+    alns = ALNS(rng)
 
     D_OPS = [
         adjacent_destroy,
@@ -62,11 +62,9 @@ def large_neighborhood_search(
         alns.add_repair_operator(r_op)
 
     if init is None:
-        # Use smallest variance first to generate an initial solution.
-        svf = smallest_variance_first(seed, data, cost_evaluator, **kwargs).solution
-        visits = svf.visits
-        ht_schedule = compute_ht_schedule(visits, data, cost_evaluator)
-        init = Solution(data, cost_evaluator, visits, ht_schedule)
+        visits_ = rng.permutation(list(range(1, data.dimension))).tolist()
+        ht_schedule = compute_ht_schedule(visits_, data, cost_evaluator)
+        init = Solution(data, cost_evaluator, visits_, ht_schedule)
 
     select = RouletteWheel([5, 2, 1, 0.5], 0.5, len(D_OPS), len(R_OPS))
 

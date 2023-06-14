@@ -1,5 +1,4 @@
 from copy import deepcopy
-from math import ceil
 
 from numpy.random import Generator
 
@@ -12,7 +11,7 @@ def random_destroy(
     rng: Generator,
     data: ProblemData,
     cost_evaluator: CostEvaluator,
-    pct_destroy: float = 0.15,
+    max_num_destroy: int = 5,
     **kwargs
 ) -> Solution:
     """
@@ -30,7 +29,8 @@ def random_destroy(
     visits = deepcopy(solution.visits)
     unassigned = []
 
-    num_destroy = ceil(len(solution) * pct_destroy)  # at least one
+    num_destroy = rng.integers(max_num_destroy) + 1  # destroy at least 1 cust
+    num_destroy = min(num_destroy, len(visits) - 1)  # keep at least 1 cust
 
     for cust in rng.choice(visits, num_destroy, replace=False):
         unassigned.append(cust)

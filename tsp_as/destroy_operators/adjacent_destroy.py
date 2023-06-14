@@ -1,5 +1,4 @@
 from copy import deepcopy
-from math import ceil
 
 from numpy.random import Generator
 
@@ -12,7 +11,7 @@ def adjacent_destroy(
     rng: Generator,
     data: ProblemData,
     cost_evaluator: CostEvaluator,
-    pct_destroy: float = 0.15,
+    max_num_destroy: int = 6,
     **kwargs
 ) -> Solution:
     """
@@ -21,9 +20,10 @@ def adjacent_destroy(
     visits = deepcopy(solution.visits)
     unassigned = []
 
-    num_destroy = ceil(len(solution) * pct_destroy)  # at least one
+    num_destroy = rng.integers(max_num_destroy) + 1  # destroy at least 1 cust
+    num_destroy = min(num_destroy, len(visits) - 1)  # keep at least 1 cust
 
-    start = rng.integers(len(visits) - num_destroy)
+    start = rng.integers(len(visits) - num_destroy + 1)
     custs_to_remove = [visits[start + idx] for idx in range(num_destroy)]
 
     for cust in custs_to_remove:
