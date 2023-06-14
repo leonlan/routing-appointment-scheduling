@@ -22,7 +22,10 @@ def _test_moments(mean: float, scv: float, K: int, prob: float, mu: float):
     actual_mean = prob * (K - 1) / mu + (1 - prob) * K / mu
     assert_allclose(actual_mean, mean)
 
-    # TODO test second moment
+    # Test that the second moment is matched.
+    variance = (K - prob**2) / (K - prob) ** 2 * actual_mean**2
+    actual_second_moment = variance + actual_mean**2
+    assert_allclose(actual_second_moment, (scv + 1) * mean**2)
 
     # Test that probability is between 0 and 1.
     assert 0 <= prob <= 1
