@@ -1,11 +1,11 @@
 import numpy as np
 from numpy.random import Generator
-from scipy.stats import erlang
+from scipy.stats import gamma
 
 
 def mixed_erlang_rvs(
-    phases: list[int],
-    means: list[float],
+    shapes: list[int],
+    scales: list[float],
     weights: list[float],
     num_samples: int,
     rng: Generator,
@@ -15,37 +15,36 @@ def mixed_erlang_rvs(
 
     Parameters
     ----------
-    phases : list[int]
-        List of phase parameters for each Erlang distribution.
-        NOTE this is the same as the shape parameter, i.e., K.
-    means : list[float]
-        List of loc parameters for each Erlang distribution.
-    weights : list[float]
+    shapes
+        List of shape (phase) parameters for each Erlang distribution.
+    scales
+        List of scale parameters for each Erlang distribution.
+        This can be computed by mean/phase.
+    weights
         List of weights (probabilities) for each Erlang distribution.
-    num_samples : int
+    num_samples
         Number of samples to generate.
-    rng : Generator
+    rng
         NumPy random number generator.
 
     Returns
     -------
-    np.ndarray[float]
+    np.ndarray
         Array of samples from the mixed Erlang distribution.
     """
     msg = "Input lists must have the same length."
-    assert len(means) == len(weights), msg
+    assert len(scales) == len(weights), msg
 
-    # Normalize weights
-    weights = np.array(weights)
-    weights = weights / weights.sum()
+    # Normalize weights to probabilities
+    probs = np.array(weights) / sum(weights)
 
     # Select component Erlang distributions based on weights
-    choices = rng.choice(len(weights), p=weights, size=num_samples)
+    choices = rng.choice(len(probs), p=probs, size=num_samples)
 
     # Generate samples from the selected Erlang distributions
-    samples = [
-        erlang.rvs(phases[idx], loc=means[idx], scale=0, random_state=rng)
-        for idx in choices
-    ]
+    samples = []
+    for idx in np.unique(choices):
+        num_choice = np.sum(choices == idx)
+        samples.extend(gamma.rvs(shapes[idx], scale=scales[idx], size=num_choice))
 
     return samples

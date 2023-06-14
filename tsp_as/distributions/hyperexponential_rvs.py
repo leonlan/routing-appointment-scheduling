@@ -32,9 +32,12 @@ def hyperexponential_rvs(
     probs = np.array(weights) / sum(weights)
 
     # Select component exponential distributions based on weights
-    components = rng.choice(len(probs), p=probs, size=num_samples)
+    choices = rng.choice(len(probs), p=probs, size=num_samples)
 
     # Generate samples from the selected exponential distributions
-    samples = [rng.exponential(scales[k]) for k in components]
+    samples = []
+    for idx in np.unique(choices):
+        num_choice = np.sum(choices == idx)
+        samples.extend(rng.exponential(scales[idx], size=num_choice))
 
     return samples
