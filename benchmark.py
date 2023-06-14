@@ -19,6 +19,7 @@ from tqdm.contrib.concurrent import process_map
 
 from diagnostics import cost_breakdown
 from tsp_as import (
+    double_orientation_tsp,
     full_enumeration,
     large_neighborhood_search,
     smallest_variance_first,
@@ -41,7 +42,7 @@ def parse_args():
         "--algorithm",
         type=str,
         default="lns",
-        choices=["lns", "tsp", "mtsp", "svf", "enum"],
+        choices=["lns", "tsp", "dotsp", "mtsp", "svf", "enum"],
     )
 
     # Weight parameters for the cost function. Travel and idle time weightes
@@ -136,6 +137,8 @@ def solve(
         result = large_neighborhood_search(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "tsp":
         result = tsp(seed, data, cost_evaluator, **kwargs)
+    elif algorithm == "dotsp":
+        result = double_orientation_tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "mtsp":
         result = solve_modified_tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "svf":
