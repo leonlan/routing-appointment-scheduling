@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_, assert_allclose
 
 
 def fit_hyperexponential(mean: float, scv: float):
@@ -28,4 +28,4 @@ def _test_moments(mean: float, scv: float, prob: float, mu1: float, mu2: float):
     assert_allclose(second_moment, (scv + 1) * mean**2)
 
     # Test that probability is between 0 and 1.
-    assert 0 <= prob <= 1
+    assert_(0 <= prob <= 1)

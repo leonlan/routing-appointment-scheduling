@@ -32,9 +32,6 @@ def mixed_erlang_rvs(
     np.ndarray
         Array of samples from the mixed Erlang distribution.
     """
-    msg = "Input lists must have the same length."
-    assert len(scales) == len(weights), msg
-
     # Normalize weights to probabilities
     probs = np.array(weights) / sum(weights)
 
