@@ -1,5 +1,7 @@
 from copy import copy
 
+from numpy.testing import assert_
+
 from tsp_as.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
 from tsp_as.classes import Solution
 
@@ -46,7 +48,7 @@ def _best_insert_idx(visits: list[int], customer: int, data, cost_evaluator):
             best_cost = new.cost
             best_idx = idx
 
-    assert best_idx is not None  # Sanity check that we always find a best_idx
+    assert_(best_idx is not None)  # must always find an insertion index
 
     return best_idx
 

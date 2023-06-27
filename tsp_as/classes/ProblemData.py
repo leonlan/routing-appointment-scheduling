@@ -1,9 +1,10 @@
 import json
-import math
+from itertools import product
 from pathlib import Path
 
 import numpy as np
-from scipy.stats import poisson
+
+from tsp_as.distributions import fit_hyperexponential, fit_mixed_erlang
 
 
 class ProblemData:
@@ -90,6 +91,8 @@ def compute_arc_data(distances, distances_scv, service, service_scv):
 
     with np.errstate(divide="ignore", invalid="ignore"):
         scvs = np.divide(_var, means**2)  # There may be NaNs in the means
+        # Round to 3 decimals to avoid floating point precision issues in fitting mixed erlang
+        scvs = np.round(scvs, 3)
 
     np.fill_diagonal(means, 0)
     np.fill_diagonal(scvs, 0)
@@ -106,48 +109,39 @@ def compute_phase_parameters(means, scvs):
     alphas = np.zeros((n, n), dtype=object)
     transitions = np.zeros((n, n), dtype=object)
 
-    for i in range(n):
-        for j in range(n):
-            if i == j:
-                continue
+    for i, j in product(range(n), range(n)):
+        if i == j:
+            continue
 
-            alpha, transition = _compute_phase_parameters(means[i, j], scvs[i, j])
-            alphas[i, j] = alpha
-            transitions[i, j] = transition
+        alpha, transition = _compute_phase_parameters(means[i, j], scvs[i, j])
+        alphas[i, j] = alpha
+        transitions[i, j] = transition
 
     return alphas, transitions
 
 
-def _compute_phase_parameters(mean, SCV):
+def _compute_phase_parameters(mean: float, scv: float):
     """
     Returns the initial distribution alpha and the transition rate
-    matrix T of the phase-fitted service times given the mean, SCV,
-    and the elapsed service time u of the client in service.
+    matrix T of the phase-fitted service times given the mean and scv.
+
+    Based on the scv, we either fit a mixed Erlang or a hyperexponential
+    distribution such that they match the first and second moment of the
+    given distribution.
     """
-    if SCV < 1:  # Weighted Erlang case
-        K = math.floor(1 / SCV)
-        prob = ((K + 1) * SCV - math.sqrt((K + 1) * (1 - K * SCV))) / (SCV + 1)
-        mu = (K + 1 - prob) / mean
+    if scv < 1:  # Mixed Erlang case
+        K, prob, mu = fit_mixed_erlang(mean, scv)
 
-        alpha = np.zeros((1, K + 1))
-        B_sf = poisson.cdf(K - 1, mu) + (1 - prob) * poisson.pmf(K, mu)
+        alpha = np.zeros((1, K))
+        alpha[0, 0] = 1 - prob
+        alpha[0, 1] = prob
 
-        alpha[0, :] = [poisson.pmf(z, mu) / B_sf for z in range(K + 1)]
-        alpha[0, K] *= 1 - prob
-
-        transition = -mu * np.eye(K + 1)
-        transition += mu * np.diag(np.ones(K), k=1)  # one above diagonal
-        transition[K - 1, K] = (1 - prob) * mu
-
+        transition = -mu * np.eye(K)
+        transition += mu * np.diag(np.ones(K - 1), k=1)  # one above diagonal
+        transition[K - 2, K - 1] = (1 - prob) * mu  # last row
     else:  # Hyperexponential case
-        prob = (1 + np.sqrt((SCV - 1) / (SCV + 1))) / 2
-        mu1 = 2 * prob / mean
-        mu2 = 2 * (1 - prob) / mean
-
-        B_sf = prob * np.exp(-mu1) + (1 - prob) * np.exp(-mu2)
-        term = prob * np.exp(-mu1) / B_sf
-
-        alpha = np.array([[term, 1 - term]])
+        prob, mu1, mu2 = fit_hyperexponential(mean, scv)
+        alpha = np.array([[prob, 1 - prob]])
         transition = np.diag([-mu1, -mu2])
 
     return alpha, transition
