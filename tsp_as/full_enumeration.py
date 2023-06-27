@@ -48,7 +48,7 @@ def full_enumeration(
         # Filter the candidate pool of solutions using the heavy traffic
         # schedule, if the candidate pool is small enough.
         pool = _filter_using_heavy_traffic(
-            pool, approx_pool_size, data, cost_evaluator, num_procs_enum
+            data, cost_evaluator, pool, approx_pool_size, num_procs_enum
         )
 
     solutions = []
@@ -65,7 +65,7 @@ def full_enumeration(
 
 
 def _filter_using_heavy_traffic(
-    pool, approx_pool_size, data, cost_evaluator, num_procs
+    data: ProblemData, cost_evaluator: CostEvaluator, pool, approx_pool_size, num_procs
 ):
     """
     Evaluates the pool of permutations using the heavy traffic schedule, and
@@ -82,11 +82,15 @@ def _filter_using_heavy_traffic(
     return [solution.visits for solution in candidates[:approx_pool_size]]
 
 
-def _make_solution(visits, data, cost_evaluator):
+def _make_solution(
+    data: ProblemData, cost_evaluator: CostEvaluator, visits: list[int]
+) -> Solution:
     schedule = compute_optimal_schedule(data, cost_evaluator, visits)
     return Solution(data, cost_evaluator, visits, schedule)
 
 
-def _make_ht_solution(visits, data, cost_evaluator):
-    schedule = compute_ht_schedule(cost_evaluator, visits, data)
+def _make_ht_solution(
+    data: ProblemData, cost_evaluator: CostEvaluator, visits: list[int]
+) -> Solution:
+    schedule = compute_ht_schedule(data, cost_evaluator, visits)
     return Solution(data, cost_evaluator, visits, schedule)

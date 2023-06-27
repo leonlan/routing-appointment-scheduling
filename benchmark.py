@@ -22,8 +22,8 @@ from tsp_as import (
     double_orientation_tsp,
     full_enumeration,
     large_neighborhood_search,
+    modified_tsp,
     smallest_variance_first,
-    solve_modified_tsp,
     tsp,
 )
 from tsp_as.appointment.true_optimal import compute_idle_wait as true_objective_function
@@ -140,7 +140,7 @@ def solve(
     elif algorithm == "dotsp":
         result = double_orientation_tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "mtsp":
-        result = solve_modified_tsp(seed, data, cost_evaluator, **kwargs)
+        result = modified_tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "svf":
         result = smallest_variance_first(seed, data, cost_evaluator)
     elif algorithm == "enum":

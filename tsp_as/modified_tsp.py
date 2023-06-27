@@ -24,7 +24,7 @@ from .Result import Result
 NUM_SAMPLES = 500_000
 
 
-def solve_modified_tsp(
+def modified_tsp(
     seed: int,
     data: ProblemData,
     cost_evaluator: CostEvaluator,
