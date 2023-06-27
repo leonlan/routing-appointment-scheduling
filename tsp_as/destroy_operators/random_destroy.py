@@ -12,7 +12,7 @@ def random_destroy(
     rng: Generator,
     data: ProblemData,
     cost_evaluator: CostEvaluator,
-    max_num_destroy: int = 5,
+    max_num_destroy: int = 6,
     **kwargs
 ) -> Solution:
     """
