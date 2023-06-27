@@ -23,7 +23,7 @@ def large_neighborhood_search(
     max_runtime: Optional[float] = None,
     max_iterations: Optional[int] = None,
     **kwargs,
-):
+) -> Result:
     """
     Solve the appointment scheduling problem using the LNS metaheuristic.
 

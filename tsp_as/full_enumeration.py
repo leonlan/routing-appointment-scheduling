@@ -17,7 +17,7 @@ def full_enumeration(
     approx_pool_size: int = 50000,  # little more than 8!
     num_procs_enum: int = 1,
     **kwargs,
-):
+) -> Result:
     """
     Obtains the optimal solution by enumerating all possible visits.
 

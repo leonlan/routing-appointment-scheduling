@@ -1,14 +1,21 @@
 import time
+from typing import Optional
 
 import elkai
 
 from tsp_as.appointment.true_optimal import compute_optimal_schedule
-from tsp_as.classes import Solution
+from tsp_as.classes import CostEvaluator, ProblemData, Solution
 
 from .Result import Result
 
 
-def double_orientation_tsp(seed, data, cost_evaluator, max_iterations=None, **kwargs):
+def double_orientation_tsp(
+    seed: int,
+    data: ProblemData,
+    cost_evaluator: CostEvaluator,
+    max_iterations: Optional[int] = None,
+    **kwargs
+) -> Result:
     """
     Solves the appointment scheduling problem by computing a solution to the
     deterministic TSP problem. For each orientation of the TSP tour, the

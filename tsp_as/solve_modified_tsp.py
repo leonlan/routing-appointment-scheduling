@@ -30,7 +30,7 @@ def solve_modified_tsp(
     cost_evaluator: CostEvaluator,
     max_iterations: Optional[int] = None,
     **kwargs,
-):
+) -> Result:
     """
     Solves the modified TSP algorithm by [1].
 
