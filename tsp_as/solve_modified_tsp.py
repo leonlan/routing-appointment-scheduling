@@ -7,7 +7,7 @@ import elkai
 import numpy as np
 from numpy.random import Generator
 from numpy.testing import assert_, assert_allclose
-from scipy.special import gammaincc
+from scipy.special import gamma, gammaincc
 
 from tsp_as.appointment.true_optimal import compute_optimal_schedule
 from tsp_as.classes import CostEvaluator, ProblemData, Solution
@@ -21,7 +21,7 @@ from tsp_as.distributions import (
 from .Result import Result
 
 # Number of samples to estimate the CDF
-NUM_SAMPLES = 5_000
+NUM_SAMPLES = 500_000
 
 
 def solve_modified_tsp(
@@ -125,29 +125,51 @@ def compute_appointment_cost(
     mean, scv = data.arcs_mean[i, j], data.arcs_scv[i, j]
 
     if scv < 1:  # Mixed Erlang case
-        K, prob, mu = fit_mixed_erlang(mean, scv)
+        K, p, mu = fit_mixed_erlang(mean, scv)
+
+        # The mean of each Erlang component is K' / mu, where K' is the number
+        # of phases of the Erlang distribution. The scale parameter is
+        # computed as mean / K' for each component.
+        # # TODO it is not clear why I have to use 1/mu for scale parameter here
+        # because mu is the scale parameter. But if I change this then it doesnt
+        # work.
         samples = mixed_erlang_rvs(
-            [K - 1, K], [(K - 1) / mu, K / mu], [prob, (1 - prob)], NUM_SAMPLES, rng
+            [K - 1, K], [1 / mu, 1 / mu], [p, (1 - p)], NUM_SAMPLES, rng
         )
-
         appt_time = compute_appointment_time(samples, w_wait, w_idle)
-        appt_cost = cost_mixed_erlang(appt_time, prob, K, mu, w_wait, w_idle)
+        appt_cost = cost_mixed_erlang(appt_time, p, K, mu, w_wait, w_idle)
+
+        _check_mixed_erlang_samples(appt_time, p, K, mu, samples)
+
     else:  # Hyperexponential case
-        prob, mu1, mu2 = fit_hyperexponential(mean, scv)
+        p, mu1, mu2 = fit_hyperexponential(mean, scv)
         samples = hyperexponential_rvs(
-            [1 / mu1, 1 / mu2], [prob, (1 - prob)], NUM_SAMPLES, rng
+            [1 / mu1, 1 / mu2], [p, (1 - p)], NUM_SAMPLES, rng
         )
 
         appt_time = compute_appointment_time(samples, w_wait, w_idle)
-        appt_cost = cost_hyperexponential(appt_time, prob, mu1, mu2, w_wait, w_idle)
+        appt_cost = cost_hyperexponential(appt_time, p, mu1, mu2, w_wait, w_idle)
 
-    # Check that the mean of the samples is equal to the mean of the random varialbe
-    # and that the appointment time and cost is non-negative.
-    assert_allclose(np.mean(samples), mean, rtol=0.1)
-    assert_(appt_time >= 0)
-    assert_(appt_cost >= 0)
+        _check_hyperexponential_samples(appt_time, p, mu1, mu2, samples)
+
+    _check_moments_samples(mean, scv, samples)
+    _check_nonnegative_appt_values(appt_time, appt_cost)
 
     return appt_cost
+
+
+def _check_moments_samples(mean, scv, samples):
+    msg = "Mean of samples is not equal to mean of random variable."
+    assert_allclose(np.mean(samples), mean, rtol=0.01, err_msg=msg)
+
+    msg = "Second moment of samples is not equal to second moment of random variable."
+    moment2 = (scv + 1) * mean**2
+    assert_allclose(np.mean(np.power(samples, 2)), moment2, rtol=0.05, err_msg=msg)
+
+
+def _check_nonnegative_appt_values(appt_time, appt_cost):
+    assert_(appt_time >= 0, msg="appt_time must be non-negative.")
+    assert_(appt_cost >= 0, msg="appt_cost must be non-negative.")
 
 
 def compute_appointment_time(
@@ -172,10 +194,14 @@ def compute_appointment_time(
 
 
 def cost_hyperexponential(x, prob, mu1, mu2, weight_wait, weight_idle):
-    expr1 = prob / mu1 * exp(-mu1 * x) + (1 - prob) / mu2 * exp(-mu2 * x)
+    expr1 = _mean_hyperexponential_nonnegative(x, prob, mu1, mu2)
     expr2 = prob / mu1 + (1 - prob) / mu2
 
     return (weight_wait + weight_idle) * expr1 + weight_idle * x - weight_idle * expr2
+
+
+def _mean_hyperexponential_nonnegative(x, prob, mu1, mu2):
+    return prob / mu1 * exp(-mu1 * x) + (1 - prob) / mu2 * exp(-mu2 * x)
 
 
 def cost_mixed_erlang(x, p, k, mu, weight_wait, weight_idle):
@@ -194,9 +220,46 @@ def _mean_mixed_erlang_nonnegative(x, p, k, mu):
     constant.
     """
     expr1 = (k - p - mu * x) / (mu * factorial(k - 2))
-    expr2 = gammaincc(k - 1, mu * x)  # Regularized upper incomplete Gamma
+
+    # Gammaincc has an extra factor 1/gamma(k-1), which we don't need in our
+    # definition of the upper incomplete Gamma function.
+    expr2 = gammaincc(k - 1, mu * x) * gamma(k - 1)
 
     expr3 = (k - p) / (mu * factorial(k - 1))
     expr4 = (mu * x) ** (k - 1) * exp(-mu * x)
 
     return expr1 * expr2 + expr3 * expr4
+
+
+def _check_hyperexponential_samples(x, p, mu1, mu2, samples):
+    """
+    Verify that the sample means correspond to the theoretical result.
+    """
+    samples = np.array(samples)
+
+    wait_ = np.mean(np.maximum(0, samples - x))
+    true_wait = _mean_hyperexponential_nonnegative(x, p, mu1, mu2)
+    assert_allclose(wait_, true_wait, rtol=0.01)
+
+    idle_ = np.mean(np.maximum(0, x - samples))
+    mean = p / mu1 + (1 - p) / mu2
+    true_idle = true_wait + x - mean
+    assert_allclose(idle_, true_idle, rtol=0.01)
+
+
+def _check_mixed_erlang_samples(x, p, k, mu, samples):
+    """
+    Verify that the sample means correspond to the theoretical result.
+    """
+    samples = np.array(samples)
+
+    wait_ = np.mean(np.maximum(0, samples - x))
+    true_wait = _mean_mixed_erlang_nonnegative(x, p, k, mu)
+    msg = "Sampled wait time does not match theoretical result."
+    assert_allclose(wait_, true_wait, rtol=0.01, err_msg=msg)
+
+    idle_ = np.mean(np.maximum(0, x - samples))
+    mean = p * (k - 1) / mu + (1 - p) * k / mu
+    true_idle = true_wait + x - mean
+    msg = "Sampled idle time does not match theoretical result."
+    assert_allclose(idle_, true_idle, rtol=0.01, err_msg=msg)
