@@ -155,20 +155,6 @@ def compute_appointment_cost(
     return appt_cost
 
 
-def _check_moments_samples(mean, scv, samples):
-    msg = "Mean of samples is not equal to mean of random variable."
-    assert_allclose(np.mean(samples), mean, rtol=0.01, err_msg=msg)
-
-    msg = "Second moment of samples is not equal to second moment of random variable."
-    moment2 = (scv + 1) * mean**2
-    assert_allclose(np.mean(np.power(samples, 2)), moment2, rtol=0.05, err_msg=msg)
-
-
-def _check_nonnegative_appt_values(appt_time, appt_cost):
-    assert_(appt_time >= 0, msg="appt_time must be non-negative.")
-    assert_(appt_cost >= 0, msg="appt_cost must be non-negative.")
-
-
 def compute_appointment_time(
     samples: list[float], weight_wait: float, weight_idle: float
 ) -> float:
@@ -260,3 +246,17 @@ def _check_mixed_erlang_samples(x, p, k, mu, samples):
     true_idle = true_wait + x - mean
     msg = "Sampled idle time does not match theoretical result."
     assert_allclose(idle_, true_idle, rtol=0.01, err_msg=msg)
+
+
+def _check_moments_samples(mean, scv, samples):
+    msg = "Mean of samples is not equal to mean of random variable."
+    assert_allclose(np.mean(samples), mean, rtol=0.01, err_msg=msg)
+
+    msg = "Second moment of samples is not equal to second moment of random variable."
+    moment2 = (scv + 1) * mean**2
+    assert_allclose(np.mean(np.power(samples, 2)), moment2, rtol=0.05, err_msg=msg)
+
+
+def _check_nonnegative_appt_values(appt_time, appt_cost):
+    assert_(appt_time >= 0, msg="appt_time must be non-negative.")
+    assert_(appt_cost >= 0, msg="appt_cost must be non-negative.")
