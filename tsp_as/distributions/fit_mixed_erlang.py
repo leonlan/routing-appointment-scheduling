@@ -10,7 +10,7 @@ def fit_mixed_erlang(mean: float, scv: float) -> tuple[int, float, float]:
     """
     K = math.ceil(1 / scv)
     prob = (K * scv - math.sqrt(K * (1 - (K - 1) * scv))) / (scv + 1)
-    mu = (K - prob) / mean
+    mu = (K - prob) / mean  # rate aka inverse scale
 
     _test_moments(mean, scv, K, prob, mu)
 

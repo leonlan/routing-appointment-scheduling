@@ -130,9 +130,6 @@ def compute_appointment_cost(
         # The mean of each Erlang component is K' / mu, where K' is the number
         # of phases of the Erlang distribution. The scale parameter is
         # computed as mean / K' for each component.
-        # # TODO it is not clear why I have to use 1/mu for scale parameter here
-        # because mu is the scale parameter. But if I change this then it doesnt
-        # work.
         samples = mixed_erlang_rvs(
             [K - 1, K], [1 / mu, 1 / mu], [p, (1 - p)], NUM_SAMPLES, rng
         )
