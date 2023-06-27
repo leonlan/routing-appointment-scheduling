@@ -52,17 +52,17 @@ def compute_optimal_schedule(
     """
 
     def cost_fun(x):
-        return cost_evaluator(visits, x, data)
+        return cost_evaluator(data, visits, x)
 
     # Use heavy traffic solution as initial guess
-    x_init = compute_ht_schedule(visits, data, cost_evaluator)
+    x_init = compute_ht_schedule(data, cost_evaluator, visits)
 
     optim = minimize(
         cost_fun,
         x_init,
         method="trust-constr",
         tol=0.01,
-        bounds=[(0, None) for _ in range(x_init.size)],
+        bounds=[(0, None) for _ in range(len(x_init))],
     )
 
     return optim.x

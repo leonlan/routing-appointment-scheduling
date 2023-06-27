@@ -5,7 +5,7 @@ from tsp_as.classes import CostEvaluator, ProblemData
 
 def compute_schedule(
     data: ProblemData, cost_evaluator: CostEvaluator, visits: list[int]
-) -> np.ndarray:
+) -> list[float]:
     """
     Computes the schedule using heavy traffic approximation.
     """
@@ -15,12 +15,13 @@ def compute_schedule(
     wait_weights = cost_evaluator.wait_weights[visits]
     idle_weight = cost_evaluator.idle_weight
 
-    return means + np.sqrt((wait_weights * S) / (2 * idle_weight))
+    schedule = means + np.sqrt((wait_weights * S) / (2 * idle_weight))
+    return schedule.tolist()
 
 
 def compute_idle_wait(
     data: ProblemData, visits: list[int], schedule: list[float]
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[list[float], list[float]]:
     """
     Computes the objective value using heavy traffic approximation.
     """
@@ -30,7 +31,7 @@ def compute_idle_wait(
     idle_times = schedule - means
     wait_times = S / (2 * idle_times)
 
-    return idle_times, wait_times
+    return idle_times.tolist(), wait_times.tolist()
 
 
 def _compute_weighted_mean_variance(visits, data):

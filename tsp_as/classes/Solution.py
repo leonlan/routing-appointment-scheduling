@@ -24,7 +24,7 @@ class Solution:
         self.schedule = schedule
         self.unassigned = unassigned if unassigned is not None else []
 
-        self.cost = cost_evaluator(visits, schedule, data)
+        self.cost = cost_evaluator(data, visits, schedule)
 
     def __len__(self):
         return len(self.visits)

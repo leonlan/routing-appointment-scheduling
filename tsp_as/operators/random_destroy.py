@@ -38,6 +38,6 @@ def random_destroy(
 
     assert_equal(len(solution.visits), len(visits) + num_destroy)
 
-    schedule = compute_ht_schedule(visits, data, cost_evaluator)
+    schedule = compute_ht_schedule(data, cost_evaluator, visits)
 
     return Solution(data, cost_evaluator, visits, schedule, unassigned)

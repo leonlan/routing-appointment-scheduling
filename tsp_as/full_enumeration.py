@@ -88,5 +88,5 @@ def _make_solution(visits, data, cost_evaluator):
 
 
 def _make_ht_solution(visits, data, cost_evaluator):
-    schedule = compute_ht_schedule(visits, data, cost_evaluator)
+    schedule = compute_ht_schedule(cost_evaluator, visits, data)
     return Solution(data, cost_evaluator, visits, schedule)

@@ -10,8 +10,7 @@ from alns.stop import MaxIterations, MaxRuntime
 from tsp_as.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
 from tsp_as.appointment.true_optimal import compute_optimal_schedule
 from tsp_as.classes import CostEvaluator, ProblemData, Solution
-from tsp_as.destroy_operators import adjacent_destroy, random_destroy
-from tsp_as.repair_operators import greedy_insert
+from tsp_as.operators import adjacent_destroy, greedy_insert, random_destroy
 
 from .Result import Result
 
@@ -62,9 +61,9 @@ def large_neighborhood_search(
         alns.add_repair_operator(r_op)
 
     if init is None:
-        visits_ = rng.permutation(list(range(1, data.dimension))).tolist()
-        ht_schedule = compute_ht_schedule(visits_, data, cost_evaluator)
-        init = Solution(data, cost_evaluator, visits_, ht_schedule)
+        rnd_visits = rng.permutation(list(range(1, data.dimension))).tolist()
+        ht_schedule = compute_ht_schedule(data, cost_evaluator, rnd_visits)
+        init = Solution(data, cost_evaluator, rnd_visits, ht_schedule)
 
     select = RouletteWheel([5, 2, 1, 0.5], 0.5, len(D_OPS), len(R_OPS))
 

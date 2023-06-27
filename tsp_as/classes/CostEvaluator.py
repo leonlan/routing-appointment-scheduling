@@ -41,7 +41,7 @@ class CostEvaluator:
         distance = data.distances[[0] + visits, visits + [0]].sum()
         travel_costs = self.travel_weight * distance
 
-        idle_times, wait_times = self.idle_wait_function(visits, schedule, data)
+        idle_times, wait_times = self.idle_wait_function(data, visits, schedule)
         idle_costs = self.idle_weight * sum(idle_times)
 
         wait_weights = self.wait_weights[visits]
