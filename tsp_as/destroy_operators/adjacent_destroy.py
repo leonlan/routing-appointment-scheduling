@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 from numpy.random import Generator
+from numpy.testing import assert_equal
 
 from tsp_as.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
 from tsp_as.classes import CostEvaluator, ProblemData, Solution
@@ -20,9 +21,7 @@ def adjacent_destroy(
     visits = deepcopy(solution.visits)
     unassigned = []
 
-    num_destroy = rng.integers(max_num_destroy) + 1  # destroy at least 1 cust
-    num_destroy = min(num_destroy, len(visits) - 1)  # keep at least 1 cust
-
+    num_destroy = rng.integers(1, min(max_num_destroy, len(visits)))
     start = rng.integers(len(visits) - num_destroy + 1)
     custs_to_remove = [visits[start + idx] for idx in range(num_destroy)]
 
@@ -30,7 +29,7 @@ def adjacent_destroy(
         unassigned.append(cust)
         visits.remove(cust)
 
-    assert len(solution.visits) == len(visits) + num_destroy
+    assert_equal(len(solution.visits), len(visits) + num_destroy)
 
     schedule = compute_ht_schedule(visits, data, cost_evaluator)
 
