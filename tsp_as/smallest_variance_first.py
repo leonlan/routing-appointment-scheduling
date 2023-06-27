@@ -22,7 +22,7 @@ def smallest_variance_first(seed, data, cost_evaluator, **kwargs):
 
         visits.append(to)
 
-    schedule = compute_optimal_schedule(visits, data, cost_evaluator)
+    schedule = compute_optimal_schedule(data, cost_evaluator, visits)
     solution = Solution(data, cost_evaluator, visits, schedule)
 
     return Result(solution, time.perf_counter() - start, 0)

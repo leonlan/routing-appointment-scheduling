@@ -38,6 +38,6 @@ def tsp(seed, data, cost_evaluator, max_iterations=None, **kwargs):
     visits = elkai.solve_float_matrix(data.distances, runs=max_iterations)
     visits.remove(0)  # remove depot
 
-    schedule = compute_optimal_schedule(visits, data, cost_evaluator)
+    schedule = compute_optimal_schedule(data, cost_evaluator, visits)
     solution = Solution(data, cost_evaluator, visits, schedule)
     return Result(solution, time.perf_counter() - start, max_iterations)

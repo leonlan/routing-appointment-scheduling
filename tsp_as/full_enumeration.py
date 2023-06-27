@@ -83,7 +83,7 @@ def _filter_using_heavy_traffic(
 
 
 def _make_solution(visits, data, cost_evaluator):
-    schedule = compute_optimal_schedule(visits, data, cost_evaluator)
+    schedule = compute_optimal_schedule(data, cost_evaluator, visits)
     return Solution(data, cost_evaluator, visits, schedule)
 
 

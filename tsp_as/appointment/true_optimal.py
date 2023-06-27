@@ -3,10 +3,14 @@ from scipy.linalg import expm, inv
 from scipy.linalg.blas import dgemm
 from scipy.optimize import minimize
 
+from tsp_as.classes import CostEvaluator, ProblemData
+
 from .heavy_traffic import compute_schedule as compute_ht_schedule
 
 
-def compute_idle_wait(visits, schedule, data) -> tuple[list[float], list[float]]:
+def compute_idle_wait(
+    data: ProblemData, visits: list[int], schedule: list[float]
+) -> tuple[list[float], list[float]]:
     """
     Compute the idle and wait times for a solution (visits and schedule).
     Wrapper for `_compute_idle_wait_per_client`.
@@ -31,7 +35,9 @@ def compute_idle_wait(visits, schedule, data) -> tuple[list[float], list[float]]
     return _compute_idle_wait_per_client(schedule, alpha, Vn)
 
 
-def compute_optimal_schedule(visits, data, cost_evaluator):
+def compute_optimal_schedule(
+    data: ProblemData, cost_evaluator: CostEvaluator, visits: list[int]
+) -> list[float]:
     """
     Compute the optimal schedule and the corresponding idle and wait times.
 

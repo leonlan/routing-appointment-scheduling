@@ -84,7 +84,7 @@ def solve_modified_tsp(
     visits.remove(0)  # remove depot
 
     # Compute the optimal schedule of the found visits
-    schedule = compute_optimal_schedule(visits, data, cost_evaluator)
+    schedule = compute_optimal_schedule(data, cost_evaluator, visits)
     solution = Solution(data, cost_evaluator, visits, schedule)
 
     return Result(solution, perf_counter() - start, 0)

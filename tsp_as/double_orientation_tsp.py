@@ -39,11 +39,11 @@ def double_orientation_tsp(seed, data, cost_evaluator, max_iterations=None, **kw
     visits.remove(0)  # remove depot
 
     # Try both orientations of the client visits
-    schedule1 = compute_optimal_schedule(visits, data, cost_evaluator)
+    schedule1 = compute_optimal_schedule(data, cost_evaluator, visits)
     first = Solution(data, cost_evaluator, visits, schedule1)
 
     reverse_visits = visits[::-1]
-    schedule2 = compute_optimal_schedule(reverse_visits, data, cost_evaluator)
+    schedule2 = compute_optimal_schedule(data, cost_evaluator, reverse_visits)
     second = Solution(data, cost_evaluator, reverse_visits, schedule2)
 
     best = first if first.cost < second.cost else second

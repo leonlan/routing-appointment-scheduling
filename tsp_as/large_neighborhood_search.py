@@ -88,7 +88,7 @@ def large_neighborhood_search(
     )
 
     visits = alns_result.best_state.visits
-    schedule = compute_optimal_schedule(visits, data, cost_evaluator)
+    schedule = compute_optimal_schedule(data, cost_evaluator, visits)
     solution = Solution(data, cost_evaluator, visits, schedule)
 
     return Result(
