@@ -1,7 +1,11 @@
 import numpy as np
 
+from tsp_as.classes import CostEvaluator, ProblemData
 
-def compute_schedule(visits, data, cost_evaluator) -> list[float]:
+
+def compute_schedule(
+    data: ProblemData, cost_evaluator: CostEvaluator, visits: list[int]
+) -> np.ndarray:
     """
     Computes the schedule using heavy traffic approximation.
     """
@@ -14,7 +18,9 @@ def compute_schedule(visits, data, cost_evaluator) -> list[float]:
     return means + np.sqrt((wait_weights * S) / (2 * idle_weight))
 
 
-def compute_idle_wait(visits, schedule, data) -> tuple[list[float], list[float]]:
+def compute_idle_wait(
+    data: ProblemData, visits: list[int], schedule: list[float]
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Computes the objective value using heavy traffic approximation.
     """
