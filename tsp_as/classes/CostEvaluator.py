@@ -4,6 +4,8 @@ from typing import Callable
 
 import numpy as np
 
+from tsp_as.classes.ProblemData import ProblemData
+
 
 class CostEvaluator:
     def __init__(
@@ -30,7 +32,9 @@ class CostEvaluator:
         self.idle_weight = weight_idle
         self.wait_weights = weights_wait
 
-    def __call__(self, visits, schedule, data) -> float:  # noqa: F821
+    def __call__(
+        self, data: ProblemData, visits: list[int], schedule: list[float]
+    ) -> float:
         """
         Returns the cost of a solution.
         """
