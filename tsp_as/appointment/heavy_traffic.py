@@ -1,30 +1,37 @@
 import numpy as np
 
+from tsp_as.classes import CostEvaluator, ProblemData
 
-def compute_schedule(visits, data, cost_evaluator) -> list[float]:
+
+def compute_schedule(
+    data: ProblemData, cost_evaluator: CostEvaluator, visits: list[int]
+) -> list[float]:
     """
     Computes the schedule using heavy traffic approximation.
     """
-    means = _get_arc_means(visits, data)
+    means = _get_arc_means(data, visits)
     S = _compute_weighted_mean_variance(visits, data)
 
     wait_weights = cost_evaluator.wait_weights[visits]
     idle_weight = cost_evaluator.idle_weight
 
-    return means + np.sqrt((wait_weights * S) / (2 * idle_weight))
+    schedule = means + np.sqrt((wait_weights * S) / (2 * idle_weight))
+    return schedule.tolist()
 
 
-def compute_idle_wait(visits, schedule, data) -> tuple[list[float], list[float]]:
+def compute_idle_wait(
+    data: ProblemData, visits: list[int], schedule: list[float]
+) -> tuple[list[float], list[float]]:
     """
     Computes the objective value using heavy traffic approximation.
     """
-    means = _get_arc_means(visits, data)
+    means = _get_arc_means(data, visits)
     S = _compute_weighted_mean_variance(visits, data)
 
     idle_times = schedule - means
     wait_times = S / (2 * idle_times)
 
-    return idle_times, wait_times
+    return idle_times.tolist(), wait_times.tolist()
 
 
 def _compute_weighted_mean_variance(visits, data):
@@ -38,7 +45,7 @@ def _compute_weighted_mean_variance(visits, data):
     BETA = 0.5  # TODO I'm not sure what this paramater is.
 
     # None, Var(U_1), Var(U_2), ..., Var(U_n)
-    variances = [None] + _get_arc_vars(visits, data).tolist()
+    variances = [None] + _get_arc_vars(data, visits).tolist()
 
     # b^0, b^1, ..., b^{n}
     betas = BETA ** np.arange(n + 1)
@@ -53,15 +60,15 @@ def _compute_weighted_mean_variance(visits, data):
     return S
 
 
-def _get_arc_means(visits, data):
+def _get_arc_means(data: ProblemData, visits: list[int]) -> np.ndarray:
     return data.arcs_mean[_visits2arcs(visits)]
 
 
-def _get_arc_vars(visits, data):
+def _get_arc_vars(data: ProblemData, visits: list[int]) -> np.ndarray:
     return data.arcs_var[_visits2arcs(visits)]
 
 
-def _visits2arcs(visits):
+def _visits2arcs(visits: list[int]) -> np.ndarray:
     """
     Returns the from and to indices for the given arcs to the client visits.
     """

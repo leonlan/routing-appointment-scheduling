@@ -1,14 +1,20 @@
 import time
+from typing import Optional
 
 import elkai
 
 from tsp_as.appointment.true_optimal import compute_optimal_schedule
-from tsp_as.classes import Solution
+from tsp_as.classes import CostEvaluator, ProblemData, Solution
 
 from .Result import Result
 
 
-def tsp(seed, data, cost_evaluator, max_iterations=None, **kwargs):
+def tsp(
+    seed: int,
+    data: ProblemData,
+    cost_evaluator: CostEvaluator,
+    max_iterations: Optional[int] = None,
+) -> Result:
     """
     Solves the appointment scheduling problem by computing a solution to the
     deterministic TSP problem. We compute an optimal TSP tour (only
@@ -38,6 +44,6 @@ def tsp(seed, data, cost_evaluator, max_iterations=None, **kwargs):
     visits = elkai.solve_float_matrix(data.distances, runs=max_iterations)
     visits.remove(0)  # remove depot
 
-    schedule = compute_optimal_schedule(visits, data, cost_evaluator)
+    schedule = compute_optimal_schedule(data, cost_evaluator, visits)
     solution = Solution(data, cost_evaluator, visits, schedule)
     return Result(solution, time.perf_counter() - start, max_iterations)

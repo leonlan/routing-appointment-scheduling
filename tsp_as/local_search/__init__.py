@@ -1,1 +1,0 @@
-from .relocate import relocate

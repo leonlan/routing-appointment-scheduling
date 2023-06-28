@@ -3,10 +3,14 @@ from scipy.linalg import expm, inv
 from scipy.linalg.blas import dgemm
 from scipy.optimize import minimize
 
+from tsp_as.classes import CostEvaluator, ProblemData
+
 from .heavy_traffic import compute_schedule as compute_ht_schedule
 
 
-def compute_idle_wait(visits, schedule, data) -> tuple[list[float], list[float]]:
+def compute_idle_wait(
+    data: ProblemData, visits: list[int], schedule: list[float]
+) -> tuple[list[float], list[float]]:
     """
     Compute the idle and wait times for a solution (visits and schedule).
     Wrapper for `_compute_idle_wait_per_client`.
@@ -27,11 +31,13 @@ def compute_idle_wait(visits, schedule, data) -> tuple[list[float], list[float]]
     wait_times
         The wait times per client.
     """
-    alpha, Vn = _get_alphas_and_Vn(visits, data)
+    alpha, Vn = _get_alphas_and_Vn(data, visits)
     return _compute_idle_wait_per_client(schedule, alpha, Vn)
 
 
-def compute_optimal_schedule(visits, data, cost_evaluator):
+def compute_optimal_schedule(
+    data: ProblemData, cost_evaluator: CostEvaluator, visits: list[int]
+) -> list[float]:
     """
     Compute the optimal schedule and the corresponding idle and wait times.
 
@@ -46,17 +52,17 @@ def compute_optimal_schedule(visits, data, cost_evaluator):
     """
 
     def cost_fun(x):
-        return cost_evaluator(visits, x, data)
+        return cost_evaluator(data, visits, x)
 
     # Use heavy traffic solution as initial guess
-    x_init = compute_ht_schedule(visits, data, cost_evaluator)
+    x_init = compute_ht_schedule(data, cost_evaluator, visits)
 
     optim = minimize(
         cost_fun,
         x_init,
         method="trust-constr",
         tol=0.01,
-        bounds=[(0, None) for _ in range(x_init.size)],
+        bounds=[(0, None) for _ in range(len(x_init))],
     )
 
     return optim.x
@@ -138,7 +144,9 @@ def _create_Vn(alphas, T):
     return Vn
 
 
-def _get_alphas_and_Vn(visits, data):
+def _get_alphas_and_Vn(
+    data: ProblemData, visits: list[int]
+) -> tuple[np.ndarray, np.ndarray]:
     arcs = [0] + visits[:-1], visits  # only arcs visiting to clients
 
     alpha = tuple(data.alphas[arcs])
