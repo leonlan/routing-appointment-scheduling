@@ -9,18 +9,16 @@ authors = ["Leon Lan <leon.lanyidong@gmail.com>"]
 python = ">=3.9,<3.11"
 numpy = "^1.23.3"
 matplotlib = "^3.6.0"
-alns = "5.0.4"
-tsplib95 = "^0.7.1"
-jupyter = "^1.0.0"
-tqdm = "^4.64.1"
 scipy = "^1.9.3"
-vrplib = "^1.0.1"
-jupyterlab = "^3.6.1"
-pandas = "^2.0.1"
+alns = "5.0.4"
 elkai = "^0.1.2"
 
+[tool.poetry.group.benchmark.dependencies]
+tqdm = "^4.64.1"
+pandas = "^2.0.1"
+jupyterlab = "^3.6.1"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "^5.2"
 isort = "^5.10.1"
 black = "^22.8.0"
