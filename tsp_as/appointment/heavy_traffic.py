@@ -9,7 +9,7 @@ def compute_schedule(
     """
     Computes the schedule using heavy traffic approximation.
     """
-    means = _get_arc_means(visits, data)
+    means = _get_arc_means(data, visits)
     S = _compute_weighted_mean_variance(visits, data)
 
     wait_weights = cost_evaluator.wait_weights[visits]
@@ -25,7 +25,7 @@ def compute_idle_wait(
     """
     Computes the objective value using heavy traffic approximation.
     """
-    means = _get_arc_means(visits, data)
+    means = _get_arc_means(data, visits)
     S = _compute_weighted_mean_variance(visits, data)
 
     idle_times = schedule - means
@@ -45,7 +45,7 @@ def _compute_weighted_mean_variance(visits, data):
     BETA = 0.5  # TODO I'm not sure what this paramater is.
 
     # None, Var(U_1), Var(U_2), ..., Var(U_n)
-    variances = [None] + _get_arc_vars(visits, data).tolist()
+    variances = [None] + _get_arc_vars(data, visits).tolist()
 
     # b^0, b^1, ..., b^{n}
     betas = BETA ** np.arange(n + 1)
@@ -60,15 +60,15 @@ def _compute_weighted_mean_variance(visits, data):
     return S
 
 
-def _get_arc_means(visits, data):
+def _get_arc_means(data: ProblemData, visits: list[int]) -> np.ndarray:
     return data.arcs_mean[_visits2arcs(visits)]
 
 
-def _get_arc_vars(visits, data):
+def _get_arc_vars(data: ProblemData, visits: list[int]) -> np.ndarray:
     return data.arcs_var[_visits2arcs(visits)]
 
 
-def _visits2arcs(visits):
+def _visits2arcs(visits: list[int]) -> np.ndarray:
     """
     Returns the from and to indices for the given arcs to the client visits.
     """

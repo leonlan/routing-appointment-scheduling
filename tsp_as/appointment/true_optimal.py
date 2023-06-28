@@ -31,7 +31,7 @@ def compute_idle_wait(
     wait_times
         The wait times per client.
     """
-    alpha, Vn = _get_alphas_and_Vn(visits, data)
+    alpha, Vn = _get_alphas_and_Vn(data, visits)
     return _compute_idle_wait_per_client(schedule, alpha, Vn)
 
 
@@ -144,7 +144,9 @@ def _create_Vn(alphas, T):
     return Vn
 
 
-def _get_alphas_and_Vn(visits, data):
+def _get_alphas_and_Vn(
+    data: ProblemData, visits: list[int]
+) -> tuple[np.ndarray, np.ndarray]:
     arcs = [0] + visits[:-1], visits  # only arcs visiting to clients
 
     alpha = tuple(data.alphas[arcs])
