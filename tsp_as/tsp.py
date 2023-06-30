@@ -14,6 +14,7 @@ def tsp(
     data: ProblemData,
     cost_evaluator: CostEvaluator,
     max_iterations: Optional[int] = None,
+    **kwargs,
 ) -> Result:
     """
     Solves the appointment scheduling problem by computing a solution to the

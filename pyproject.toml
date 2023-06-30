@@ -12,6 +12,7 @@ matplotlib = "^3.6.0"
 scipy = "^1.9.3"
 alns = "5.0.4"
 elkai = "^0.1.2"
+networkx = "^3.1" # for plotting
 
 [tool.poetry.group.benchmark.dependencies]
 tqdm = "^4.64.1"
