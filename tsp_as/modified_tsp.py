@@ -21,7 +21,7 @@ from tsp_as.distributions import (
 from .Result import Result
 
 # Number of samples to estimate the CDF
-NUM_SAMPLES = 500_000
+NUM_SAMPLES = 1_000_000
 
 
 def modified_tsp(
