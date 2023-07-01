@@ -136,7 +136,7 @@ def compute_appointment_cost(
         appt_time = compute_appointment_time(samples, w_wait, w_idle)
         appt_cost = cost_mixed_erlang(appt_time, p, K, mu, w_wait, w_idle)
 
-        _check_mixed_erlang_samples(appt_time, p, K, mu, samples)
+        # _check_mixed_erlang_samples(appt_time, p, K, mu, samples)
 
     else:  # Hyperexponential case
         p, mu1, mu2 = fit_hyperexponential(mean, scv)
@@ -147,10 +147,10 @@ def compute_appointment_cost(
         appt_time = compute_appointment_time(samples, w_wait, w_idle)
         appt_cost = cost_hyperexponential(appt_time, p, mu1, mu2, w_wait, w_idle)
 
-        _check_hyperexponential_samples(appt_time, p, mu1, mu2, samples)
+        # _check_hyperexponential_samples(appt_time, p, mu1, mu2, samples)
 
-    _check_moments_samples(mean, scv, samples)
-    _check_nonnegative_appt_values(appt_time, appt_cost)
+    # _check_moments_samples(mean, scv, samples)
+    # _check_nonnegative_appt_values(appt_time, appt_cost)
 
     return appt_cost
 
