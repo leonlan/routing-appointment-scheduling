@@ -51,6 +51,8 @@ def parse_args():
     parser.add_argument("--weight_idle", type=float, default=2.5)
     parser.add_argument("--weight_wait", type=int, default=10)
 
+    parser.add_argument("--distance_scaling", type=float, default=1.0)
+
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
     group.add_argument("--max_iterations", type=int)
@@ -179,6 +181,7 @@ def solve(
     weight_travel: float,
     weight_idle: float,
     weight_wait: int,
+    distance_scaling: float,
     sol_dir: Optional[str],
     plot_dir: Optional[str],
     breakdown: Optional[bool],
@@ -188,7 +191,7 @@ def solve(
     Solves the instance using the ALNS package.
     """
     path = Path(loc)
-    data = ProblemData.from_file(loc)
+    data = ProblemData.from_file(loc, distance_scaling=distance_scaling)
 
     # The cost seed is used to generate the customer-dependent wait times.
     # This seed is derived from the instance name.
@@ -239,7 +242,7 @@ def solve(
     cost_profile = str((weight_travel, weight_idle, weight_wait))
     return (
         path.stem,
-        best.objective(),
+        round(best.objective(), 3),
         result.iterations,
         round(result.runtime, 3),
         algorithm,
@@ -273,7 +276,7 @@ def benchmark(instances: List[str], **kwargs):
 
     dtypes = [
         ("inst", "U37"),
-        ("obj", int),
+        ("obj", float),
         ("iters", int),
         ("time", float),
         ("alg", "U37"),
