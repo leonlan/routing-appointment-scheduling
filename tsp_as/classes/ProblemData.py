@@ -66,10 +66,13 @@ class ProblemData:
             data = json.load(fh)
             data = {key: np.array(arr) for key, arr in data.items()}
 
+            # Scale distances for the numerical experiment that investigates
+            # how the proportion of service/travel times affects performance
+            data["distances"] *= kwargs.get("distance_scaling", 1)
+
         return cls(
             name=path.stem,
             **data,
-            **kwargs,
         )
 
 
