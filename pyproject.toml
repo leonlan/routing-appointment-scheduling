@@ -15,10 +15,15 @@ elkai = "^0.1.2"
 networkx = "^3.1" # for plotting
 
 [tool.poetry.group.benchmark.dependencies]
+# Needed to run benchmark.py
 tqdm = "^4.64.1"
+
+[tool.poetry.group.results.dependencies]
+# Needed to run notebooks to analyse results
 pandas = "^2.0.1"
 jupyterlab = "^3.6.1"
 seaborn = "^0.12.2"
+scienceplots = "^2.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^5.2"
