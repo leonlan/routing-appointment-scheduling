@@ -116,7 +116,7 @@ def cost_breakdown(data, cost_evaluator, solution):
     tour_arcs = [0] + solution.visits, solution.visits + [0]
     dists = data.distances[tour_arcs]
     idle_times, wait_times = cost_evaluator.idle_wait_function(
-        solution.visits, solution.schedule, data
+        data, solution.visits, solution.schedule
     )
 
     headers = [

@@ -14,7 +14,7 @@ def full_enumeration(
     seed: int,
     data: ProblemData,
     cost_evaluator: CostEvaluator,
-    approx_pool_size: int = 50000,  # little more than 8!
+    approx_pool_size: int = 100,  # little more than 8!
     num_procs_enum: int = 1,
     **kwargs,
 ) -> Result:
@@ -54,7 +54,7 @@ def full_enumeration(
     solutions = []
 
     with multiprocessing.Pool(num_procs_enum) as mp_pool:
-        func = partial(_make_solution, data=data, cost_evaluator=cost_evaluator)
+        func = partial(_make_solution, data, cost_evaluator)
 
         for solution in mp_pool.imap_unordered(func, pool):
             solutions.append(solution)
@@ -73,7 +73,7 @@ def _filter_using_heavy_traffic(
     """
     candidates = []
     with multiprocessing.Pool(num_procs) as mp_pool:
-        func = partial(_make_ht_solution, data=data, cost_evaluator=cost_evaluator)
+        func = partial(_make_ht_solution, data, cost_evaluator)
 
         for solution in mp_pool.imap_unordered(func, pool):
             candidates.append(solution)
