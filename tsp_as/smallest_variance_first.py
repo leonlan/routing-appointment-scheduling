@@ -14,15 +14,8 @@ def smallest_variance_first(
     """
     start = time.perf_counter()
 
-    visits: list[int] = []
-
-    for _ in range(1, data.dimension):
-        unvisited = [idx for idx in range(1, data.dimension) if idx not in visits]
-
-        frm = 0 if len(visits) == 0 else visits[-1]
-        to = unvisited[data.arcs_var[frm, unvisited].argmin()]
-
-        visits.append(to)
+    visits = data.service_var.argsort().tolist()
+    visits.remove(0)
 
     schedule = compute_optimal_schedule(data, cost_evaluator, visits)
     solution = Solution(data, cost_evaluator, visits, schedule)
