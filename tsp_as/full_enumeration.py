@@ -14,7 +14,7 @@ def full_enumeration(
     seed: int,
     data: ProblemData,
     cost_evaluator: CostEvaluator,
-    approx_pool_size: int = 100,  # little more than 8!
+    approx_pool_size: int = 40320,  # factorial(8)
     num_procs_enum: int = 1,
     **kwargs,
 ) -> Result:
