@@ -22,6 +22,7 @@ from tsp_as import (
     full_enumeration,
     large_neighborhood_search,
     modified_tsp,
+    nearest_neighbor_smallest_variance_first,
     smallest_variance_first,
     tsp,
 )
@@ -41,7 +42,7 @@ def parse_args():
         "--algorithm",
         type=str,
         default="lns",
-        choices=["lns", "tsp", "dotsp", "mtsp", "svf", "enum"],
+        choices=["lns", "tsp", "dotsp", "mtsp", "svf", "nnsvf", "enum"],
     )
 
     # Weight parameters for the cost function. Travel and idle time weightes
@@ -210,6 +211,8 @@ def solve(
         result = modified_tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "svf":
         result = smallest_variance_first(seed, data, cost_evaluator)
+    elif algorithm == "nnsvf":
+        result = nearest_neighbor_smallest_variance_first(seed, data, cost_evaluator)
     elif algorithm == "enum":
         result = full_enumeration(seed, data, cost_evaluator, **kwargs)
     else:

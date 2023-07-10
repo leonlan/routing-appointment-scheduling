@@ -86,7 +86,7 @@ def compute_arc_data(distances, distances_scv, service, service_scv):
     # which in turn are used to compute the scvs.
     _service_var = service_scv * (service**2)
     _distances_var = distances_scv * (distances**2)
-    _var = _service_var[np.newaxis, :].T + _distances_var
+    variances = _service_var[np.newaxis, :].T + _distances_var
 
     # The means and scvs are the combined service and travel times, where
     # entry (i, j) denotes the travel time from i to j and the service
@@ -94,14 +94,14 @@ def compute_arc_data(distances, distances_scv, service, service_scv):
     means = service[np.newaxis, :].T + distances
 
     with np.errstate(divide="ignore", invalid="ignore"):
-        scvs = np.divide(_var, means**2)  # There may be NaNs in the means
+        scvs = np.divide(variances, means**2)  # There may be NaNs in the means
         # Round to 3 decimals to avoid floating point precision issues in fitting mixed erlang
         scvs = np.round(scvs, 3)
 
     np.fill_diagonal(means, 0)
     np.fill_diagonal(scvs, 0)
 
-    return means, scvs, _var
+    return means, scvs, variances
 
 
 def compute_phase_parameters(means, scvs):
