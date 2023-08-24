@@ -57,6 +57,7 @@ def parse_args():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
     group.add_argument("--max_iterations", type=int)
+    group.add_argument("--benchmark_runtime", action="store_true")
 
     parser.add_argument("--sol_dir", type=str)
     parser.add_argument("--plot_dir", type=str)
@@ -183,13 +184,14 @@ def solve(
     weight_idle: float,
     weight_wait: int,
     distance_scaling: float,
+    benchmark_runtime: Optional[bool],
     sol_dir: Optional[str],
     plot_dir: Optional[str],
     breakdown: Optional[bool],
     **kwargs,
 ):
     """
-    Solves the instance using the ALNS package.
+    Solves the instance.
     """
     path = Path(loc)
     data = ProblemData.from_file(loc, distance_scaling=distance_scaling)
@@ -200,6 +202,21 @@ def solve(
     cost_evaluator = make_cost_evaluator(
         data, weight_travel, weight_idle, weight_wait, cost_seed
     )
+
+    # Set the maximum runtime based on the instance size for benchmarking.
+    if benchmark_runtime:
+        runtimes_by_size = {
+            6: 5,
+            8: 10,
+            10: 15,
+            15: 30,
+            20: 60,
+            25: 120,
+            30: 180,
+            35: 240,
+            40: 300,
+        }
+        kwargs["max_runtime"] = runtimes_by_size[data.dimension - 1]
 
     if algorithm == "lns":
         result = large_neighborhood_search(seed, data, cost_evaluator, **kwargs)
