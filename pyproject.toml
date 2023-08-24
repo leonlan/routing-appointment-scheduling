@@ -4,8 +4,14 @@ version = "0.1.0"
 description = "A traveling salesman problem with appointment scheduling."
 authors = ["Leon Lan <leon.lanyidong@gmail.com>"]
 packages = [
-    { include = "tsp_as" },
+    {include = "tsp_as"},
+    {include = "benchmark.py"},
 ]
+
+
+[tool.poetry.scripts]
+benchmark = "benchmark:main"
+
 
 [tool.poetry.dependencies]
 python = "^3.9,<4.0"
@@ -15,6 +21,7 @@ scipy = "^1.9.3"
 alns = "5.0.4"
 elkai = "^0.1.2"
 networkx = "^3.1" # for plotting
+
 
 [tool.poetry.group.benchmark.dependencies]
 # Needed to run benchmark.py
