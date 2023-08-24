@@ -67,11 +67,14 @@ def large_neighborhood_search(
 
     select = RouletteWheel([5, 2, 1, 0.5], 0.5, len(D_OPS), len(R_OPS))
 
-    start_threshold = 0.05
-    end_threshold = 0
+    # In percentages of the intial solution.
+    start_threshold_pct = kwargs.get("rrt_start_threshold_pct", 0.05)
+    end_threshold_pct = 0
 
     if max_runtime is not None:
         stop = MaxRuntime(max_runtime)
+        start_threshold = init.objective() * start_threshold_pct
+        end_threshold = init.objective() * end_threshold_pct
         accept = TimeBasedRecordToRecordTravel(
             start_threshold, end_threshold, max_runtime
         )
@@ -79,7 +82,7 @@ def large_neighborhood_search(
         assert max_iterations is not None
         stop = MaxIterations(max_iterations)
         accept = RecordToRecordTravel.autofit(
-            init.objective(), start_threshold, end_threshold, max_iterations
+            init.objective(), start_threshold_pct, end_threshold_pct, max_iterations
         )
 
     alns_result = alns.iterate(
