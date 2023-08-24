@@ -3,10 +3,12 @@ name = "tsp-as"
 version = "0.1.0"
 description = "A traveling salesman problem with appointment scheduling."
 authors = ["Leon Lan <leon.lanyidong@gmail.com>"]
-
+packages = [
+    { include = "tsp_as" },
+]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.11"
+python = "^3.9,<4.0"
 numpy = "^1.23.3"
 matplotlib = "^3.6.0"
 scipy = "^1.9.3"
@@ -18,12 +20,17 @@ networkx = "^3.1" # for plotting
 # Needed to run benchmark.py
 tqdm = "^4.64.1"
 
+
+[tool.poetry.group.results]
+optional = true
+
 [tool.poetry.group.results.dependencies]
 # Needed to run notebooks to analyse results
 pandas = "^2.0.1"
 jupyterlab = "^3.6.1"
 seaborn = "^0.12.2"
 scienceplots = "^2.1.0"
+
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^5.2"
@@ -44,7 +51,6 @@ select = [
     "F",  # pyflakes
     "I",  # isort
     "C",  # flake8-comprehensions
-    "B",  # flake8-bugbear
 ]
 ignore = [
     "E501",  # line too long, handled by black
@@ -53,4 +59,4 @@ ignore = [
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]
-"benchmark.py" = ["E402", "E741", "B905"]
+"benchmark.py" = ["E402", "E741"]
