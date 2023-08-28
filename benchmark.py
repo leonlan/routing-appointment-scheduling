@@ -212,9 +212,9 @@ def solve(
             15: 30,
             20: 60,
             25: 120,
-            30: 180,
-            35: 240,
-            40: 300,
+            30: 240,
+            35: 480,
+            40: 960,
         }
         kwargs["max_runtime"] = runtimes_by_size[data.dimension - 1]
 
