@@ -1,5 +1,5 @@
-# Spatial appointment scheduling and routing
+# Routing and appointment scheduling
 
-This repository contains the code implementation of our paper "Spatial appointment scheduling and routing in a random environment."
+This repository contains the code implementation of our paper "A queueing-based approach for integrated routing and appointment scheduling."
 
 TODO
