@@ -1,7 +1,7 @@
 from copy import copy
 
-from tsp_as.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
-from tsp_as.classes import CostEvaluator, ProblemData, Solution
+from ras.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
+from ras.classes import CostEvaluator, ProblemData, Solution
 
 
 def greedy_insert(

@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm.contrib.concurrent import process_map
 
-from tsp_as import (
+from ras import (
     double_orientation_tsp,
     full_enumeration,
     large_neighborhood_search,
@@ -26,9 +26,9 @@ from tsp_as import (
     smallest_variance_first,
     tsp,
 )
-from tsp_as.appointment.true_optimal import compute_idle_wait as true_objective_function
-from tsp_as.classes import CostEvaluator, ProblemData
-from tsp_as.plot import plot_graph
+from ras.appointment.true_optimal import compute_idle_wait as true_objective_function
+from ras.classes import CostEvaluator, ProblemData
+from ras.plot import plot_graph
 
 
 def parse_args():

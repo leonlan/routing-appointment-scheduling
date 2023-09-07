@@ -3,8 +3,8 @@ from typing import Optional
 
 import elkai
 
-from tsp_as.appointment.true_optimal import compute_optimal_schedule
-from tsp_as.classes import CostEvaluator, ProblemData, Solution
+from ras.appointment.true_optimal import compute_optimal_schedule
+from ras.classes import CostEvaluator, ProblemData, Solution
 
 from .Result import Result
 

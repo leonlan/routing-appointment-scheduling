@@ -7,10 +7,10 @@ from alns.accept import RecordToRecordTravel
 from alns.select import RouletteWheel
 from alns.stop import MaxIterations, MaxRuntime
 
-from tsp_as.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
-from tsp_as.appointment.true_optimal import compute_optimal_schedule
-from tsp_as.classes import CostEvaluator, ProblemData, Solution
-from tsp_as.operators import adjacent_destroy, greedy_insert, random_destroy
+from ras.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
+from ras.appointment.true_optimal import compute_optimal_schedule
+from ras.classes import CostEvaluator, ProblemData, Solution
+from ras.operators import adjacent_destroy, greedy_insert, random_destroy
 
 from .Result import Result
 

@@ -3,8 +3,8 @@ from itertools import product
 
 import numpy as np
 
-from tsp_as.appointment.true_optimal import compute_optimal_schedule
-from tsp_as.classes import CostEvaluator, ProblemData, Solution
+from ras.appointment.true_optimal import compute_optimal_schedule
+from ras.classes import CostEvaluator, ProblemData, Solution
 
 from .Result import Result
 

@@ -3,9 +3,9 @@ from functools import partial
 from itertools import permutations
 from time import perf_counter
 
-from tsp_as.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
-from tsp_as.appointment.true_optimal import compute_optimal_schedule
-from tsp_as.classes import CostEvaluator, ProblemData, Solution
+from ras.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
+from ras.appointment.true_optimal import compute_optimal_schedule
+from ras.classes import CostEvaluator, ProblemData, Solution
 
 from .Result import Result
 

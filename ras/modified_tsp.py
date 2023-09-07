@@ -9,9 +9,9 @@ from numpy.random import Generator
 from numpy.testing import assert_, assert_allclose
 from scipy.special import gamma, gammaincc
 
-from tsp_as.appointment.true_optimal import compute_optimal_schedule
-from tsp_as.classes import CostEvaluator, ProblemData, Solution
-from tsp_as.distributions import (
+from ras.appointment.true_optimal import compute_optimal_schedule
+from ras.classes import CostEvaluator, ProblemData, Solution
+from ras.distributions import (
     fit_hyperexponential,
     fit_mixed_erlang,
     hyperexponential_rvs,

@@ -1,6 +1,6 @@
 import numpy as np
 
-from tsp_as.classes import CostEvaluator, ProblemData
+from ras.classes import CostEvaluator, ProblemData
 
 
 def compute_schedule(
@@ -39,7 +39,7 @@ def _compute_weighted_mean_variance(visits, data):
     This function mimics the notation in the paper for easy checking.
     There's a much more compact way to do this, see the this commit:
 
-    https://github.com/leonlan/tsp-as/blob/7bd9008/tsp_as/appointment/heavy_traffic.py#L30
+    https://github.com/leonlan/tsp-as/blob/7bd9008/ras/appointment/heavy_traffic.py#L30
     """
     n = len(visits)
     BETA = 0.5  # TODO I'm not sure what this paramater is.

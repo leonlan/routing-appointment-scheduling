@@ -3,8 +3,8 @@ from copy import deepcopy
 from numpy.random import Generator
 from numpy.testing import assert_equal
 
-from tsp_as.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
-from tsp_as.classes import CostEvaluator, ProblemData, Solution
+from ras.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
+from ras.classes import CostEvaluator, ProblemData, Solution
 
 
 def random_destroy(

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 
-from tsp_as.distributions import fit_hyperexponential, fit_mixed_erlang
+from ras.distributions import fit_hyperexponential, fit_mixed_erlang
 
 
 class ProblemData:

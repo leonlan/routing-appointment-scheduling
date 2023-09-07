@@ -16,9 +16,9 @@ from typing import List, Optional
 import numpy as np
 from tqdm.contrib.concurrent import process_map
 
-from tsp_as import large_neighborhood_search
-from tsp_as.appointment.true_optimal import compute_idle_wait as true_objective_function
-from tsp_as.classes import CostEvaluator, ProblemData
+from ras import large_neighborhood_search
+from ras.appointment.true_optimal import compute_idle_wait as true_objective_function
+from ras.classes import CostEvaluator, ProblemData
 
 
 def parse_args():
