@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "tsp-as"
+name = "ras"
 version = "0.1.0"
-description = "A traveling salesman problem with appointment scheduling."
+description = "Integrated routing and appointment scheduling."
 authors = ["Leon Lan <leon.lanyidong@gmail.com>"]
 packages = [
-    {include = "tsp_as"},
+    {include = "ras"},
     {include = "benchmark.py"},
 ]
 
