@@ -23,6 +23,7 @@ from ras import (
     large_neighborhood_search,
     modified_tsp,
     nearest_neighbor_smallest_variance_first,
+    sample_average_approximation,
     smallest_variance_first,
     tsp,
 )
@@ -42,7 +43,7 @@ def parse_args():
         "--algorithm",
         type=str,
         default="lns",
-        choices=["lns", "tsp", "dotsp", "mtsp", "svf", "nnsvf", "enum"],
+        choices=["lns", "tsp", "dotsp", "mtsp", "svf", "nnsvf", "enum", "saa"],
     )
 
     # Weight parameters for the cost function. Travel and idle time weightes
@@ -232,6 +233,8 @@ def solve(
         result = nearest_neighbor_smallest_variance_first(seed, data, cost_evaluator)
     elif algorithm == "enum":
         result = full_enumeration(seed, data, cost_evaluator, **kwargs)
+    elif algorithm == "saa":
+        result = sample_average_approximation(seed, data, cost_evaluator, **kwargs)
     else:
         raise ValueError(f"Unknown algorithm {algorithm}")
 
