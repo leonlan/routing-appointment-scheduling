@@ -21,6 +21,7 @@ scipy = "^1.9.3"
 alns = "5.0.4"
 elkai = "^0.1.2"
 networkx = "^3.1" # for plotting
+gurobipy = "^11.0.0"
 
 
 [tool.poetry.group.benchmark.dependencies]
