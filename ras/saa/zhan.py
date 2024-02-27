@@ -61,19 +61,24 @@ def zhan(
     idle = m.addVars(N, S, lb=0, vtype=GRB.CONTINUOUS, name="idle time")
     wait = m.addVars(N, S, lb=0, vtype=GRB.CONTINUOUS, name="service time")
 
+    # Objective
+    travel_weight = cost_evaluator.travel_weight
+    idle_weight = cost_evaluator.idle_weight
+    wait_weights = cost_evaluator.wait_weights
+
     total_travel = quicksum(
-        cost_evaluator.travel_weight * data.distances[i, j] * y[i, j]
+        travel_weight * data.distances[i, j] * y[i, j]
         for i in range(N)
         for j in range(N)
-    )  # No need to divide travel by S because we minimize expected distance.
-    total_idle = quicksum(
-        cost_evaluator.idle_weight * idle[i, s] for i in range(N) for s in range(S)
     )
-    total_wait = quicksum(
-        cost_evaluator.wait_weights[i] * wait[i, s] for i in range(N) for s in range(S)
+    avg_total_idle = (
+        quicksum(idle_weight * idle[i, s] for i in range(N) for s in range(S)) / S
+    )
+    avg_total_wait = (
+        quicksum(wait_weights[i] * wait[i, s] for i in range(N) for s in range(S)) / S
     )
 
-    m.setObjective(total_travel + total_idle / S + total_wait / S, GRB.MINIMIZE)
+    m.setObjective(total_travel + avg_total_idle + avg_total_wait, GRB.MINIMIZE)
 
     # Exactly one edge leaving each node
     for i in range(N):
