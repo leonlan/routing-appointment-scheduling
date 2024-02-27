@@ -1,9 +1,13 @@
+import time
+
+import gurobipy as gp
+from numpy.random import default_rng
+
 from ras.classes import CostEvaluator, ProblemData
+from ras.Result import Result
 
-from .Result import Result
 
-
-def saa_tsang(
+def tsang(
     seed: int,
     data: ProblemData,
     cost_evaluator: CostEvaluator,
@@ -33,4 +37,10 @@ def saa_tsang(
     Result
         The algorithm results.
     """
-    pass
+    start = time.perf_counter()
+
+    gp.Model()
+
+    default_rng(seed)
+
+    return Result(solution, time.perf_counter() - start, 0)

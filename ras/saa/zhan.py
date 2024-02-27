@@ -1,115 +1,22 @@
 import time
-from itertools import product
 
 import gurobipy as gp
-import numpy as np
 from gurobipy import GRB, quicksum
-from numpy.random import Generator, default_rng
+from numpy.random import default_rng
 
 from ras.appointment.true_optimal import compute_optimal_schedule
 from ras.classes import CostEvaluator, ProblemData, Solution
-from ras.distributions import (
-    fit_hyperexponential,
-    fit_mixed_erlang,
-    hyperexponential_rvs,
-    mixed_erlang_rvs,
-)
+from ras.Result import Result
 
-from .Result import Result
+from .utils import _sample_distance_matrices, _sample_service_times
 
 
-def _sample_distance_matrices(
-    data: ProblemData, num_samples: int, rng: Generator
-) -> np.ndarray:
-    """
-    Samples a number of distances matrix.
-
-    Parameters
-    ----------
-    data
-        ProblemData object.
-    num_samples
-        The number of samples.
-    rng
-        NumPy random number generator.
-
-    Returns
-    -------
-    np.ndarray
-        Sampled distances matrix.
-    """
-    distances = np.zeros((data.dimension, data.dimension, num_samples))
-
-    for i, j in product(range(data.dimension), repeat=2):
-        if i == j:
-            continue
-
-        mean, scv = data.distances[i, j], data.distances_scv[i, j]
-
-        if scv < 1:  # Mixed Erlang case
-            K, p, mu = fit_mixed_erlang(mean, scv)
-            distances[i, j, :] = mixed_erlang_rvs(
-                [K - 1, K], [1 / mu, 1 / mu], [p, (1 - p)], num_samples, rng
-            )
-
-        else:  # Hyperexponential case
-            p, mu1, mu2 = fit_hyperexponential(mean, scv)
-            distances[i, j, :] = hyperexponential_rvs(
-                [1 / mu1, 1 / mu2], [p, (1 - p)], num_samples, rng
-            )
-
-    return distances
-
-
-def _sample_service_times(
-    data: ProblemData, num_samples: int, rng: Generator
-) -> np.ndarray:
-    """
-    Samples a number of service times vectors.
-
-    Parameters
-    ----------
-    data
-        ProblemData object.
-    num_samples
-        The number of samples.
-    rng
-        NumPy random number generator.
-
-    Returns
-    -------
-    np.ndarray
-        Sampled service times.
-    """
-    service = np.zeros((data.dimension, num_samples))
-
-    for i in range(data.dimension):
-        if i == 0:
-            continue
-
-        mean, scv = data.service[i], data.service_scv[i]
-
-        if scv < 1:  # Mixed Erlang case
-            K, p, mu = fit_mixed_erlang(mean, scv)
-            service[i, :] = mixed_erlang_rvs(
-                [K - 1, K], [1 / mu, 1 / mu], [p, (1 - p)], num_samples, rng
-            )
-
-        else:  # Hyperexponential case
-            p, mu1, mu2 = fit_hyperexponential(mean, scv)
-            service[i, :] = hyperexponential_rvs(
-                [1 / mu1, 1 / mu2], [p, (1 - p)], num_samples, rng
-            )
-
-    return service
-
-
-def saa_zhan(
+def zhan(
     seed: int,
     data: ProblemData,
     cost_evaluator: CostEvaluator,
     max_runtime: int,
-    num_scenarios: int = 50,  # TODO remove
+    num_scenarios: int = 100,  # TODO remove
     **kwargs,
 ) -> Result:
     """

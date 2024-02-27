@@ -23,10 +23,10 @@ from ras import (
     large_neighborhood_search,
     modified_tsp,
     nearest_neighbor_smallest_variance_first,
-    saa_tsang,
-    saa_zhan,
     smallest_variance_first,
+    tsang,
     tsp,
+    zhan,
 )
 from ras.appointment.true_optimal import compute_idle_wait as true_objective_function
 from ras.classes import CostEvaluator, ProblemData
@@ -245,9 +245,9 @@ def solve(
     elif algorithm == "enum":
         result = full_enumeration(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "zhan":
-        result = saa_zhan(seed, data, cost_evaluator, **kwargs)
+        result = zhan(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "tsang":
-        result = saa_tsang(seed, data, cost_evaluator, **kwargs)
+        result = tsang(seed, data, cost_evaluator, **kwargs)
     else:
         raise ValueError(f"Unknown algorithm {algorithm}")
 
