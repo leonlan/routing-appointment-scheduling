@@ -42,6 +42,13 @@ def mixed_erlang_rvs(
     samples = []
     for idx in np.unique(choices):
         num_choice = np.sum(choices == idx)
-        samples.extend(gamma.rvs(shapes[idx], scale=scales[idx], size=num_choice))
+        samples.extend(
+            gamma.rvs(
+                shapes[idx],
+                scale=scales[idx],
+                size=num_choice,
+                random_state=rng,
+            )
+        )
 
     return samples
