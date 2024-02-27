@@ -5,6 +5,7 @@ from .modified_tsp import modified_tsp
 from .nearest_neighbor_smallest_variance_first import (
     nearest_neighbor_smallest_variance_first,
 )
-from .sample_average_approximation import sample_average_approximation
+from .saa_tsang import saa_tsang
+from .saa_zhan import saa_zhan
 from .smallest_variance_first import smallest_variance_first
 from .tsp import tsp

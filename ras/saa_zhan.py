@@ -1,20 +1,115 @@
 import time
+from itertools import product
 
 import gurobipy as gp
+import numpy as np
 from gurobipy import GRB, quicksum
+from numpy.random import Generator, default_rng
 
 from ras.appointment.true_optimal import compute_optimal_schedule
 from ras.classes import CostEvaluator, ProblemData, Solution
+from ras.distributions import (
+    fit_hyperexponential,
+    fit_mixed_erlang,
+    hyperexponential_rvs,
+    mixed_erlang_rvs,
+)
 
 from .Result import Result
 
 
-def sample_average_approximation(
+def _sample_distance_matrices(
+    data: ProblemData, num_samples: int, rng: Generator
+) -> np.ndarray:
+    """
+    Samples a number of distances matrix.
+
+    Parameters
+    ----------
+    data
+        ProblemData object.
+    num_samples
+        The number of samples.
+    rng
+        NumPy random number generator.
+
+    Returns
+    -------
+    np.ndarray
+        Sampled distances matrix.
+    """
+    distances = np.zeros((data.dimension, data.dimension, num_samples))
+
+    for i, j in product(range(data.dimension), repeat=2):
+        if i == j:
+            continue
+
+        mean, scv = data.distances[i, j], data.distances_scv[i, j]
+
+        if scv < 1:  # Mixed Erlang case
+            K, p, mu = fit_mixed_erlang(mean, scv)
+            distances[i, j, :] = mixed_erlang_rvs(
+                [K - 1, K], [1 / mu, 1 / mu], [p, (1 - p)], num_samples, rng
+            )
+
+        else:  # Hyperexponential case
+            p, mu1, mu2 = fit_hyperexponential(mean, scv)
+            distances[i, j, :] = hyperexponential_rvs(
+                [1 / mu1, 1 / mu2], [p, (1 - p)], num_samples, rng
+            )
+
+    return distances
+
+
+def _sample_service_times(
+    data: ProblemData, num_samples: int, rng: Generator
+) -> np.ndarray:
+    """
+    Samples a number of service times vectors.
+
+    Parameters
+    ----------
+    data
+        ProblemData object.
+    num_samples
+        The number of samples.
+    rng
+        NumPy random number generator.
+
+    Returns
+    -------
+    np.ndarray
+        Sampled service times.
+    """
+    service = np.zeros((data.dimension, num_samples))
+
+    for i in range(data.dimension):
+        if i == 0:
+            continue
+
+        mean, scv = data.service[i], data.service_scv[i]
+
+        if scv < 1:  # Mixed Erlang case
+            K, p, mu = fit_mixed_erlang(mean, scv)
+            service[i, :] = mixed_erlang_rvs(
+                [K - 1, K], [1 / mu, 1 / mu], [p, (1 - p)], num_samples, rng
+            )
+
+        else:  # Hyperexponential case
+            p, mu1, mu2 = fit_hyperexponential(mean, scv)
+            service[i, :] = hyperexponential_rvs(
+                [1 / mu1, 1 / mu2], [p, (1 - p)], num_samples, rng
+            )
+
+    return service
+
+
+def saa_zhan(
     seed: int,
     data: ProblemData,
     cost_evaluator: CostEvaluator,
     max_runtime: int,
-    num_scenarios: int = 1,  # TODO remove
+    num_scenarios: int = 50,  # TODO remove
     **kwargs,
 ) -> Result:
     """
@@ -47,6 +142,11 @@ def sample_average_approximation(
     N = data.dimension
     S = num_scenarios
 
+    rng = default_rng(seed)
+
+    sampled_distances = _sample_distance_matrices(data, num_scenarios, rng)
+    sampled_service = _sample_service_times(data, num_scenarios, rng)
+
     y = m.addVars(N, N, vtype=GRB.BINARY, name="order")
     x = m.addVars(N, vtype=GRB.CONTINUOUS, lb=0, name="appointment time")
     z = m.addVars(N, S, vtype=GRB.CONTINUOUS, lb=0, name="start service")
@@ -56,7 +156,7 @@ def sample_average_approximation(
 
     total_travel = quicksum(
         data.distances[i, j] * y[i, j] for i in range(N) for j in range(N)
-    )
+    )  # No need to divide travel by S because we minimize expected distance.
     total_idle = quicksum(
         cost_evaluator.idle_weight * idle[i, s] for i in range(N) for s in range(S)
     )
@@ -64,7 +164,7 @@ def sample_average_approximation(
         cost_evaluator.wait_weights[i] * wait[i, s] for i in range(N) for s in range(S)
     )
 
-    m.setObjective(total_travel + total_idle + total_wait, GRB.MINIMIZE)
+    m.setObjective(total_travel + total_idle / S + total_wait / S, GRB.MINIMIZE)
 
     # Exactly one edge leaving each node
     for i in range(N):
@@ -94,8 +194,8 @@ def sample_average_approximation(
                 m.addConstr(
                     z[j, s]
                     >= z[i, s]
-                    + data.service[i]
-                    + data.distances[i, j]
+                    + sampled_service[i, s]
+                    + sampled_distances[i, j, s]
                     - big_M * (1 - y[i, j])
                 )
 
@@ -111,13 +211,21 @@ def sample_average_approximation(
                     idle[j, s]
                     >= z[j, s]
                     - z[i, s]
-                    - data.service[i]
-                    - data.distances[i, j]
-                    - big_M * (1 - y[i, j])
+                    - sampled_service[i, s]
+                    - sampled_distances[i, j, s]
+                    - big_M * (1 - y[i, j]),
                 )
 
     m.setParam("TimeLimit", max_runtime)
     m.optimize()
+
+    # Debugging
+    {i: x[i].X for i in range(N)}
+    {(i, j): y[i, j].X for i in range(N) for j in range(N)}
+    {(i, j): z[i, j].X for i in range(N) for j in range(S)}
+
+    {(i, j): idle[i, j].X for i in range(N) for j in range(S)}
+    {(i, j): wait[i, j].X for i in range(N) for j in range(S)}
 
     vals = m.getAttr("X", y)
     edges = [(i, j) for i, j in y.keys() if vals[i, j] > 0.5]
