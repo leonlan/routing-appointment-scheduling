@@ -44,7 +44,17 @@ def parse_args():
         "--algorithm",
         type=str,
         default="lns",
-        choices=["lns", "tsp", "dotsp", "mtsp", "svf", "nnsvf", "enum", "saa"],
+        choices=[
+            "lns",
+            "tsp",
+            "dotsp",
+            "mtsp",
+            "svf",
+            "nnsvf",
+            "enum",
+            "zhan",
+            "tsang",
+        ],
     )
 
     # Weight parameters for the cost function. Travel and idle time weightes
@@ -234,9 +244,9 @@ def solve(
         result = nearest_neighbor_smallest_variance_first(seed, data, cost_evaluator)
     elif algorithm == "enum":
         result = full_enumeration(seed, data, cost_evaluator, **kwargs)
-    elif algorithm == "saa_zhan":
+    elif algorithm == "zhan":
         result = saa_zhan(seed, data, cost_evaluator, **kwargs)
-    elif algorithm == "saa_tsang":
+    elif algorithm == "tsang":
         result = saa_tsang(seed, data, cost_evaluator, **kwargs)
     else:
         raise ValueError(f"Unknown algorithm {algorithm}")
