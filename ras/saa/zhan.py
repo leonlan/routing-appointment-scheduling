@@ -16,7 +16,7 @@ def zhan(
     data: ProblemData,
     cost_evaluator: CostEvaluator,
     max_runtime: int,
-    num_scenarios: int = 1000,  # TODO remove
+    num_scenarios: int,
     **kwargs,
 ) -> Result:
     """
@@ -50,7 +50,6 @@ def zhan(
     S = num_scenarios
 
     rng = default_rng(seed)
-
     distances = _sample_distance_matrices(data, num_scenarios, rng)
     service = _sample_service_times(data, num_scenarios, rng)
 

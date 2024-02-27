@@ -65,6 +65,7 @@ def parse_args():
     parser.add_argument("--weight_wait", type=int, default=10)
 
     parser.add_argument("--distance_scaling", type=float, default=1.0)
+    parser.add_argument("--num_scenarios", type=int, default=100)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
