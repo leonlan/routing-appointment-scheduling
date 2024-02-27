@@ -62,7 +62,9 @@ def zhan(
     wait = m.addVars(N, S, lb=0, vtype=GRB.CONTINUOUS, name="service time")
 
     total_travel = quicksum(
-        data.distances[i, j] * y[i, j] for i in range(N) for j in range(N)
+        cost_evaluator.travel_weight * data.distances[i, j] * y[i, j]
+        for i in range(N)
+        for j in range(N)
     )  # No need to divide travel by S because we minimize expected distance.
     total_idle = quicksum(
         cost_evaluator.idle_weight * idle[i, s] for i in range(N) for s in range(S)
