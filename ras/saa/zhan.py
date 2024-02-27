@@ -11,14 +11,14 @@ from ras.Result import Result
 from .utils import _sample_distance_matrices, _sample_service_times
 
 
-def zhan(
+def zhan_mip(
     seed: int,
     data: ProblemData,
     cost_evaluator: CostEvaluator,
     max_runtime: int,
     num_scenarios: int,
     **kwargs,
-) -> Result:
+):
     """
     Solves the routing and appointment scheduling problem using the sample
     average approximation method. The problem is solved by solving the
@@ -42,7 +42,6 @@ def zhan(
     Result
         The algorithm results.
     """
-    start = time.perf_counter()
     big_M = 10000
 
     m = gp.Model()
@@ -132,13 +131,25 @@ def zhan(
     m.setParam("TimeLimit", max_runtime)
     m.optimize()
 
-    # Debugging
-    {i: x[i].X for i in range(N)}
-    {(i, j): y[i, j].X for i in range(N) for j in range(N)}
-    {(i, j): z[i, j].X for i in range(N) for j in range(S)}
+    return m, y, x, idle, wait
 
-    {(i, j): idle[i, j].X for i in range(N) for j in range(S)}
-    {(i, j): wait[i, j].X for i in range(N) for j in range(S)}
+
+def zhan(
+    seed: int,
+    data: ProblemData,
+    cost_evaluator: CostEvaluator,
+    max_runtime: int,
+    num_scenarios: int,
+    **kwargs,
+) -> Result:
+    """
+    Wrapper around ``zhan_mip`` to convert to RAS solution.
+    """
+    start = time.perf_counter()
+
+    m, y, *_ = zhan_mip(
+        seed, data, cost_evaluator, max_runtime, num_scenarios, **kwargs
+    )
 
     vals = m.getAttr("X", y)
     edges = [(i, j) for i, j in y.keys() if vals[i, j] > 0.5]
