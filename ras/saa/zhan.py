@@ -16,7 +16,7 @@ def zhan(
     data: ProblemData,
     cost_evaluator: CostEvaluator,
     max_runtime: int,
-    num_scenarios: int = 100,  # TODO remove
+    num_scenarios: int = 1000,  # TODO remove
     **kwargs,
 ) -> Result:
     """
@@ -51,8 +51,8 @@ def zhan(
 
     rng = default_rng(seed)
 
-    sampled_distances = _sample_distance_matrices(data, num_scenarios, rng)
-    sampled_service = _sample_service_times(data, num_scenarios, rng)
+    distances = _sample_distance_matrices(data, num_scenarios, rng)
+    service = _sample_service_times(data, num_scenarios, rng)
 
     y = m.addVars(N, N, vtype=GRB.BINARY, name="order")
     x = m.addVars(N, vtype=GRB.CONTINUOUS, lb=0, name="appointment time")
@@ -108,8 +108,8 @@ def zhan(
                 m.addConstr(
                     z[j, s]
                     >= z[i, s]
-                    + sampled_service[i, s]
-                    + sampled_distances[i, j, s]
+                    + service[i, s]
+                    + distances[i, j, s]
                     - big_M * (1 - y[i, j])
                 )
 
@@ -125,8 +125,8 @@ def zhan(
                     idle[j, s]
                     >= z[j, s]
                     - z[i, s]
-                    - sampled_service[i, s]
-                    - sampled_distances[i, j, s]
+                    - service[i, s]
+                    - distances[i, j, s]
                     - big_M * (1 - y[i, j]),
                 )
 
