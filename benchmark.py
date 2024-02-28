@@ -24,7 +24,9 @@ from ras import (
     modified_tsp,
     nearest_neighbor_smallest_variance_first,
     smallest_variance_first,
+    tsang,
     tsp,
+    zhan,
 )
 from ras.appointment.true_optimal import compute_idle_wait as true_objective_function
 from ras.classes import CostEvaluator, ProblemData
@@ -42,7 +44,17 @@ def parse_args():
         "--algorithm",
         type=str,
         default="lns",
-        choices=["lns", "tsp", "dotsp", "mtsp", "svf", "nnsvf", "enum"],
+        choices=[
+            "lns",
+            "tsp",
+            "dotsp",
+            "mtsp",
+            "svf",
+            "nnsvf",
+            "enum",
+            "zhan",
+            "tsang",
+        ],
     )
 
     # Weight parameters for the cost function. Travel and idle time weightes
@@ -53,6 +65,7 @@ def parse_args():
     parser.add_argument("--weight_wait", type=int, default=10)
 
     parser.add_argument("--distance_scaling", type=float, default=1.0)
+    parser.add_argument("--num_scenarios", type=int, default=100)
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--max_runtime", type=float)
@@ -232,6 +245,10 @@ def solve(
         result = nearest_neighbor_smallest_variance_first(seed, data, cost_evaluator)
     elif algorithm == "enum":
         result = full_enumeration(seed, data, cost_evaluator, **kwargs)
+    elif algorithm == "zhan":
+        result = zhan(seed, data, cost_evaluator, **kwargs)
+    elif algorithm == "tsang":
+        result = tsang(seed, data, cost_evaluator, **kwargs)
     else:
         raise ValueError(f"Unknown algorithm {algorithm}")
 

@@ -34,14 +34,6 @@ def plot_graph(ax, data, solution=None):
         edge_color="black",
     )
 
-    # offsets = [
-    #     [0, -0.25],
-    #     [0, -0.25],
-    #     [0, -0.25],
-    #     [0, -0.25],
-    #     [0, 0.2],
-    #     [0, 0.2],
-    # ]
     offset = [0, 0.1]
     _ = nx.draw_networkx_labels(
         G,

@@ -12,7 +12,7 @@ class ProblemData:
         self,
         name: str,
         coords: np.ndarray,
-        dimension: int,
+        dimension: np.ndarray,
         distances: np.ndarray,
         distances_scv: np.ndarray,
         service: np.ndarray,
@@ -40,7 +40,7 @@ class ProblemData:
         """
         self.name = name
         self.coords = coords
-        self.dimension = dimension
+        self.dimension = dimension.item()
         self.distances = distances
         self.distances_scv = distances_scv
         self.service = service
