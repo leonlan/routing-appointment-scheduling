@@ -35,6 +35,6 @@ def hyperexponential_rvs(
     samples = []
     for idx in np.unique(choices):
         num_choice = np.sum(choices == idx)
-        samples.extend(rng.exponential(scales[idx], size=num_choice, random_state=rng))
+        samples.extend(rng.exponential(scales[idx], size=num_choice))
 
     return samples
