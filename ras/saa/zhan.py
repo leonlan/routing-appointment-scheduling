@@ -151,6 +151,14 @@ def zhan(
         seed, data, cost_evaluator, max_runtime, num_scenarios, **kwargs
     )
 
+    try:
+        vals = m.getAttr("X", y)
+    except gp.GurobiError:  # no feasible solution
+        dummy = list(range(1, data.dimension))
+        empty = Solution(data, cost_evaluator, dummy, dummy)
+        empty.cost = -1
+        return Result(empty, time.perf_counter() - start, 0)
+
     vals = m.getAttr("X", y)
     edges = [(i, j) for i, j in y.keys() if vals[i, j] > 0.5]
     tour = find_shortest_cycle(edges)

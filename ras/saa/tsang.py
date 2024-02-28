@@ -2,7 +2,7 @@ import time
 from itertools import product
 
 import gurobipy as gp
-from gurobipy import GRB
+from gurobipy import GRB, quicksum
 from numpy.random import default_rng
 
 from ras.appointment.true_optimal import compute_optimal_schedule
@@ -70,8 +70,6 @@ def tsang(
 
     avg_travel = sum(travel_weight * total_travel[s] for s in range(S)) / S
     avg_idle = sum(idle_weight * idle[i, s] for i in range(N) for s in range(S)) / S
-
-    # TODO this is wrong in the paper
     avg_wait = sum(wait_weights[i] * wait[i, s] for i in range(N) for s in range(S)) / S
 
     m.setObjective(avg_travel + avg_idle + avg_wait, GRB.MINIMIZE)
@@ -90,16 +88,16 @@ def tsang(
 
     for s in range(S):
         lhs = wait[1, s] - idle[1, s]
-        travel_to_first_client = sum(distance[0, i, s] * x[i, 1] for i in range(1, N))
-        rhs = travel_to_first_client - a[1]
+        travel2first = quicksum(distance[0, i, s] * x[i, 1] for i in range(1, N))
+        rhs = travel2first - a[1]
         m.addConstr(lhs == rhs)
 
     for j, s in product(range(2, N), range(S)):
         lhs = wait[j, s] - wait[j - 1, s] - idle[j, s]
         rhs = a[j - 1] - a[j]  # inter appointment time
-        rhs += sum(service[i, s] * x[i, j - 1] for i in range(1, N))
-        rhs += sum(
-            sum(
+        rhs += quicksum(service[i, s] * x[i, j - 1] for i in range(1, N))
+        rhs += quicksum(
+            quicksum(
                 distance[i, k, s] * x[i, j - 1] * x[k, j] for k in range(1, N) if i != k
             )
             for i in range(1, N)
@@ -109,25 +107,33 @@ def tsang(
     # NOTE We skip the overtime constraint because we don't have overtime.
 
     for s in range(S):
-        expr = 0
-
         # Distances from client <-> client.
-        for j in range(2, N):
-            for i in range(1, N):
-                for k in range(1, N):
-                    if i == k:
-                        continue
-
-                    expr += distance[i, k, s] * x[i, j - 1] * x[k, j]
+        expr1 = quicksum(
+            distance[i, k, s] * x[i, j - 1] * x[k, j]
+            for j in range(2, N)
+            for i in range(1, N)
+            for k in range(1, N)
+            if i != k
+        )
 
         # Distances from depot <-> client.
-        for i in range(1, N):
-            expr += distance[0, i, s] * x[i, 1] + distance[i, 0, s] * x[i, N - 1]
+        expr2 = quicksum(
+            distance[0, i, s] * x[i, 1] + distance[i, 0, s] * x[i, N - 1]
+            for i in range(1, N)
+        )
 
-        m.addConstr(total_travel[s] == expr)
+        m.addConstr(total_travel[s] == expr1 + expr2)
 
     m.setParam("TimeLimit", max_runtime)
     m.optimize()
+
+    try:
+        vals = m.getAttr("X", x)
+    except gp.GurobiError:  # no feasible solution
+        dummy = list(range(1, data.dimension))
+        empty = Solution(data, cost_evaluator, dummy, dummy)
+        empty.cost = -1
+        return Result(empty, time.perf_counter() - start, 0)
 
     vals = m.getAttr("X", x)
     positions = [(i, j) for i, j in x.keys() if vals[i, j] == 1]
