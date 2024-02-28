@@ -31,18 +31,21 @@ docs = ["sphinx (==7.2.6)", "sphinx-mdinclude (==0.5.3)"]
 
 [[package]]
 name = "alns"
-version = "5.0.4"
+version = "5.3.2"
 description = "A flexible implementation of the adaptive large neighbourhood search (ALNS) algorithm."
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = ">=3.8,<4.0"
 files = [
-    {file = "alns-5.0.4-py3-none-any.whl", hash = "sha256:ba733d8a9199c46077131d1d9e0db4c97cf6ffd2992f9874ca1ff567a1fa2366"},
-    {file = "alns-5.0.4.tar.gz", hash = "sha256:8f6cfd3d56cdeddfcfaf1e585564c60f837817b1978b102b418eb50dabcbd837"},
+    {file = "alns-5.3.2-py3-none-any.whl", hash = "sha256:bcacc1f39573dbcad1dc20d3b0b5415d42744f05d82c4eb7d2a52e6fdebe694b"},
+    {file = "alns-5.3.2.tar.gz", hash = "sha256:a65215c6e3094089e677dc8df6222dc13521a2aa10c75df7e5349f15ce90ee55"},
 ]
 
 [package.dependencies]
-matplotlib = ">=2.2.0"
-numpy = ">=1.15.2"
+matplotlib = ">=3.5.0"
+numpy = ">=1.18.0"
+
+[package.extras]
+mabwiser = ["mabwiser (>=2.7.1)"]
 
 [[package]]
 name = "anyio"
@@ -3253,4 +3256,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "feeab7e1d6b788fe36c052633b074750e3c6640ab7963f4c693616a17c4fc782"
+content-hash = "419260eda426ed901db44efabb3a4354fb34dcab15336b7858fb84306ab2548c"
