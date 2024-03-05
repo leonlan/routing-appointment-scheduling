@@ -63,6 +63,7 @@ def parse_args():
     parser.add_argument("--weight_travel", type=float, default=1)
     parser.add_argument("--weight_idle", type=float, default=2.5)
     parser.add_argument("--weight_wait", type=int, default=10)
+    parser.add_argument("--fixed_weights", action="store_true")
 
     parser.add_argument("--distance_scaling", type=float, default=1.0)
     parser.add_argument("--num_scenarios", type=int, default=100)
@@ -110,16 +111,24 @@ def make_cost_evaluator(
     weight_travel: float,
     weight_idle: float,
     weight_wait: int,
+    fixed_weights: bool,
     seed: int,
 ) -> CostEvaluator:
     """
     Returns a cost evaluator based on the given weights. The customer-dependent
     wait time weight is randomly generated based on the given seed.
+
+    If ``fixed_weights`` is True, the customer-dependent wait time weight is set to
+    the given ``weight_wait`` (i.e., the weight is not randomly generated).
     """
     rng = np.random.default_rng(seed)
 
     obj_func = true_objective_function
-    weights_wait = rng.integers(weight_wait, size=data.dimension) + 1
+
+    if fixed_weights:
+        weights_wait = np.ones(data.dimension, dtype=int) * weight_wait
+    else:
+        weights_wait = rng.integers(weight_wait, size=data.dimension) + 1
 
     return CostEvaluator(obj_func, weight_travel, weight_idle, weights_wait)
 
@@ -196,6 +205,7 @@ def solve(
     weight_travel: float,
     weight_idle: float,
     weight_wait: int,
+    fixed_weights: bool,
     distance_scaling: float,
     benchmark_runtime: Optional[bool],
     sol_dir: Optional[str],
@@ -213,7 +223,7 @@ def solve(
     # This seed is derived from the instance name.
     cost_seed = int(data.name.split("-")[1].strip("idx"))
     cost_evaluator = make_cost_evaluator(
-        data, weight_travel, weight_idle, weight_wait, cost_seed
+        data, weight_travel, weight_idle, weight_wait, fixed_weights, cost_seed
     )
 
     # Set the maximum runtime based on the instance size for benchmarking.
