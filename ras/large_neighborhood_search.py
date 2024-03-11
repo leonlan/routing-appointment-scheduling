@@ -19,7 +19,7 @@ def large_neighborhood_search(
     seed: int,
     data: ProblemData,
     cost_evaluator: CostEvaluator,
-    init: Optional[Solution] = None,
+    initial_visits: Optional[list[int]] = None,
     max_runtime: Optional[float] = None,
     max_iterations: Optional[int] = None,
     **kwargs,
@@ -35,8 +35,8 @@ def large_neighborhood_search(
         The problem data.
     cost_evaluator
         The cost evaluator.
-    init
-        The initial solution. If None, a random solution is generated.
+    initial_visits
+        The visits of the initial solution. If None, a random visits are used.
     max_runtime
         The maximum runtime in seconds. If None, max_iterations must be specified.
     max_iterations
@@ -60,10 +60,14 @@ def large_neighborhood_search(
     for r_op in R_OPS:
         alns.add_repair_operator(r_op)
 
-    if init is None:
-        rnd_visits = rng.permutation(list(range(1, data.dimension))).tolist()
-        ht_schedule = compute_ht_schedule(data, cost_evaluator, rnd_visits)
-        init = Solution(data, cost_evaluator, rnd_visits, ht_schedule)
+    # We explicitly take initial visits because we want to be able to
+    # compute the heavy traffic schedule before the ALNS starts. This gives
+    # a "fair" objective value to compare with.
+    if initial_visits is None:
+        initial_visits = rng.permutation(list(range(1, data.dimension))).tolist()
+
+    ht_schedule = compute_ht_schedule(data, cost_evaluator, initial_visits)
+    init = Solution(data, cost_evaluator, initial_visits, ht_schedule)
 
     select = RouletteWheel([5, 2, 1, 0.5], 0.5, len(D_OPS), len(R_OPS))
 
