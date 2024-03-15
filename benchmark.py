@@ -64,7 +64,7 @@ def parse_args():
     parser.add_argument("--weight_idle", type=float, default=2.5)
     parser.add_argument("--weight_wait", type=int, default=10)
     parser.add_argument("--fixed_weights", action="store_true")
-
+    parser.add_argument("--initialize_lns", action="store_true")
     parser.add_argument("--distance_scaling", type=float, default=1.0)
     parser.add_argument("--num_scenarios", type=int, default=100)
 
@@ -207,6 +207,7 @@ def solve(
     weight_wait: int,
     fixed_weights: bool,
     distance_scaling: float,
+    initialize_lns: bool,
     benchmark_runtime: Optional[bool],
     sol_dir: Optional[str],
     plot_dir: Optional[str],
@@ -242,15 +243,14 @@ def solve(
         kwargs["max_runtime"] = runtimes_by_size[data.dimension - 1]
 
     if algorithm == "lns":
-        visits = double_orientation_tsp(
-            data, data, cost_evaluator, **kwargs
-        ).solution.visits
+        extra = {}
+
+        if initialize_lns:
+            res = double_orientation_tsp(data, data, cost_evaluator, **kwargs)
+            extra["initial_visits"] = res.solution.visits
+
         result = large_neighborhood_search(
-            seed,
-            data,
-            cost_evaluator,
-            initial_visits=visits,
-            **kwargs,
+            seed, data, cost_evaluator, **extra, **kwargs
         )
     elif algorithm == "tsp":
         result = tsp(seed, data, cost_evaluator, **kwargs)

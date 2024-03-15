@@ -18,7 +18,7 @@ If you don't want to use Poetry, you can use install all packages listed in the 
 You can use the `benchmark.py` script to solve instances. Here's an example:
 
 ``` shell
-poetry run python benchmark.py instances/*.json \
+poetry run python benchmark.py instances/n6-idx0-distribution0-travel0-serv1.json \
 --num_procs 4 \
 --weight_travel 1 \
 --weight_idle 2.5 \
@@ -28,6 +28,26 @@ poetry run python benchmark.py instances/*.json \
 --max_runtime 1
 ```
 
-This command solves all instances, four in parallel at a time. The objective weights are 1, 2.5 and 10 for the travel, idle and waiting time contributions, respectively. The selected algorithm is LNS with seed 1 and runs for one second.
+This command solves an instance with six clients with high service time variance. 
+The objective weights are 1, 2.5 and 10 for the travel, idle and waiting time, respectively. The selected algorithm is LNS with seed 1 and runs for one second.
 
 All results presented in our paper can be found in this repository. In particular, the raw results data is stored in `data/` and the notebooks that generate tables and figures can be found in `notebooks/`.
+
+
+## Citation
+
+Please consider citing our paper if this repository has been useful to you:
+
+``` bibtex
+@misc{Bekker2023,
+  title = {A Queueing-Based Approach for Integrated Routing and Appointment Scheduling},
+  author = {Bekker, Ren{\'e} and Bharti, Bharti and Lan, Leon and Mandjes, Michel},
+  year = {2023},
+  month = dec,
+  number = {arXiv:2312.02715},
+  eprint = {2312.02715},
+  primaryclass = {math},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2312.02715},
+}
+```
