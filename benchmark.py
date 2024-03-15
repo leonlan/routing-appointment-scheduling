@@ -242,7 +242,16 @@ def solve(
         kwargs["max_runtime"] = runtimes_by_size[data.dimension - 1]
 
     if algorithm == "lns":
-        result = large_neighborhood_search(seed, data, cost_evaluator, **kwargs)
+        visits = double_orientation_tsp(
+            data, data, cost_evaluator, **kwargs
+        ).solution.visits
+        result = large_neighborhood_search(
+            seed,
+            data,
+            cost_evaluator,
+            initial_visits=visits,
+            **kwargs,
+        )
     elif algorithm == "tsp":
         result = tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "dotsp":
