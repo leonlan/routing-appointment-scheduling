@@ -29,9 +29,6 @@ gurobipy = "^11.0.0"
 tqdm = "^4.64.1"
 
 
-[tool.poetry.group.results]
-optional = true
-
 [tool.poetry.group.results.dependencies]
 # Needed to run notebooks to analyse results
 pandas = "^2.0.1"
