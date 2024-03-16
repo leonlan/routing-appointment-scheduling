@@ -7,10 +7,9 @@ from alns.accept import RecordToRecordTravel
 from alns.select import RouletteWheel
 from alns.stop import MaxIterations, MaxRuntime
 
-from ras.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
 from ras.appointment.true_optimal import compute_optimal_schedule
 from ras.classes import CostEvaluator, ProblemData, Solution
-from ras.operators import adjacent_destroy, greedy_insert, random_destroy
+from ras.operators import greedy_insert, random_destroy
 
 from .Result import Result
 
@@ -50,7 +49,6 @@ def large_neighborhood_search(
     alns = ALNS(rng)
 
     D_OPS = [
-        adjacent_destroy,
         random_destroy,
     ]
     for d_op in D_OPS:
@@ -66,9 +64,7 @@ def large_neighborhood_search(
     if initial_visits is None:
         initial_visits = rng.permutation(list(range(1, data.dimension))).tolist()
 
-    ht_schedule = compute_ht_schedule(data, cost_evaluator, initial_visits)
-    init = Solution(data, cost_evaluator, initial_visits, ht_schedule)
-
+    init = Solution.from_routes(data, cost_evaluator, [initial_visits])
     select = RouletteWheel([5, 2, 1, 0.5], 0.5, len(D_OPS), len(R_OPS))
 
     # In percentages of the intial solution.
@@ -93,9 +89,11 @@ def large_neighborhood_search(
         init, select, accept, stop, data=data, cost_evaluator=cost_evaluator, **kwargs
     )
 
-    visits = alns_result.best_state.visits
-    schedule = compute_optimal_schedule(data, cost_evaluator, visits)
-    solution = Solution(data, cost_evaluator, visits, schedule)
+    routes = alns_result.best_state.routes
+    schedule = [
+        compute_optimal_schedule(data, cost_evaluator, route) for route in routes
+    ]
+    solution = Solution(data, cost_evaluator, routes, schedule)
 
     return Result(
         solution, time.perf_counter() - start, len(alns_result.statistics.runtimes)

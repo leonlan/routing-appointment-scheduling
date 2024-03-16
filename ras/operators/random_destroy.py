@@ -3,7 +3,6 @@ from copy import deepcopy
 from numpy.random import Generator
 from numpy.testing import assert_equal
 
-from ras.appointment.heavy_traffic import compute_schedule as compute_ht_schedule
 from ras.classes import CostEvaluator, ProblemData, Solution
 
 
@@ -24,20 +23,21 @@ def random_destroy(
         The solution to destroy.
     rng
         The random number generator.
-    pct_destroy
-        The percentage of clients to remove.
+    max_num_destroy
+        The maximum number of clients to remove from the solution.
     """
-    visits = deepcopy(solution.visits)
-    unassigned = []
+    routes = deepcopy(solution.routes)
+    clients = [client for route in routes for client in route]
+    num_destroy = rng.integers(1, min(max_num_destroy, len(clients)))
 
-    num_destroy = rng.integers(1, min(max_num_destroy, len(visits)))
+    for client in rng.choice(clients, num_destroy, replace=False):
+        for route in routes:
+            if client in route:
+                route.remove(client)
+                break
 
-    for cust in rng.choice(visits, num_destroy, replace=False):
-        unassigned.append(cust)
-        visits.remove(cust)
+    destroyed = Solution.from_routes(data, cost_evaluator, routes)
 
-    assert_equal(len(solution.visits), len(visits) + num_destroy)
+    assert_equal(len(solution) - len(destroyed), num_destroy)
 
-    schedule = compute_ht_schedule(data, cost_evaluator, visits)
-
-    return Solution(data, cost_evaluator, visits, schedule, unassigned)
+    return destroyed

@@ -1,40 +1,81 @@
 from __future__ import annotations
 
-from typing import Optional
+from ras.appointment.heavy_traffic import compute_schedule
 
 from .CostEvaluator import CostEvaluator
 from .ProblemData import ProblemData
 
 
 class Solution:
+    """
+    Represents a solution to the appointment scheduling problem.
+
+    Parameters
+    ----------
+    data
+        The problem data.
+    cost_evaluator
+        The cost evaluator (objective function) for the solution.
+    routes
+        The routes of the solution.
+    schedule
+        The schedule of the solution.
+    """
+
     def __init__(
         self,
         data: ProblemData,
         cost_evaluator: CostEvaluator,
-        visits: list[int],
-        schedule: list[float],
-        unassigned: Optional[list[int]] = None,
+        routes: list[list[int]],
+        schedule: list[int],
     ):
-        """
-        A Solution object represents a list of client visits. This may
-        optionally include a schedule (i.e., inter-appointment times), but
-        this is not required because it can be computed from the visits.
-        """
-        self.visits = visits
-        self.schedule = schedule
-        self.unassigned = unassigned if unassigned is not None else []
-
-        self.cost = cost_evaluator(data, visits, schedule)
+        self._routes = routes
+        self._schedule = schedule
+        self._cost = sum(
+            [
+                cost_evaluator(data, route, appointments)
+                for route, appointments in zip(routes, schedule)
+            ]
+        )
 
     def __len__(self):
-        return len(self.visits)
+        return len([client for route in self._routes for client in route])
 
-    def __str__(self):
-        return str(self.visits)
+    @property
+    def routes(self):
+        return self._routes
+
+    @property
+    def schedule(self):
+        return self._schedule
+
+    @property
+    def cost(self):
+        return self._cost
 
     def objective(self):
+        return self._cost
+
+    @classmethod
+    def from_routes(
+        cls, data: ProblemData, cost_evaluator: CostEvaluator, routes: list[list[int]]
+    ):
         """
-        Return the objective value. This is a weighted sum of the travel times,
-        the idle times and the waiting times.
+        Creates a solution from the given routes.
+
+        Parameters
+        ----------
+        data
+            The problem data.
+        cost_evaluator
+            The cost evaluator for the solution.
+        routes
+            The routes of the solution.
+
+        Returns
+        -------
+        Solution
+            The solution.
         """
-        return self.cost
+        schedule = [compute_schedule(data, cost_evaluator, route) for route in routes]
+        return cls(data, cost_evaluator, routes, schedule)
