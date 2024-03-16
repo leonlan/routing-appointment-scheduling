@@ -6,37 +6,89 @@ from .CostEvaluator import CostEvaluator
 from .ProblemData import ProblemData
 
 
-class Solution:
+class Route:
     """
-    Represents a solution to the appointment scheduling problem.
+    Represents the client visits with appointment times.
 
     Parameters
     ----------
     data
         The problem data.
     cost_evaluator
-        The cost evaluator (objective function) for the solution.
-    routes
-        The routes of the solution.
-    schedule
-        The schedule of the solution.
+        The cost evaluator for the solution.
+    clients
+        The clients in the route.
+    appointments
+        The appointment times for each clients.
     """
 
     def __init__(
         self,
         data: ProblemData,
         cost_evaluator: CostEvaluator,
-        routes: list[list[int]],
-        schedule: list[int],
+        clients: list[int],
+        appointments: list[float],
     ):
+        self._clients = clients
+        self._appointments = appointments
+        self._cost = cost_evaluator(data, clients, appointments)
+
+    def __len__(self):
+        return len(self._clients)
+
+    def __iter__(self):
+        return iter(self._clients)
+
+    @property
+    def clients(self):
+        return self._clients
+
+    @property
+    def appointments(self):
+        return self._appointments
+
+    @property
+    def cost(self):
+        return self._cost
+
+    @classmethod
+    def from_clients(
+        cls, data: ProblemData, cost_evaluator: CostEvaluator, clients: list[int]
+    ):
+        """
+        Creates a route from the given client visits. Uses heavy traffic.
+
+        Parameters
+        ----------
+        data
+            The problem data.
+        cost_evaluator
+            The cost evaluator for the solution.
+        clients
+            The clients in the route.
+
+        Returns
+        -------
+        Route
+            The route.
+        """
+        appointments = compute_schedule(data, cost_evaluator, clients)
+        return cls(data, cost_evaluator, clients, appointments)
+
+
+class Solution:
+    """
+    Represents a solution to the appointment scheduling problem.
+
+    Parameters
+    ----------
+    routes
+        The routes of the solution.
+    """
+
+    def __init__(self, routes: list[Route]):
         self._routes = routes
-        self._schedule = schedule
-        self._cost = sum(
-            [
-                cost_evaluator(data, route, appointments)
-                for route, appointments in zip(routes, schedule)
-            ]
-        )
+        self._cost = sum([route.cost for route in routes])
 
     def __len__(self):
         return len([client for route in self._routes for client in route])
@@ -44,10 +96,6 @@ class Solution:
     @property
     def routes(self):
         return self._routes
-
-    @property
-    def schedule(self):
-        return self._schedule
 
     @property
     def cost(self):
@@ -61,7 +109,7 @@ class Solution:
         cls, data: ProblemData, cost_evaluator: CostEvaluator, routes: list[list[int]]
     ):
         """
-        Creates a solution from the given routes.
+        Creates a solution from a list of visits.
 
         Parameters
         ----------
@@ -77,5 +125,6 @@ class Solution:
         Solution
             The solution.
         """
-        schedule = [compute_schedule(data, cost_evaluator, route) for route in routes]
-        return cls(data, cost_evaluator, routes, schedule)
+        return cls(
+            [Route.from_clients(data, cost_evaluator, route) for route in routes]
+        )

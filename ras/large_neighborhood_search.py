@@ -8,7 +8,7 @@ from alns.select import RouletteWheel
 from alns.stop import MaxIterations, MaxRuntime
 
 from ras.appointment.true_optimal import compute_optimal_schedule
-from ras.classes import CostEvaluator, ProblemData, Solution
+from ras.classes import CostEvaluator, ProblemData, Route, Solution
 from ras.operators import greedy_insert, random_destroy
 
 from .Result import Result
@@ -89,14 +89,16 @@ def large_neighborhood_search(
         init, select, accept, stop, data=data, cost_evaluator=cost_evaluator, **kwargs
     )
 
-    routes = alns_result.best_state.routes
-    schedule = [
-        compute_optimal_schedule(data, cost_evaluator, route) for route in routes
-    ]
-    solution = Solution(data, cost_evaluator, routes, schedule)
+    routes = []
+    for route in alns_result.best_state.routes:
+        clients = route.clients
+        schedule = compute_optimal_schedule(data, cost_evaluator, clients)
+        routes.append(Route(data, cost_evaluator, clients, schedule))
 
     return Result(
-        solution, time.perf_counter() - start, len(alns_result.statistics.runtimes)
+        Solution(routes),
+        time.perf_counter() - start,
+        len(alns_result.statistics.runtimes),
     )
 
 

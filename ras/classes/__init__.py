@@ -1,3 +1,3 @@
 from .CostEvaluator import CostEvaluator
 from .ProblemData import ProblemData
-from .Solution import Solution
+from .Solution import Route, Solution

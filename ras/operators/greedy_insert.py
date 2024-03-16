@@ -1,6 +1,6 @@
-from copy import copy, deepcopy
+from copy import copy
 
-from ras.classes import CostEvaluator, ProblemData, Solution
+from ras.classes import CostEvaluator, ProblemData, Route, Solution
 
 from .utils import compute_unassigned
 
@@ -11,24 +11,27 @@ def greedy_insert(
     """
     Insert the unassigned clients into the best place, one-by-one.
     """
-    routes = deepcopy(solution.routes)
+    routes = copy(solution.routes)
     unassigned = compute_unassigned(data, solution)
     rng.shuffle(unassigned)
 
     while unassigned:
         client = unassigned.pop()
-        route, idx = _best_insert_idx(data, cost_evaluator, routes, client)
-        route.insert(idx, client)
+        route_idx, idx = _best_insert_idx(data, cost_evaluator, routes, client)
 
-    return Solution.from_routes(data, cost_evaluator, routes)
+        clients = copy(routes[route_idx].clients)
+        clients.insert(idx, client)
+        routes[route_idx] = Route.from_clients(data, cost_evaluator, clients)
+
+    return Solution(routes)
 
 
 def _best_insert_idx(
     data: ProblemData,
     cost_evaluator: CostEvaluator,
-    routes: list[list[int]],
+    routes: list[Route],
     client: int,
-) -> tuple[list[int], int]:
+) -> tuple[int, int]:
     """
     Finds the best route and insertion index for the client in the current visits order.
 
@@ -48,20 +51,16 @@ def _best_insert_idx(
 
     Returns
     -------
-    list[int]
-        The best route.
-    int
-        The best insertion index.
+    tuple[int, int]
+        The index of the best route and the index to insert the client.
     """
-    best_route = None
+    best_route_idx = None
     best_idx = None
     best_cost = float("inf")
 
-    for route in routes:
-        old_cost = Solution.from_routes(data, cost_evaluator, [route]).cost
-
+    for route_idx, route in enumerate(routes):
         for idx in range(len(route) + 1):
-            new_visits = copy(route)
+            new_visits = copy(route.clients)
             new_visits.insert(idx, client)
 
             if _compute_new_travel_cost(data, cost_evaluator, new_visits) > best_cost:
@@ -69,18 +68,18 @@ def _best_insert_idx(
                 # can stop the search to avoid expensive idle/wait computations.
                 continue
 
-            new_cost = Solution.from_routes(data, cost_evaluator, [new_visits]).cost
-            delta_cost = new_cost - old_cost
+            new_cost = Route.from_clients(data, cost_evaluator, new_visits).cost
+            delta_cost = new_cost - route.cost
 
             if best_cost is None or delta_cost < best_cost:
-                best_route = route
+                best_route_idx = route_idx
                 best_idx = idx
                 best_cost = delta_cost
 
     # Must always find an insertion index.
-    assert best_route is not None and best_idx is not None
+    assert best_route_idx is not None and best_idx is not None
 
-    return best_route, best_idx
+    return best_route_idx, best_idx
 
 
 def _compute_new_travel_cost(

@@ -26,7 +26,7 @@ def random_destroy(
     max_num_destroy
         The maximum number of clients to remove from the solution.
     """
-    routes = deepcopy(solution.routes)
+    routes = deepcopy([route.clients for route in solution.routes])
     clients = [client for route in routes for client in route]
     num_destroy = rng.integers(1, min(max_num_destroy, len(clients)))
 
