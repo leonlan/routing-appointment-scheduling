@@ -31,7 +31,7 @@ class Route:
     ):
         self._clients = clients
         self._appointments = appointments
-        self._cost = cost_evaluator(data, clients, appointments)
+        self._cost = cost_evaluator(data, clients, appointments) if clients else 0
 
     def __len__(self):
         return len(self._clients)
@@ -72,7 +72,9 @@ class Route:
         Route
             The route.
         """
-        appointments = compute_schedule(data, cost_evaluator, clients)
+        appointments = (
+            compute_schedule(data, cost_evaluator, clients) if clients else []
+        )
         return cls(data, cost_evaluator, clients, appointments)
 
 

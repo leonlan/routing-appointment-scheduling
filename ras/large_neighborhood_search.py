@@ -62,9 +62,10 @@ def large_neighborhood_search(
     # compute the heavy traffic schedule before the ALNS starts. This gives
     # a "fair" objective value to compare with.
     if initial_visits is None:
-        initial_visits = rng.permutation(list(range(1, data.dimension))).tolist()
+        initial_visits = [rng.permutation(list(range(1, data.dimension))).tolist()]
 
-    init = Solution.from_routes(data, cost_evaluator, [initial_visits])
+    initial_visits = [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]]
+    init = Solution.from_routes(data, cost_evaluator, initial_visits)
     select = RouletteWheel([5, 2, 1, 0.5], 0.5, len(D_OPS), len(R_OPS))
 
     # In percentages of the intial solution.
