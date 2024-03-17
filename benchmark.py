@@ -18,6 +18,7 @@ import numpy as np
 from tqdm.contrib.concurrent import process_map
 
 from ras import (
+    cvrp,
     double_orientation_tsp,
     full_enumeration,
     large_neighborhood_search,
@@ -46,6 +47,7 @@ def parse_args():
         default="lns",
         choices=[
             "lns",
+            "cvrp",
             "tsp",
             "dotsp",
             "mtsp",
@@ -254,6 +256,8 @@ def solve(
         )
     elif algorithm == "tsp":
         result = tsp(seed, data, cost_evaluator, **kwargs)
+    elif algorithm == "cvrp":
+        result = cvrp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "dotsp":
         result = double_orientation_tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "mtsp":

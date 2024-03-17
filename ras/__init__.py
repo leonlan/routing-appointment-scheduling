@@ -1,3 +1,4 @@
+from .cvrp import cvrp
 from .double_orientation_tsp import double_orientation_tsp
 from .full_enumeration import full_enumeration
 from .large_neighborhood_search import large_neighborhood_search

@@ -11,8 +11,9 @@ class ProblemData:
     def __init__(
         self,
         name: str,
-        coords: np.ndarray,
         dimension: np.ndarray,
+        num_vehicles: int,
+        coords: np.ndarray,
         distances: np.ndarray,
         distances_scv: np.ndarray,
         service: np.ndarray,
@@ -25,10 +26,12 @@ class ProblemData:
         ----------
         name
             The name of the problem instance.
-        coords
-            The coordinates of the locations.
         dimension
             The number of locations.
+        num_vehicles
+            The number of vehicles.
+        coords
+            The coordinates of the locations.
         distances
             The distances between the locations.
         distances_scv
@@ -39,8 +42,9 @@ class ProblemData:
             The squared coefficient of variation of the service times.
         """
         self.name = name
-        self.coords = coords
+        self.num_vehicles = num_vehicles
         self.dimension = dimension.item()
+        self.coords = coords
         self.distances = distances
         self.distances_scv = distances_scv
         self.service = service
@@ -73,6 +77,7 @@ class ProblemData:
 
         return cls(
             name=path.stem,
+            num_vehicles=kwargs.get("num_vehicles", 1),
             **data,
         )
 

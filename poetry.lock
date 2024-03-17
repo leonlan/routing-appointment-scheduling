@@ -2391,6 +2391,38 @@ files = [
 ]
 
 [[package]]
+name = "pyvrp"
+version = "0.7.0"
+description = "A state-of-the-art vehicle routing problem solver."
+optional = false
+python-versions = ">=3.9,<4.0"
+files = [
+    {file = "pyvrp-0.7.0-cp310-cp310-macosx_11_0_x86_64.whl", hash = "sha256:00c799146130308e3e4e407731ba5e63fefd8310bfb66380cca80f3db86736a3"},
+    {file = "pyvrp-0.7.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:773ec679dc9dd3a87db83d5492a2c215a6f9efec8e06edcddb58497122b9086f"},
+    {file = "pyvrp-0.7.0-cp310-cp310-win_amd64.whl", hash = "sha256:dba987cc551757c52e0a7bd0d8232c6011e10bc0ec7f70ab2d5fb12e5d883a77"},
+    {file = "pyvrp-0.7.0-cp311-cp311-macosx_11_0_x86_64.whl", hash = "sha256:4a4d532989227ea62dc5947d95498a3c042468e828962488d058d59e990d1455"},
+    {file = "pyvrp-0.7.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2d6c1f5c0ad27dcbc75d6c3bd9909322d83b6e1a2da42a30f8d26f068b32db05"},
+    {file = "pyvrp-0.7.0-cp311-cp311-win_amd64.whl", hash = "sha256:ad2c3c6e756525ff724b8303f62d3dd89a55cedeac9dcd3d41a79db6e4507c4d"},
+    {file = "pyvrp-0.7.0-cp312-cp312-macosx_11_0_x86_64.whl", hash = "sha256:76f079e88125174aa6c93446bc53fdd8b9ad62edbf416b511c2659ac1c73ec93"},
+    {file = "pyvrp-0.7.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a73e98a83002fb5ce96b0885b3881a0d543aafd0d5d9e7611e0eeb0e5c6f994b"},
+    {file = "pyvrp-0.7.0-cp312-cp312-win_amd64.whl", hash = "sha256:c0bffe57476a64475d5b0f218646c0711767fc3281cea84a1d32c5afc622ed5f"},
+    {file = "pyvrp-0.7.0-cp39-cp39-macosx_11_0_x86_64.whl", hash = "sha256:aae3d4c15a26551411ab127cd31aa217081f01734a2d040d732d4a956628170e"},
+    {file = "pyvrp-0.7.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:358dac01edf17e99d939e8f805c01f36669e83e0752d0b009411fe29b03cc009"},
+    {file = "pyvrp-0.7.0-cp39-cp39-win_amd64.whl", hash = "sha256:abb60693186f636ea6822241a01df73b4a31a47101f254a72e1df4d66d344950"},
+    {file = "pyvrp-0.7.0.tar.gz", hash = "sha256:3dc9de22b687a9c4a20da01faf66e27c243e0add39e642d96d36b50ad2d5d73b"},
+]
+
+[package.dependencies]
+matplotlib = ">=2.2.0"
+numpy = [
+    {version = ">=1.15.2", markers = "python_version < \"3.12\""},
+    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
+]
+tomli = ">=2.0.1,<3.0.0"
+tqdm = ">=4.64.1,<5.0.0"
+vrplib = ">=1.2.0,<2.0.0"
+
+[[package]]
 name = "pywin32"
 version = "306"
 description = "Python for Window Extensions"
@@ -3084,6 +3116,20 @@ docs = ["furo (>=2023.7.26)", "proselint (>=0.13)", "sphinx (>=7.1.2)", "sphinx-
 test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess (>=1)", "flaky (>=3.7)", "packaging (>=23.1)", "pytest (>=7.4)", "pytest-env (>=0.8.2)", "pytest-freezer (>=0.4.8)", "pytest-mock (>=3.11.1)", "pytest-randomly (>=3.12)", "pytest-timeout (>=2.1)", "setuptools (>=68)", "time-machine (>=2.10)"]
 
 [[package]]
+name = "vrplib"
+version = "1.3.0"
+description = "Python library for working with vehicle routing problem instances."
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "vrplib-1.3.0-py3-none-any.whl", hash = "sha256:1ec87c20bb7aaa33d39dc921f52c61a39d2efff02426027ed1e795f3607b7304"},
+    {file = "vrplib-1.3.0.tar.gz", hash = "sha256:07c676b26a651aed040bc5aa9008d7e2b4f5c15ece4b63432d4bffd2cab3c002"},
+]
+
+[package.dependencies]
+numpy = ">=1.19,<2.0"
+
+[[package]]
 name = "wcwidth"
 version = "0.2.13"
 description = "Measures the displayed width of unicode strings in a terminal"
@@ -3256,4 +3302,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "419260eda426ed901db44efabb3a4354fb34dcab15336b7858fb84306ab2548c"
+content-hash = "fd4d162427e3d324ea185f28563106616e00392134d7e42abd55835c10a97cd0"
