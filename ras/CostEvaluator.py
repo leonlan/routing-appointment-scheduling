@@ -4,7 +4,7 @@ from typing import Callable
 
 import numpy as np
 
-from ras.classes.ProblemData import ProblemData
+from .ProblemData import ProblemData
 
 
 class CostEvaluator:

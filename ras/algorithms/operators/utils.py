@@ -1,4 +1,5 @@
-from ras.classes import ProblemData, Solution
+from ras.ProblemData import ProblemData
+from ras.Solution import Solution
 
 
 def compute_unassigned(data: ProblemData, solution: Solution):

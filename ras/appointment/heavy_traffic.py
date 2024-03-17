@@ -1,6 +1,6 @@
 import numpy as np
 
-from ras.classes import CostEvaluator, ProblemData
+from ras import CostEvaluator, ProblemData
 
 
 def compute_schedule(

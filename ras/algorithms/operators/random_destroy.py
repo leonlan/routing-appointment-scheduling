@@ -3,7 +3,9 @@ from copy import deepcopy
 from numpy.random import Generator
 from numpy.testing import assert_equal
 
-from ras.classes import CostEvaluator, ProblemData, Solution
+from ras.CostEvaluator import CostEvaluator
+from ras.ProblemData import ProblemData
+from ras.Solution import Solution
 
 
 def random_destroy(

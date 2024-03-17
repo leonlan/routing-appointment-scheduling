@@ -17,9 +17,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm.contrib.concurrent import process_map
 
-from ras import cvrp, lns, nnsvf, saa
+from ras import CostEvaluator, ProblemData, cvrp, lns, nnsvf, saa
 from ras.appointment.true_optimal import compute_idle_wait as true_objective_function
-from ras.classes import CostEvaluator, ProblemData
 from ras.plot import plot_graph
 
 

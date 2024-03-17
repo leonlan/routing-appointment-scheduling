@@ -1,11 +1,22 @@
 import time
+from itertools import product
 
 import gurobipy as gp
+import numpy as np
 from gurobipy import GRB, quicksum
-from numpy.random import default_rng
+from numpy.random import Generator, default_rng
 
 from ras.appointment.true_optimal import compute_optimal_schedule
-from ras.classes import CostEvaluator, ProblemData, Result, Solution
+from ras.CostEvaluator import CostEvaluator
+from ras.distributions import (
+    fit_hyperexponential,
+    fit_mixed_erlang,
+    hyperexponential_rvs,
+    mixed_erlang_rvs,
+)
+from ras.ProblemData import ProblemData
+from ras.Result import Result
+from ras.Solution import Solution
 
 
 def zhan_mip(
@@ -193,20 +204,6 @@ def find_shortest_cycle(edges: list[tuple[int, int]]) -> list[int]:
 
     assert cycle is not None
     return cycle
-
-
-from itertools import product
-
-import numpy as np
-from numpy.random import Generator
-
-from ras.classes import ProblemData
-from ras.distributions import (
-    fit_hyperexponential,
-    fit_mixed_erlang,
-    hyperexponential_rvs,
-    mixed_erlang_rvs,
-)
 
 
 def _sample_distance_matrices(

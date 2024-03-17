@@ -4,7 +4,10 @@ from itertools import product
 import numpy as np
 
 from ras.appointment.true_optimal import compute_optimal_schedule
-from ras.classes import CostEvaluator, ProblemData, Result, Solution
+from ras.CostEvaluator import CostEvaluator
+from ras.ProblemData import ProblemData
+from ras.Result import Result
+from ras.Solution import Solution
 
 
 def nnsvf(

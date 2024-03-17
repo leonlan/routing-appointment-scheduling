@@ -1,6 +1,8 @@
 from copy import copy
 
-from ras.classes import CostEvaluator, ProblemData, Route, Solution
+from ras.CostEvaluator import CostEvaluator
+from ras.ProblemData import ProblemData
+from ras.Solution import Route, Solution
 
 from .utils import compute_unassigned
 

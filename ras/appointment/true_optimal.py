@@ -3,7 +3,7 @@ from scipy.linalg import expm, inv
 from scipy.linalg.blas import dgemm
 from scipy.optimize import minimize
 
-from ras.classes import CostEvaluator, ProblemData
+from ras import CostEvaluator, ProblemData
 
 from .heavy_traffic import compute_schedule as compute_ht_schedule
 

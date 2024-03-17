@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ras.classes import Solution
+from .Solution import Solution
 
 
 @dataclass
