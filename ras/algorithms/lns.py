@@ -1,6 +1,7 @@
 import time
 from typing import Optional
 
+import numpy as np
 import numpy.random as rnd
 from alns import ALNS
 from alns.accept import RecordToRecordTravel
@@ -49,9 +50,7 @@ def lns(
 
     alns = ALNS(rng)
 
-    D_OPS = [
-        random_destroy,
-    ]
+    D_OPS = [random_destroy]
     for d_op in D_OPS:
         alns.add_destroy_operator(d_op)
 
@@ -59,13 +58,13 @@ def lns(
     for r_op in R_OPS:
         alns.add_repair_operator(r_op)
 
-    # We explicitly take initial visits because we want to be able to
-    # compute the heavy traffic schedule before the ALNS starts. This gives
-    # a "fair" objective value to compare with.
     if initial_visits is None:
-        initial_visits = [rng.permutation(list(range(1, data.dimension))).tolist()]
+        # Random initial solution.
+        clients = list(range(1, data.dimension))
+        idcs = rng.permutation(range(len(clients)))
+        borders = np.array_split(idcs, data.num_vehicles)
+        initial_visits = [np.take(clients, chunk).tolist() for chunk in borders]
 
-    initial_visits = [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]]
     init = Solution.from_routes(data, cost_evaluator, initial_visits)
     select = RouletteWheel([5, 2, 1, 0.5], 0.5, len(D_OPS), len(R_OPS))
 
