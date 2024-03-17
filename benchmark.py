@@ -17,18 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm.contrib.concurrent import process_map
 
-from ras import (
-    cvrp,
-    double_orientation_tsp,
-    full_enumeration,
-    large_neighborhood_search,
-    modified_tsp,
-    nearest_neighbor_smallest_variance_first,
-    smallest_variance_first,
-    tsang,
-    tsp,
-    zhan,
-)
+from ras import cvrp, lns, nnsvf, saa
 from ras.appointment.true_optimal import compute_idle_wait as true_objective_function
 from ras.classes import CostEvaluator, ProblemData
 from ras.plot import plot_graph
@@ -40,23 +29,11 @@ def parse_args():
     parser.add_argument("instances", nargs="+", help="Instance paths.")
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--num_procs", type=int, default=8)
-    parser.add_argument("--num_procs_enum", type=int, default=1)
     parser.add_argument(
         "--algorithm",
         type=str,
         default="lns",
-        choices=[
-            "lns",
-            "cvrp",
-            "tsp",
-            "dotsp",
-            "mtsp",
-            "svf",
-            "nnsvf",
-            "enum",
-            "zhan",
-            "tsang",
-        ],
+        choices=["lns", "cvrp", "nnsvf", "saa"],
     )
 
     # Weight parameters for the cost function. Travel and idle time weightes
@@ -251,27 +228,15 @@ def solve(
             res = double_orientation_tsp(data, data, cost_evaluator, **kwargs)
             extra["initial_visits"] = res.solution.visits
 
-        result = large_neighborhood_search(
-            seed, data, cost_evaluator, **extra, **kwargs
-        )
+        result = lns(seed, data, cost_evaluator, **extra, **kwargs)
     elif algorithm == "tsp":
         result = tsp(seed, data, cost_evaluator, **kwargs)
     elif algorithm == "cvrp":
         result = cvrp(seed, data, cost_evaluator, **kwargs)
-    elif algorithm == "dotsp":
-        result = double_orientation_tsp(seed, data, cost_evaluator, **kwargs)
-    elif algorithm == "mtsp":
-        result = modified_tsp(seed, data, cost_evaluator, **kwargs)
-    elif algorithm == "svf":
-        result = smallest_variance_first(seed, data, cost_evaluator)
     elif algorithm == "nnsvf":
-        result = nearest_neighbor_smallest_variance_first(seed, data, cost_evaluator)
-    elif algorithm == "enum":
-        result = full_enumeration(seed, data, cost_evaluator, **kwargs)
-    elif algorithm == "zhan":
-        result = zhan(seed, data, cost_evaluator, **kwargs)
-    elif algorithm == "tsang":
-        result = tsang(seed, data, cost_evaluator, **kwargs)
+        result = nnsvf(seed, data, cost_evaluator)
+    elif algorithm == "saa":
+        result = saa(seed, data, cost_evaluator, **kwargs)
     else:
         raise ValueError(f"Unknown algorithm {algorithm}")
 

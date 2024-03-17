@@ -7,14 +7,12 @@ from alns.accept import RecordToRecordTravel
 from alns.select import RouletteWheel
 from alns.stop import MaxIterations, MaxRuntime
 
+from ras.algorithms.operators import greedy_insert, random_destroy
 from ras.appointment.true_optimal import compute_optimal_schedule
-from ras.classes import CostEvaluator, ProblemData, Route, Solution
-from ras.operators import greedy_insert, random_destroy
-
-from .Result import Result
+from ras.classes import CostEvaluator, ProblemData, Result, Route, Solution
 
 
-def large_neighborhood_search(
+def lns(
     seed: int,
     data: ProblemData,
     cost_evaluator: CostEvaluator,

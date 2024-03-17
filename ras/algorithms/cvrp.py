@@ -5,8 +5,7 @@ import pyvrp
 from pyvrp.stop import MaxRuntime
 
 from ras.appointment.true_optimal import compute_optimal_schedule
-from ras.classes import CostEvaluator, ProblemData, Route, Solution
-from ras.Result import Result
+from ras.classes import CostEvaluator, ProblemData, Result, Route, Solution
 
 
 def cvrp(

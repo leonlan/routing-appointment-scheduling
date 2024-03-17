@@ -4,15 +4,15 @@ from itertools import product
 import numpy as np
 
 from ras.appointment.true_optimal import compute_optimal_schedule
-from ras.classes import CostEvaluator, ProblemData, Solution
-
-from .Result import Result
+from ras.classes import CostEvaluator, ProblemData, Result, Solution
 
 
-def nearest_neighbor_smallest_variance_first(
+def nnsvf(
     seed: int, data: ProblemData, cost_evaluator: CostEvaluator, **kwargs
 ) -> Result:
     """
+    Nearest neighbor smallest variance first (NNSVF) algorithm.
+
     Greedily selects the next client to visit by choosing the one with the
     smallest variance of the arc, defined as the travel time plus the service
     time of the _next_ client (this is different from the $U$ variables used
