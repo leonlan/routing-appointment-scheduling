@@ -1,6 +1,6 @@
 # Routing and appointment scheduling
 
-This repository contains the code implementation of our paper [*A queueing-based approach for integrated routing and appointment scheduling*](preprint.pdf).
+This repository contains the code implementation of our paper [*A queueing-based approach for integrated routing and appointment scheduling*](https://doi.org/10.1016/j.ejor.2024.05.038).
 
 ## Installation
 
@@ -34,20 +34,18 @@ The objective weights are 1, 2.5 and 10 for the travel, idle and waiting time, r
 All results presented in our paper can be found in this repository. In particular, the raw results data is stored in `data/` and the notebooks that generate tables and figures can be found in `notebooks/`.
 
 
-## Citation
+## Paper and citation
 
-Please consider citing our paper if this repository has been useful to you:
+Please consider citing [our paper](https://doi.org/10.1016/j.ejor.2024.05.038) (open access) if this repository has been useful to you:
 
 ``` bibtex
-@misc{Bekker2023,
-  title = {A Queueing-Based Approach for Integrated Routing and Appointment Scheduling},
-  author = {Bekker, Ren{\'e} and Bharti, Bharti and Lan, Leon and Mandjes, Michel},
-  year = {2023},
-  month = dec,
-  number = {arXiv:2312.02715},
-  eprint = {2312.02715},
-  primaryclass = {math},
-  publisher = {arXiv},
-  doi = {10.48550/arXiv.2312.02715},
+@article{Bekker_et_al2024,
+title = {A queueing-based approach for integrated routing and appointment scheduling},
+journal = {European Journal of Operational Research},
+year = {2024},
+issn = {0377-2217},
+doi = {https://doi.org/10.1016/j.ejor.2024.05.038},
+url = {https://www.sciencedirect.com/science/article/pii/S0377221724003977},
+author = {René Bekker and Bharti Bharti and Leon Lan and Michel Mandjes},
 }
 ```
